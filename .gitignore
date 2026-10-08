@@ -1,0 +1,15 @@
+.gradle/
+.tools/
+build/
+run/
+run-data/
+run-gametest/
+run-gametest-terraced/
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+bin/
+__pycache__/
+
