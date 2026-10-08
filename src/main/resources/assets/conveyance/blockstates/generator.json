@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "conveyance:block/generator"
+    },
+    "lit=true": {
+      "model": "conveyance:block/generator_on"
+    }
+  }
+}

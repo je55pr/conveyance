@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "conveyance:block/miner_casing"
+    }
+  }
+}

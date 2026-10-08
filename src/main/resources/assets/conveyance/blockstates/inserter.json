@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "conveyance:block/inserter",
+      "y": 0
+    },
+    "facing=east": {
+      "model": "conveyance:block/inserter",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "conveyance:block/inserter",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "conveyance:block/inserter",
+      "y": 270
+    }
+  }
+}

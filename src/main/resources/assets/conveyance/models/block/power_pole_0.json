@@ -1,0 +1,73 @@
+{
+  "textures": {
+    "body": "minecraft:block/iron_block",
+    "insulator": "minecraft:block/black_concrete",
+    "particle": "minecraft:block/iron_block"
+  },
+  "elements": [
+    {
+      "from": [
+        6,
+        0,
+        6
+      ],
+      "to": [
+        10,
+        16,
+        10
+      ],
+      "faces": {
+        "down": {
+          "texture": "#body"
+        },
+        "up": {
+          "texture": "#body"
+        },
+        "north": {
+          "texture": "#body"
+        },
+        "south": {
+          "texture": "#body"
+        },
+        "west": {
+          "texture": "#body"
+        },
+        "east": {
+          "texture": "#body"
+        }
+      }
+    },
+    {
+      "from": [
+        2,
+        0,
+        2
+      ],
+      "to": [
+        14,
+        4,
+        14
+      ],
+      "faces": {
+        "down": {
+          "texture": "#body"
+        },
+        "up": {
+          "texture": "#body"
+        },
+        "north": {
+          "texture": "#body"
+        },
+        "south": {
+          "texture": "#body"
+        },
+        "west": {
+          "texture": "#body"
+        },
+        "east": {
+          "texture": "#body"
+        }
+      }
+    }
+  ]
+}

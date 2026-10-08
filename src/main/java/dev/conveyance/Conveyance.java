@@ -5,6 +5,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import dev.conveyance.world.WorldGeneration;
+import dev.conveyance.factory.FactoryContent;
 
 @Mod(Conveyance.MOD_ID)
 public final class Conveyance {
@@ -16,6 +17,7 @@ public final class Conveyance {
         MinecraftForge.EVENT_BUS.register(RecipePolicy.class);
         context.getModEventBus().addListener(ItemPolicy::onCreativeContents);
         WorldGeneration.register(context.getModEventBus());
+        FactoryContent.register(context.getModEventBus());
         MinecraftForge.EVENT_BUS.register(WorldGeneration.class);
         LogUtils.getLogger().info("Conveyance loaded: stripped-back industrial baseline enabled.");
     }

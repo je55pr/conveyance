@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "part=0": {
+      "model": "conveyance:block/power_pole_0"
+    },
+    "part=1": {
+      "model": "conveyance:block/power_pole_1"
+    },
+    "part=2": {
+      "model": "conveyance:block/power_pole_2"
+    },
+    "part=3": {
+      "model": "conveyance:block/power_pole_3"
+    }
+  }
+}

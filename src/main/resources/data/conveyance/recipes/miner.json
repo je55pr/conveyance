@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "III",
+    "ICI",
+    "III"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_block"
+    },
+    "C": {
+      "item": "minecraft:copper_block"
+    }
+  },
+  "result": {
+    "item": "conveyance:miner",
+    "count": 1
+  }
+}

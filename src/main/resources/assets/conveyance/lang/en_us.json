@@ -1,4 +1,27 @@
 {
   "generator.conveyance.terraced": "Conveyance",
-  "biome.conveyance.alien_savannah": "Alien Savannah"
+  "biome.conveyance.alien_savannah": "Alien Savannah",
+  "itemGroup.conveyance.factory": "Conveyance Factory",
+  "block.conveyance.miner": "Miner",
+  "block.conveyance.conveyor": "Conveyor Belt",
+  "block.conveyance.inserter": "Inserter",
+  "message.conveyance.miner_space": "Miner needs clear 4x4 space, 3 blocks high, on solid level ground.",
+  "tooltip.conveyance.miner": "Places a 4x4x3 miner. Put an outward-facing belt directly in front of its controller.",
+  "block.conveyance.power_pole": "Power Pole",
+  "block.conveyance.generator": "Coal Generator",
+  "message.conveyance.pole_space": "Power pole needs 4 blocks of clear height on solid ground.",
+  "tooltip.conveyance.power_pole": "Places a 4-block-tall pole. Link range: %s blocks. Machine coverage: %s blocks.",
+  "message.conveyance.no_power_coverage": "Outside power pole coverage.",
+  "message.conveyance.power_idle": "Supply: %s kW | No connected machines | %s poles",
+  "message.conveyance.power_status": "Supply: %s / %s kW | %s%% power | %s poles, %s machines",
+  "block.conveyance.burner_miner": "Burner Miner",
+  "block.conveyance.assembler": "Assembling Machine",
+  "block.conveyance.industrial_furnace": "Industrial Furnace",
+  "message.conveyance.machine_space": "Machine needs clear %sx%s space, %s blocks high, on solid level ground.",
+  "tooltip.conveyance.burner_miner": "2x2x2 coal miner. One fuel slot; outputs to a belt in front of its controller.",
+  "tooltip.conveyance.assembler": "3x3x2 assembler. 60 kW. Select a recipe, supply ingredients, extract the output.",
+  "tooltip.conveyance.industrial_furnace": "2x2x3 coal furnace. One input, one fuel and one output slot.",
+  "menu.conveyance.inputs": "Inputs",
+  "menu.conveyance.output": "Output",
+  "menu.conveyance.requires": "Requires %s x %s per batch"
 }

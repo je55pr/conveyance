@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "conveyance:block/assembler_casing"
+    }
+  }
+}

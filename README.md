@@ -3,7 +3,129 @@
 A standalone industrial overhaul for Minecraft Java Edition **1.20.1**, using
 **Forge 47.4.26** and **Java 17**. No other mods are required.
 
-## Version 0.7.0: surface resources prototype
+## Version 0.12.0: burner mining, assembling and industrial smelting
+
+Three new machines are in the **Conveyance Factory** tab. Each places with one
+item, needs a clear supported footprint, and returns as one machine item when
+any part is broken. Right-click any part to use its compact interface.
+
+- **Burner Miner: 2x2x2.** One coal/charcoal slot, no electricity. Mines one
+  resource every two seconds from its 2x2 footprint, keeping ore patches intact.
+  Put an outward-facing belt directly in front of its controller at the bottom
+  layer. Missing/full belts pause both mining and fuel consumption.
+- **Assembling Machine: 3x3x2.** Requires **60 kW** and makes one recipe batch
+  every two seconds at full power. Choose a factory recipe with the left/right
+  buttons. Ingredient quantities are counted without a crafting grid. Up to
+  four material buffers and one output slot keep its storage compact. Faint
+  icons show required ingredients and quantities; hover them for details.
+  Inserters supply the matching input buffers and extract only finished output.
+  Changing the recipe leaves existing ingredients available to remove manually.
+- **Industrial Furnace: 2x2x3.** Coal/charcoal powered, with one input slot, one
+  fuel slot and one output slot. Uses existing smelting recipes and cooking times,
+  including raw iron/copper to ingots. Inserters can feed input and fuel through
+  any side and extract finished output. Full outputs pause processing and fuel use.
+- Coal machines get **30 seconds of active work** per piece of fuel. Fuel,
+  ingredients, output, selected recipe and progress survive normal saving/pickup.
+- **Every item and block has a maximum stack size of 100**, including tools,
+  buckets and machine items. Matching metadata is still required to combine
+  stacks: different damage, names or packed machine contents remain separate.
+  Standard containers also accept 100 per slot; equipment-specific slots retain
+  their own placement rules. Belts still carry individual items in their queue.
+
+Assembler recipes currently cover Conveyance's factory items. Their costs are
+read from existing recipe data, without requiring any spatial arrangement.
+The player's crafting interface has not yet been replaced.
+
+Try **burner miner -> belt -> inserter -> industrial furnace**, manually add coal,
+then use output inserters to send ingots to an assembler set to Conveyor Belt.
+Supply three iron and three copper per batch, provide pole coverage, and extract
+eight belts per batch. Existing prototype worlds work; no migration is performed.
+
+## Direct miner output and single-slot generators
+
+Miners have no inventory or inventory screen. Put a belt directly in front of
+the controller's furnace face, at the miner's bottom layer, with its arrow pointing
+away from the miner. Ore feeds straight into the belt queue. A missing or full
+belt pauses mining; items are never dropped into the world. Right-clicking any
+miner part shows power status.
+
+Generators now have **one fuel slot**, accepting one stack of coal or charcoal.
+Right-click to open the compact screen; shift-click moves fuel between that slot
+and your inventory. Inserters can still feed the generator automatically.
+Old miner inventories and extra generator slots are discarded in this prototype.
+
+Try **miner -> belts -> inserter -> chest**, with a fueled generator and pole
+coverage. Existing worlds can be used.
+
+## Automatic power networks
+
+The **Conveyance Factory** Creative tab now includes a Power Pole and Coal
+Generator. Existing factory worlds work; miners and inserters now require power.
+
+- One Power Pole item places a **1x1x4** structure. Breaking any part returns one
+  pole item and removes the whole structure, including in Creative.
+- Poles automatically form networks within **24 blocks**, with visible overhead
+  wires. Connections have unlimited throughput. Adding generation increases
+  available power across the entire connected network.
+- Machines and generators connect automatically within an **8-block radius** of
+  a pole's base. Distance includes height; for miners, any part of the footprint
+  can be within range. Coverage overlap counts each machine and generator once.
+- A Coal Generator supplies **120 kW**. Right-click it to open its fuel inventory
+  and add coal or charcoal. One piece burns for **30 seconds** while loaded,
+  including when the network is idle. Inserters can supply fuel automatically.
+- Each connected miner reserves **90 kW** and each inserter **15 kW** in this
+  prototype, including when blocked or idle. Conveyors run without power.
+- Network satisfaction scales machine speed proportionally: **50% supply means
+  50% speed**. With no generation or coverage, machines stop and retain their
+  fuel, held item and partial work. Power is shared fairly across consumers.
+- Right-click any pole part with an empty hand for supply, demand, satisfaction,
+  pole count and machine count. Inspecting a miner, opening a generator, or rotating an
+  inserter, also shows its network status above the hotbar.
+- Generator fuel and remaining burn time survive breaking/replacing the generator.
+  Network connections rebuild automatically after loading a world. This iteration
+  uses **loaded chunks only**; distant factories do not keep chunks loaded.
+
+To try it, place a pole within 8 blocks of both a generator and your factory line,
+then add coal. **One miner plus two inserters uses exactly one generator's 120 kW**.
+Add another covered miner to see the network slow down; add a second fueled
+generator to restore full speed. Extend the network with poles up to 24 blocks
+apart, with an additional pole near each remote group of machines.
+
+## Factory and stored conveyor queues
+
+The **Conveyance Factory** Creative tab contains a Miner, Conveyor Belt and
+Inserter. Existing ore worlds can be used for this factory iteration.
+
+- One Miner item places a **4x4x3** machine, extending away from its controller
+  corner according to your facing. It needs clear space on level, solid ground.
+- At full power the miner produces one raw iron, raw copper or coal per second
+  from ore blocks beneath its footprint. Patches remain intact.
+- The miner outputs directly to a belt in front of its controller. Right-click
+  any part with an empty hand to see power status.
+- Breaking any part dismantles the whole miner and returns **one machine item**,
+  preserving its partial work. This also works in Creative for prototyping.
+- Conveyor arrows indicate travel direction. Each belt stores four individual
+  items in one lane. Items move between belts directly, including around corners,
+  with no dropped item entities, physics or despawning. Blocked outputs make the
+  line queue back; the front item waits until an inserter or the next belt accepts it.
+- Right-click with a resource item (such as coal or raw iron) to load one item
+  directly. In Creative this copies one item; in Survival it takes one from your
+  hand. Inserters can also load building blocks from a chest.
+- Belt queues survive saving/reloading. Breaking a belt returns one belt item
+  with its cargo packed inside; placing it restores the queue, including in Creative.
+  Loose item drops left over from 0.8.0 can be picked up and loaded by right-clicking.
+- Inserters take one item from the block behind them and deliver it to the block
+  in front. They work with chests, furnace inventories, generator
+  fuel inventories and the front of belt queues. A full destination makes the inserter hold its item.
+  Keep the line at the same height for this first version.
+- Right-click a belt or inserter with an empty hand to rotate its direction.
+
+Try **miner -> belts -> inserter -> chest**. Use a 0.7.0 ore world or
+create a new Creative world, place a miner over a patch, and build the line beside
+its bottom layer. Models, throughput and recipes are placeholders for playtesting;
+ore depletion and inserter animations are not implemented yet.
+
+## Terrain and surface resources
 
 New worlds offer one locked **Conveyance** preset. The generator starts from its
 own terrain rules, without vanilla carving, decoration, ores, vegetation,
@@ -40,7 +162,7 @@ structures, or creature generation.
 - World seeds still vary the terrain. Saving/reloading retains the generator.
 
 Use a **new Creative world** to fly around and test foundations and resource
-patches. There are no trees or miners yet, so the Survival progression is incomplete.
+patches. There are no trees yet, so the Survival progression is incomplete.
 Use a fresh world for this revision; changing the generator and dimension bounds
 does not migrate the terrain or player position saved by earlier prototypes.
 
@@ -95,7 +217,8 @@ Close the previously launched development game, then from PowerShell in this fol
 powershell -ExecutionPolicy Bypass -File .\dev.ps1 runClient
 ```
 
-Open **Mods** to find **Conveyance 0.7.0**, then create a **new Creative world**.
+Open **Mods** to find **Conveyance 0.12.0**, then use an existing ore world or create a
+**new Creative world**.
 The only world type should be **Conveyance**; normal and hidden alternate preset
 lists contain only that preset. Seed entry and game mode remain available.
 Structures and bonus-chest generation are forced off. Minecraft marks custom
@@ -121,7 +244,7 @@ and a supplied magical item should disappear on the next player tick.
 powershell -ExecutionPolicy Bypass -File .\dev.ps1 assemble
 ```
 
-The resulting file is `build/libs/conveyance-1.20.1-0.7.0.jar`. Put it in the
+The resulting file is `build/libs/conveyance-1.20.1-0.12.0.jar`. Put it in the
 `mods` folder of a Minecraft 1.20.1 instance with Forge 47.4.26 installed. Replace
 the previous Conveyance jar; do not install both versions together.
 
