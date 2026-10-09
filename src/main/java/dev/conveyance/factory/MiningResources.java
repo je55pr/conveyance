@@ -1,5 +1,7 @@
 package dev.conveyance.factory;
 
+import dev.conveyance.world.TerrainBlocks;
+
 import java.util.function.IntFunction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
@@ -18,7 +20,7 @@ final class MiningResources {
                 int part = Math.floorMod(cursor + attempt, area);
                 BlockPos pos = position.apply(part);
                 if (!level.hasChunkAt(pos)) continue;
-                BlockState state = level.getBlockState(pos);
+                BlockState state = TerrainBlocks.material(level.getBlockState(pos));
                 ItemStack output = pass == 0 ? ore(state) : stone(state);
                 if (!output.isEmpty()) return new Pick(output, (part + 1) % area);
             }

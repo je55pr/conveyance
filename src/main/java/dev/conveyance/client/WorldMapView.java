@@ -17,7 +17,7 @@ import net.minecraft.world.level.ChunkPos;
 
 /** Distant views use larger overview pages with the same texture size. */
 public final class WorldMapView {
-    private static final int CANVAS_HEIGHT = 154;
+    private int canvasHeight = 154, bodyHeight = 208, viewportWidth = 396;
     private record Page(int x, int z, int step) {}
     private record Texture(ResourceLocation id, long revision) {}
     private final Minecraft game = Minecraft.getInstance();
@@ -25,6 +25,7 @@ public final class WorldMapView {
     private double centerX, centerZ, zoom = 1;
     private boolean opened, dragging;
     private long requestedAt = Long.MIN_VALUE;
+    public void resize(int height) { bodyHeight = height; canvasHeight = Math.max(80, height - 54); requestedAt = Long.MIN_VALUE; }
     public void open() { if (!opened) { opened = true; center(); } }
     public void center() {
         if (game.player != null) { centerX = game.player.getX(); centerZ = game.player.getZ(); }
@@ -34,14 +35,20 @@ public final class WorldMapView {
     private static int canvasY(int top) { return top + 23; }
     private int step() {
         int step = 1;
-        while (zoom * step < 0.5 && step < 8) step *= 2;
+        while (step < 256) {
+            double columns = (viewportWidth - 8) / (16 * step * zoom) + 2;
+            double rows = canvasHeight / (16 * step * zoom) + 2;
+            if (zoom * step >= 0.5 && columns < 62 && rows < 62 && columns * rows <= 1536) break;
+            step *= 2;
+        }
         return step;
     }
     private int minX(int width) { return (int) Math.floor((centerX - (width - 8) / (2 * zoom)) / (16 * step())); }
-    private int minZ() { return (int) Math.floor((centerZ - CANVAS_HEIGHT / (2 * zoom)) / (16 * step())); }
+    private int minZ() { return (int) Math.floor((centerZ - canvasHeight / (2 * zoom)) / (16 * step())); }
     private int maxX(int width) { return (int) Math.floor((centerX + (width - 8) / (2 * zoom)) / (16 * step())); }
-    private int maxZ() { return (int) Math.floor((centerZ + CANVAS_HEIGHT / (2 * zoom)) / (16 * step())); }
+    private int maxZ() { return (int) Math.floor((centerZ + canvasHeight / (2 * zoom)) / (16 * step())); }
     public void tick(int width) {
+        viewportWidth = width;
         if (game.level == null) return;
         long now = game.level.getGameTime();
         if (requestedAt != Long.MIN_VALUE && now - requestedAt < 20) return;
@@ -68,8 +75,8 @@ public final class WorldMapView {
         graphics.drawString(game.font, Component.translatable("menu.conveyance.map_tab"), left + 8, top + 7, 0xFFE7EEF6, false);
         Component count = Component.translatable("map.conveyance.explored", WorldMapData.clientCount());
         graphics.drawString(game.font, count, left + width - 8 - game.font.width(count), top + 7, 0xFF9CABB8, false);
-        graphics.fill(x, y, x + canvasWidth, y + CANVAS_HEIGHT, 0xFF0C131B);
-        graphics.enableScissor(x, y, x + canvasWidth, y + CANVAS_HEIGHT);
+        graphics.fill(x, y, x + canvasWidth, y + canvasHeight, 0xFF0C131B);
+        graphics.enableScissor(x, y, x + canvasWidth, y + canvasHeight);
         int step = step(), pageBlocks = 16 * step;
         for (int cx = minX(width); cx <= maxX(width); cx++) for (int cz = minZ(); cz <= maxZ(); cz++) {
             int x1 = screenX(cx * (double) pageBlocks, x, canvasWidth), y1 = screenZ(cz * (double) pageBlocks, y);
@@ -106,14 +113,14 @@ public final class WorldMapView {
         int legendX = left + 7;
         for (int value : new int[] {MapPalette.IRON, MapPalette.COPPER, MapPalette.COAL, MapPalette.STONE}) {
             Component label = Component.translatable("map.conveyance." + MapPalette.name(value));
-            graphics.fill(legendX, top + 182, legendX + 5, top + 188, 0xFF000000 | MapPalette.color(value));
-            graphics.drawString(game.font, label, legendX + 7, top + 181, 0xFFBCCAD6, false);
+            graphics.fill(legendX, top + bodyHeight - 26, legendX + 5, top + bodyHeight - 20, 0xFF000000 | MapPalette.color(value));
+            graphics.drawString(game.font, label, legendX + 7, top + bodyHeight - 27, 0xFFBCCAD6, false);
             legendX += 12 + game.font.width(label);
         }
-        graphics.drawString(game.font, Component.translatable("map.conveyance.controls"), left + 8, top + 195, 0xFF9CABB8, false);
+        graphics.drawString(game.font, Component.translatable("map.conveyance.controls"), left + 8, top + bodyHeight - 13, 0xFF9CABB8, false);
         if (inside(mouseX, mouseY, left, top, width)) {
             int wx = (int) Math.floor(centerX + (mouseX - x - canvasWidth / 2.0) / zoom);
-            int wz = (int) Math.floor(centerZ + (mouseY - y - CANVAS_HEIGHT / 2.0) / zoom);
+            int wz = (int) Math.floor(centerZ + (mouseY - y - canvasHeight / 2.0) / zoom);
             var tile = WorldMapData.clientTile(Math.floorDiv(wx, pageBlocks), Math.floorDiv(wz, pageBlocks), step);
             int pixel = Math.floorMod(wz, pageBlocks) / step * 16 + Math.floorMod(wx, pageBlocks) / step;
             int value = tile == null ? MapPalette.UNKNOWN : tile.pixels()[pixel] & 255;
@@ -127,12 +134,12 @@ public final class WorldMapView {
         }
     }
     private int screenX(double worldX, int left, int width) { return (int) Math.floor(left + width / 2.0 + (worldX - centerX) * zoom); }
-    private int screenZ(double worldZ, int top) { return (int) Math.floor(top + CANVAS_HEIGHT / 2.0 + (worldZ - centerZ) * zoom); }
+    private int screenZ(double worldZ, int top) { return (int) Math.floor(top + canvasHeight / 2.0 + (worldZ - centerZ) * zoom); }
     private static void outline(GuiGraphics graphics, int x1, int y1, int x2, int y2, int color) {
         graphics.fill(x1, y1, x2, y1 + 1, color); graphics.fill(x1, y2 - 1, x2, y2, color);
         graphics.fill(x1, y1, x1 + 1, y2, color); graphics.fill(x2 - 1, y1, x2, y2, color);
     }
-    private static boolean inside(double x, double y, int left, int top, int width) { return x >= canvasX(left) && x < left + width - 4 && y >= canvasY(top) && y < canvasY(top) + CANVAS_HEIGHT; }
+    private boolean inside(double x, double y, int left, int top, int width) { return x >= canvasX(left) && x < left + width - 4 && y >= canvasY(top) && y < canvasY(top) + canvasHeight; }
     public boolean click(double x, double y, int button, int left, int top, int width) {
         if (!inside(x, y, left, top, width)) return false;
         if (button == 0 || button == 1) dragging = true;
@@ -148,12 +155,12 @@ public final class WorldMapView {
     public boolean scroll(double x, double y, double amount, int left, int top, int width) {
         if (!inside(x, y, left, top, width)) return false;
         double wx = centerX + (x - canvasX(left) - (width - 8) / 2.0) / zoom;
-        double wz = centerZ + (y - canvasY(top) - CANVAS_HEIGHT / 2.0) / zoom;
+        double wz = centerZ + (y - canvasY(top) - canvasHeight / 2.0) / zoom;
         int previousStep = step();
         zoom = Math.max(0.0625, Math.min(6, zoom * Math.pow(1.25, amount)));
         if (step() != previousStep) requestedAt = Long.MIN_VALUE;
         centerX = wx - (x - canvasX(left) - (width - 8) / 2.0) / zoom;
-        centerZ = wz - (y - canvasY(top) - CANVAS_HEIGHT / 2.0) / zoom;
+        centerZ = wz - (y - canvasY(top) - canvasHeight / 2.0) / zoom;
         return true;
     }
     public void close() { for (var texture : textures.values()) game.getTextureManager().release(texture.id); textures.clear(); }

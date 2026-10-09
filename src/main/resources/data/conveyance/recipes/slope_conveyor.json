@@ -1,0 +1,18 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "logistics",
+  "ingredients": [
+    {
+      "item": "conveyance:conveyor",
+      "count": 2
+    },
+    {
+      "item": "conveyance:gear",
+      "count": 1
+    }
+  ],
+  "result": {
+    "item": "conveyance:slope_conveyor",
+    "count": 1
+  }
+}

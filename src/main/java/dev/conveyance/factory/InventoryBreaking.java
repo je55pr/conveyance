@@ -22,17 +22,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 /** Preflight all loot before removing a block, tree or factory multiblock. */
 public final class InventoryBreaking {
-    private static ItemStack packed(BlockEntity entity) {
-        ItemStack item = new ItemStack(entity.getBlockState().getBlock());
-        if (entity instanceof ConveyorEntity belt) {
-            boolean occupied = false;
-            for (int slot = 0; slot < ConveyorEntity.CAPACITY; slot++) occupied |= !belt.item(slot).isEmpty();
-            if (!occupied) return item;
-        }
-        if (!(entity instanceof CrateEntity crate) || !crate.isEmpty())
-            BlockItem.setBlockEntityData(item, entity.getType(), entity.saveWithoutMetadata());
-        return item;
-    }
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void breakBlock(BlockEvent.BreakEvent event) {
         if (!(event.getPlayer() instanceof ServerPlayer player) || !(event.getLevel() instanceof ServerLevel level)) return;
@@ -45,16 +34,15 @@ public final class InventoryBreaking {
         BlockEntity entity = level.getBlockEntity(pos);
         List<ItemStack> loot;
         if (tree) loot = List.of(new ItemStack(FactoryContent.WOOD_ITEM.get(), ForestLogBlock.logCount(level, pos, state)));
-        else if (machine != null) loot = List.of(packed(machine));
-        else if (miner != null) loot = List.of(packed(miner));
+        else if (machine != null) loot = FactoryPickups.block(machine);
+        else if (miner != null) loot = FactoryPickups.block(miner);
         else if (pole) loot = List.of(new ItemStack(FactoryContent.POWER_POLE_ITEM.get()));
-        else if (entity != null && BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(entity.getType()).getNamespace().equals(Conveyance.MOD_ID)) loot = List.of(packed(entity));
+        else if (entity != null && BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(entity.getType()).getNamespace().equals(Conveyance.MOD_ID)) loot = FactoryPickups.block(entity);
         else {
             loot = new ArrayList<>();
-            if (player.hasCorrectToolForDrops(state) || player.isCreative())
-                loot.addAll(Block.getDrops(state, level, pos, entity, player, player.getMainHandItem()));
+            FactoryPickups.add(loot, new ItemStack(state.getBlock()));
             if (entity instanceof Container container)
-                for (int slot = 0; slot < container.getContainerSize(); slot++) loot.add(container.getItem(slot).copy());
+                for (int slot = 0; slot < container.getContainerSize(); slot++) FactoryPickups.add(loot, container.getItem(slot));
         }
         var extra = InventoryAccess.extra(player);
         var inventory = InventoryAccess.snapshot(player, extra);

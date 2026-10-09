@@ -15,7 +15,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public final class MachinePartBlock extends Block {
+public final class MachinePartBlock extends FactoryPartBlock {
     public final MachineKind kind;
     public MachinePartBlock(Properties properties, MachineKind kind) {
         super(properties);

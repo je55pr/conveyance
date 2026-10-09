@@ -50,7 +50,8 @@ public final class InventoryNetwork {
             context.enqueueWork(() -> {
                 ServerPlayer player = context.getSender();
                 if (player == null || !(player.containerMenu instanceof PlayerWorkbenchMenu menu) || !menu.stillValid(player)) return;
-                if (!message.recipe.getNamespace().equals(Conveyance.MOD_ID) || !ResearchState.recipeUnlocked(message.recipe, ResearchState.mask(player.level()))) return;
+                if (!message.recipe.getNamespace().equals(Conveyance.MOD_ID)
+                        || !player.isCreative() && !ResearchState.recipeUnlocked(message.recipe, ResearchState.mask(player.level()))) return;
                 var found = player.level().getRecipeManager().byKey(message.recipe).orElse(null);
                 if (found instanceof CraftingRecipe recipe && !HandCrafting.craft(player, menu.extra(), recipe, message.bulk)) {
                     player.displayClientMessage(Component.translatable("message.conveyance.craft_failed"), true);

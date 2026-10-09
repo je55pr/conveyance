@@ -1,5 +1,7 @@
 package dev.conveyance.player;
 
+import dev.conveyance.world.TerrainBlocks;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -14,12 +16,10 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 public final class TerrainHarvest {
     public static boolean terrain(BlockState state) {
-        return state.is(BlockTags.BASE_STONE_OVERWORLD) || state.is(BlockTags.DIRT) || state.is(BlockTags.IRON_ORES)
-                || state.is(BlockTags.COPPER_ORES) || state.is(BlockTags.COAL_ORES) || state.is(Blocks.GRASS_BLOCK)
-                || state.is(Blocks.COBBLESTONE) || state.is(Blocks.BEDROCK) || state.is(Blocks.SAND)
-                || state.is(Blocks.RED_SAND) || state.is(Blocks.GRAVEL) || state.is(Blocks.CLAY);
+        return TerrainBlocks.natural(state);
     }
     public static ItemStack resource(BlockState state) {
+        state = TerrainBlocks.material(state);
         if (state.is(BlockTags.IRON_ORES)) return new ItemStack(Items.RAW_IRON);
         if (state.is(BlockTags.COPPER_ORES)) return new ItemStack(Items.RAW_COPPER);
         if (state.is(BlockTags.COAL_ORES)) return new ItemStack(Items.COAL);
@@ -32,13 +32,13 @@ public final class TerrainHarvest {
         return ItemStack.EMPTY;
     }
     @SubscribeEvent public static void leftClick(PlayerInteractEvent.LeftClickBlock event) {
-        if (terrain(event.getLevel().getBlockState(event.getPos())) && !ResearchState.unlocked(event.getLevel(), ResearchState.EXCAVATION)) event.setCanceled(true);
+        if (terrain(event.getLevel().getBlockState(event.getPos()))) event.setCanceled(true);
     }
     @SubscribeEvent public static void breakBlock(BlockEvent.BreakEvent event) {
-        if (terrain(event.getState()) && !ResearchState.unlocked(event.getPlayer().level(), ResearchState.EXCAVATION)) event.setCanceled(true);
+        if (terrain(event.getState())) event.setCanceled(true);
     }
     public static void harvest(ServerPlayer player, BlockPos pos) {
-        if (!player.isAlive() || player.isSpectator() || !player.getAbilities().mayBuild || ResearchState.unlocked(player.level(), ResearchState.EXCAVATION)
+        if (!player.isAlive() || player.isSpectator() || !player.getAbilities().mayBuild
                 || !player.level().hasChunkAt(pos) || pos.distToCenterSqr(player.getEyePosition()) > 36) return;
         long now = player.level().getGameTime();
         long previous = player.getPersistentData().getLong("ConveyanceHarvestTime");
@@ -47,7 +47,7 @@ public final class TerrainHarvest {
         if (!terrain(state)) return;
         player.getPersistentData().putLong("ConveyanceHarvestTime", now);
         ItemStack output = resource(state);
-        if (output.isEmpty()) player.displayClientMessage(Component.translatable("message.conveyance.excavation_locked"), true);
+        if (output.isEmpty()) player.displayClientMessage(Component.translatable("message.conveyance.terrain_protected"), true);
         else if (!InventoryAccess.give(player, output)) player.displayClientMessage(Component.translatable("message.conveyance.inventory_full"), true);
     }
     private TerrainHarvest() {}

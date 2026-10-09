@@ -17,6 +17,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 public final class MachineItem extends BlockItem {
     private final MachineKind kind;
     public MachineItem(Block block, Properties properties, MachineKind kind) { super(block, properties); this.kind = kind; }
+    public BlockState previewState(BlockPlaceContext context) { return getPlacementState(context); }
     @Override protected BlockState getPlacementState(BlockPlaceContext context) {
         return getBlock().defaultBlockState().setValue(MachineBlock.FACING, context.getHorizontalDirection().getOpposite());
     }

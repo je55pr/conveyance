@@ -27,7 +27,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public final class JunctionBlock extends BaseEntityBlock {
+public final class JunctionBlock extends FactoryBlock {
     public enum Port implements StringRepresentable {
         NONE("none"), INPUT("input"), OUTPUT("output");
         private final String name;
@@ -53,7 +53,13 @@ public final class JunctionBlock extends BaseEntityBlock {
         if (!level.hasChunkAt(neighbor)) return Port.NONE;
         BlockState state = level.getBlockState(neighbor);
         Direction facing;
-        if (state.getBlock() instanceof ConveyorBlock) facing = state.getValue(ConveyorBlock.FACING);
+        ConveyorEntity source = ConveyorEntity.outletAt(level, neighbor);
+        if (source != null && source.configured() && source.outputPosition().equals(pos)) return Port.INPUT;
+        for (int dy = 0; dy <= 1; dy++) {
+            ConveyorEntity target = ConveyorEntity.at(level, neighbor.below(dy));
+            if (target != null && target.potentialEntry(neighbor, side.getOpposite())) return Port.OUTPUT;
+        }
+        if (state.getBlock() instanceof ConveyorBlock) return Port.NONE;
         else if (state.getBlock() instanceof InserterBlock arm && arm.reach() == 1) facing = state.getValue(InserterBlock.FACING);
         else if (state.getBlock() instanceof MinerBlock && state.getValue(MinerBlock.PART) == 0) {
             return state.getValue(MinerBlock.FACING) == side.getOpposite() ? Port.INPUT : Port.NONE;

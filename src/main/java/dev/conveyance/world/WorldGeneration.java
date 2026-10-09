@@ -27,7 +27,7 @@ public final class WorldGeneration {
     static { GENERATORS.register("terraced", () -> TerracedChunkGenerator.CODEC); }
     private WorldGeneration() {}
 
-    public static void register(IEventBus bus) { GENERATORS.register(bus); }
+    public static void register(IEventBus bus) { GENERATORS.register(bus); TerrainBlocks.register(bus); }
 
     @SubscribeEvent
     public static void onCreateSpawn(LevelEvent.CreateSpawnPosition event) {

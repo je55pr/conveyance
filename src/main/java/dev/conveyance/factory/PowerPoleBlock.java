@@ -25,7 +25,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public final class PowerPoleBlock extends BaseEntityBlock {
+public final class PowerPoleBlock extends FactoryBlock {
     public static final int HEIGHT = 4;
     public static final IntegerProperty PART = IntegerProperty.create("part", 0, HEIGHT - 1);
     private record Removal(Level level, BlockPos origin) {}

@@ -20,8 +20,11 @@ import net.minecraft.world.level.Level;
 
 public final class HandCrafting {
     public static List<CraftingRecipe> recipes(Level level, int unlocks) {
+        return recipes(level, unlocks, false);
+    }
+    public static List<CraftingRecipe> recipes(Level level, int unlocks, boolean creative) {
         return level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING).stream()
-                .filter(recipe -> recipe.getId().getNamespace().equals(Conveyance.MOD_ID) && ResearchState.recipeUnlocked(recipe.getId(), unlocks))
+                .filter(recipe -> recipe.getId().getNamespace().equals(Conveyance.MOD_ID) && (creative || ResearchState.recipeUnlocked(recipe.getId(), unlocks)))
                 .filter(recipe -> !recipe.getResultItem(level.registryAccess()).isEmpty() && !ItemPolicy.isDisabled(recipe.getResultItem(level.registryAccess())))
                 .sorted(Comparator.comparing(recipe -> recipe.getResultItem(level.registryAccess()).getHoverName().getString())).toList();
     }

@@ -16,6 +16,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 
 public final class MinerItem extends BlockItem {
     public MinerItem(Block block, Properties properties) { super(block, properties); }
+    public BlockState previewState(BlockPlaceContext context) { return getPlacementState(context); }
 
     @Override protected BlockState getPlacementState(BlockPlaceContext context) {
         return getBlock().defaultBlockState().setValue(MinerBlock.FACING, context.getHorizontalDirection().getOpposite());

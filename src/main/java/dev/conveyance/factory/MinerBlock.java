@@ -25,7 +25,7 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 
-public final class MinerBlock extends BaseEntityBlock {
+public final class MinerBlock extends FactoryBlock {
     public static final int WIDTH = 4, HEIGHT = 3, PART_COUNT = WIDTH * WIDTH * HEIGHT;
     public static final IntegerProperty PART = IntegerProperty.create("part", 0, PART_COUNT - 1);
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;

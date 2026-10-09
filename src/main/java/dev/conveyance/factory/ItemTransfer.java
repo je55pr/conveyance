@@ -27,7 +27,7 @@ final class ItemTransfer {
         if (stack.isEmpty() || !level.hasChunkAt(pos)) return false;
         Container target = containerAt(level, pos);
         if (target != null) return insert(target, stack, true, coalDrillSlot(target, stack, mined)).isEmpty();
-        ConveyorEntity belt = ConveyorEntity.at(level, pos);
+        ConveyorEntity belt = ConveyorEntity.connection(level, pos, incomingSide);
         if (belt != null) return belt.canAccept(incomingSide);
         JunctionEntity junction = JunctionEntity.at(level, pos);
         return junction != null && junction.canAccept(incomingSide);
@@ -39,7 +39,7 @@ final class ItemTransfer {
         if (!canOutput(level, pos, incomingSide, stack, mined)) return false;
         Container target = containerAt(level, pos);
         if (target != null) return insert(target, stack, false, coalDrillSlot(target, stack, mined)).isEmpty();
-        ConveyorEntity belt = ConveyorEntity.at(level, pos);
+        ConveyorEntity belt = ConveyorEntity.connection(level, pos, incomingSide);
         if (belt != null) return belt.offer(stack, incomingSide);
         JunctionEntity junction = JunctionEntity.at(level, pos);
         return junction != null && junction.offer(stack, incomingSide);
@@ -53,7 +53,7 @@ final class ItemTransfer {
             }
             return ItemStack.EMPTY;
         }
-        ConveyorEntity belt = ConveyorEntity.at(level, pos);
+        ConveyorEntity belt = ConveyorEntity.outletAt(level, pos);
         if (belt != null) return belt.peekFront();
         JunctionEntity junction = JunctionEntity.at(level, pos);
         return junction == null ? ItemStack.EMPTY : junction.peekOutput(outgoingSide);
@@ -94,7 +94,7 @@ final class ItemTransfer {
         ItemStack candidate = peekSource(level, pos, outgoingSide);
         if (fuelOnly && !GeneratorEntity.isFuel(candidate)
                 || !expected.isEmpty() && !ItemStack.isSameItemSameTags(candidate, expected)) return ItemStack.EMPTY;
-        ConveyorEntity belt = ConveyorEntity.at(level, pos);
+        ConveyorEntity belt = ConveyorEntity.outletAt(level, pos);
         if (belt != null) return belt.takeFront();
         JunctionEntity junction = JunctionEntity.at(level, pos);
         return junction == null ? ItemStack.EMPTY : junction.takeOutput(outgoingSide);

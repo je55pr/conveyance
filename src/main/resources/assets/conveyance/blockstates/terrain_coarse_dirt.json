@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "conveyance:block/terrain_coarse_dirt"
+    }
+  }
+}

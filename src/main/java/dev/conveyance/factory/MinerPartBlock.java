@@ -15,7 +15,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.phys.BlockHitResult;
 
 /** Structural blocks carry an index to the controller, with no block entities. */
-public final class MinerPartBlock extends Block {
+public final class MinerPartBlock extends FactoryPartBlock {
     public MinerPartBlock(Properties properties) {
         super(properties);
         registerDefaultState(stateDefinition.any().setValue(MinerBlock.PART, 1).setValue(MinerBlock.FACING, Direction.NORTH));

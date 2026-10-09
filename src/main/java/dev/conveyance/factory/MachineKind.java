@@ -4,10 +4,13 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 
 public enum MachineKind {
-    BURNER_MINER("burner_miner", 2, 2, 1), ASSEMBLER("assembler", 3, 2, 5), FURNACE("industrial_furnace", 2, 3, 3), LAB("research_lab", 3, 2, 2), SOLAR_PANEL("solar_panel", 3, 1, 0);
+    BURNER_MINER("burner_miner", 2, 2, 1, 0, 40), ASSEMBLER("assembler", 3, 2, 5, 60, 40),
+    FURNACE("industrial_furnace", 2, 3, 3, 0, 40), LAB("research_lab", 3, 2, 2, 60, 60), SOLAR_PANEL("solar_panel", 3, 1, 0, 0, 40);
     public final String id;
-    public final int width, height, slots;
-    MachineKind(String id, int width, int height, int slots) { this.id = id; this.width = width; this.height = height; this.slots = slots; }
+    public final int width, height, slots, powerKW, cycleTicks;
+    MachineKind(String id, int width, int height, int slots, int powerKW, int cycleTicks) {
+        this.id = id; this.width = width; this.height = height; this.slots = slots; this.powerKW = powerKW; this.cycleTicks = cycleTicks;
+    }
     public int parts() { return width * width * height; }
     public Item item() { return switch (this) {
         case BURNER_MINER -> FactoryContent.BURNER_MINER_ITEM.get();

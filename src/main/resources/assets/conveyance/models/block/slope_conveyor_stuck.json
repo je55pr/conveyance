@@ -1,0 +1,135 @@
+{
+  "textures": {
+    "body": "minecraft:block/black_concrete",
+    "arrow": "minecraft:block/red_concrete",
+    "particle": "minecraft:block/black_concrete"
+  },
+  "elements": [
+    {
+      "from": [
+        2,
+        7.5,
+        -3.3137
+      ],
+      "to": [
+        14,
+        8.5,
+        19.3137
+      ],
+      "faces": {
+        "down": {
+          "texture": "#body"
+        },
+        "up": {
+          "texture": "#body"
+        },
+        "north": {
+          "texture": "#body"
+        },
+        "south": {
+          "texture": "#body"
+        },
+        "west": {
+          "texture": "#body"
+        },
+        "east": {
+          "texture": "#body"
+        }
+      },
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "x",
+        "angle": 45,
+        "rescale": false
+      }
+    },
+    {
+      "from": [
+        3,
+        8.6,
+        7
+      ],
+      "to": [
+        13,
+        8.8,
+        9
+      ],
+      "faces": {
+        "down": {
+          "texture": "#arrow"
+        },
+        "up": {
+          "texture": "#arrow"
+        },
+        "north": {
+          "texture": "#arrow"
+        },
+        "south": {
+          "texture": "#arrow"
+        },
+        "west": {
+          "texture": "#arrow"
+        },
+        "east": {
+          "texture": "#arrow"
+        }
+      },
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "x",
+        "angle": 45,
+        "rescale": false
+      }
+    },
+    {
+      "from": [
+        7,
+        8.6,
+        3
+      ],
+      "to": [
+        9,
+        8.8,
+        13
+      ],
+      "faces": {
+        "down": {
+          "texture": "#arrow"
+        },
+        "up": {
+          "texture": "#arrow"
+        },
+        "north": {
+          "texture": "#arrow"
+        },
+        "south": {
+          "texture": "#arrow"
+        },
+        "west": {
+          "texture": "#arrow"
+        },
+        "east": {
+          "texture": "#arrow"
+        }
+      },
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "x",
+        "angle": 45,
+        "rescale": false
+      }
+    }
+  ]
+}

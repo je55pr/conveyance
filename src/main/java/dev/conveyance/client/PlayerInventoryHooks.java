@@ -35,7 +35,7 @@ public final class PlayerInventoryHooks {
         if (event.phase != TickEvent.Phase.END) return;
         var game = Minecraft.getInstance();
         if (game.player == null || game.level == null) { target = null; work = 0; return; }
-        if (game.screen != null || !game.options.keyAttack.isDown() || ResearchState.unlocked(game.level, ResearchState.EXCAVATION)
+        if (game.screen != null || !game.options.keyAttack.isDown()
                 || !(game.hitResult instanceof BlockHitResult hit) || !TerrainHarvest.terrain(game.level.getBlockState(hit.getBlockPos()))) {
             reset(game);
             return;

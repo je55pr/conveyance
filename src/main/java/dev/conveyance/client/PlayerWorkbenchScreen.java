@@ -24,12 +24,11 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 
 public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerWorkbenchMenu> {
-    private static final int RIGHT = 184, ROWS = 4, CELL = 26, GRID_Y = 73, CONTENT = PlayerWorkbenchMenu.CONTENT_Y;
-    private static final List<String> CATEGORIES = List.of("all", "intermediates", "logistics", "production", "power", "science");
+    private static final int RIGHT = 184, CELL = 26, ROW_HEIGHT = 42, GRID_Y = 73, CONTENT = PlayerWorkbenchMenu.CONTENT_Y;
+    private static final List<String> CATEGORIES = List.of("intermediates", "logistics", "production", "power", "science");
     private final List<Button> recipeButtons = new ArrayList<>();
     private final List<Button> categoryButtons = new ArrayList<>();
     private final Map<ResourceLocation, Integer> amounts = new HashMap<>();
@@ -37,19 +36,25 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
     private List<CraftingRecipe> availableRecipes = List.of();
     private List<ItemStack> cachedItems = List.of();
     private int cachedMask = -1;
-    private String category = "all";
+    private boolean cachedCreative;
+    private String category;
     private EditBox search;
     private Button inventoryTab, researchTab, mapTab, startResearch, fitGraph;
     private final ResearchGraphView graph = new ResearchGraphView();
     private final WorldMapView map = new WorldMapView();
     private boolean researchView, mapView;
-    private int scroll, columns;
+    private int scroll, columns, rows;
+    private record CraftRow(String family, List<CraftingRecipe> recipes) {}
     public PlayerWorkbenchScreen(PlayerWorkbenchMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
+        category = CATEGORIES.contains(WorkbenchPreferences.category()) ? WorkbenchPreferences.category() : "production";
+        researchView = WorkbenchPreferences.tab() == 1;
+        mapView = WorkbenchPreferences.tab() == 2;
         imageWidth = 396; imageHeight = 232;
     }
     @Override protected void init() {
-        imageWidth = Math.min(396, Math.max(304, width - 12));
+        imageWidth = Math.max(304, width - 24);
+        imageHeight = Math.max(232, height - 24);
         super.init();
         recipeButtons.clear();
         categoryButtons.clear();
@@ -58,11 +63,11 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
         researchTab = addRenderableWidget(Button.builder(Component.translatable("menu.conveyance.research_tab"), button -> tab(1)).bounds(leftPos + 138, topPos, 74, 20).build());
         mapTab = addRenderableWidget(Button.builder(Component.translatable("menu.conveyance.map_tab"), button -> tab(2)).bounds(leftPos + 216, topPos, 44, 20).build());
         fitGraph = addRenderableWidget(Button.builder(Component.translatable("menu.conveyance.tree_fit"), button -> { if (mapView) map.center(); else graph.fit(imageWidth); }).bounds(leftPos + imageWidth - 40, topPos, 40, 20).build());
-        graph.fit(imageWidth);
+        graph.resize(imageWidth, bodyHeight());
         int categoryWidth = (panelWidth - 16) / CATEGORIES.size();
         for (int index = 0; index < CATEGORIES.size(); index++) {
             String selected = CATEGORIES.get(index);
-            Button button = addRenderableWidget(Button.builder(Component.empty(), clicked -> { category = selected; scroll = 0; refresh(); })
+            Button button = addRenderableWidget(Button.builder(Component.empty(), clicked -> { category = selected; scroll = 0; remember(); refresh(); })
                     .bounds(leftPos + RIGHT + 8 + index * categoryWidth, topPos + CONTENT + 25, categoryWidth - 1, 20).build());
             button.setTooltip(Tooltip.create(Component.translatable("menu.conveyance.category." + selected)));
             categoryButtons.add(button);
@@ -72,27 +77,32 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
         search.setResponder(value -> scroll = 0);
         addRenderableWidget(search);
         columns = Math.max(1, (panelWidth - 16) / CELL);
-        for (int cell = 0; cell < ROWS * columns; cell++) {
+        rows = Math.max(1, (bodyHeight() - GRID_Y - 12) / ROW_HEIGHT);
+        for (int cell = 0; cell < rows * columns; cell++) {
             final int index = cell;
             recipeButtons.add(addRenderableWidget(Button.builder(Component.empty(), button -> {
-                var recipes = filtered();
-                int selected = scroll * columns + index;
-                if (selected < recipes.size()) InventoryNetwork.requestCraft(recipes.get(selected).getId(), hasShiftDown());
-            }).bounds(leftPos + RIGHT + 8 + cell % columns * CELL, topPos + CONTENT + GRID_Y + cell / columns * CELL, 24, 24).build()));
+                CraftingRecipe recipe = recipeAt(index, grouped());
+                if (recipe != null) InventoryNetwork.requestCraft(recipe.getId(), hasShiftDown());
+            }).bounds(leftPos + RIGHT + 8 + cell % columns * CELL, topPos + CONTENT + GRID_Y + cell / columns * ROW_HEIGHT + 12, 24, 24).build()));
         }
         startResearch = addRenderableWidget(Button.builder(Component.translatable("research.conveyance.start"), button -> research(graph.inspected()))
-                .bounds(leftPos + imageWidth - 108, topPos + CONTENT + 184, 100, 18).build());
+                .bounds(leftPos + imageWidth - 108, topPos + imageHeight - 24, 100, 18).build());
+        if (researchView) graph.open();
+        if (mapView) { map.resize(bodyHeight()); map.open(); map.tick(imageWidth); }
         refresh();
     }
+    private int bodyHeight() { return imageHeight - CONTENT; }
+    private void remember() { WorkbenchPreferences.remember(mapView ? 2 : researchView ? 1 : 0, category); }
     private void tab(int selected) {
         if (!menu.getCarried().isEmpty()) return;
         researchView = selected == 1;
         mapView = selected == 2;
+        remember();
         search.setFocused(false);
         graph.release();
         map.release();
         if (researchView) graph.open();
-        if (mapView) { map.open(); map.tick(imageWidth); }
+        if (mapView) { map.resize(bodyHeight()); map.open(); map.tick(imageWidth); }
         refresh();
     }
     private void research(int id) {
@@ -103,19 +113,50 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
         if (minecraft.level == null) return List.of();
         String query = search == null ? "" : search.getValue().toLowerCase(Locale.ROOT);
         return availableRecipes.stream()
-                .filter(recipe -> category.equals("all") || recipe instanceof FactoryCraftingRecipe factory && factory.tab().equals(category))
+                .filter(recipe -> !query.isBlank() || recipe instanceof FactoryCraftingRecipe factory && factory.tab().equals(category))
                 .filter(recipe -> recipe.getResultItem(minecraft.level.registryAccess()).getHoverName().getString().toLowerCase(Locale.ROOT).contains(query)).toList();
     }
     private List<ItemStack> items() { return InventoryAccess.snapshot(minecraft.player, menu.extra()); }
+    private String family(CraftingRecipe recipe) {
+        return switch (net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(recipe.getResultItem(minecraft.level.registryAccess()).getItem()).getPath()) {
+            case "miner", "burner_miner" -> "miners";
+            case "inserter", "burner_inserter", "long_inserter" -> "inserters";
+            case "conveyor", "slope_conveyor", "junction" -> "conveyors";
+            case "wood_crate", "iron_crate" -> "storage";
+            case "industrial_furnace" -> "furnaces";
+            case "assembler" -> "assemblers";
+            case "generator", "solar_panel" -> "generators";
+            case "power_pole" -> "poles";
+            case "radar" -> "radars";
+            case "research_lab" -> "labs";
+            case "red_science_pack", "green_science_pack" -> "science";
+            case "iron_pickaxe" -> "tools";
+            default -> "components";
+        };
+    }
+    private List<CraftRow> grouped() {
+        var recipes = filtered();
+        var result = new ArrayList<CraftRow>();
+        for (String group : List.of("miners", "inserters", "conveyors", "storage", "furnaces", "assemblers", "generators", "poles", "radars", "labs", "science", "tools", "components")) {
+            var matches = recipes.stream().filter(recipe -> family(recipe).equals(group)).toList();
+            for (int first = 0; first < matches.size(); first += columns) result.add(new CraftRow(group, matches.subList(first, Math.min(matches.size(), first + columns))));
+        }
+        return result;
+    }
+    private CraftingRecipe recipeAt(int cell, List<CraftRow> groups) {
+        int row = scroll + cell / columns, column = cell % columns;
+        return row < groups.size() && column < groups.get(row).recipes.size() ? groups.get(row).recipes.get(column) : null;
+    }
     private void updateAmounts() {
         var current = items();
         int mask = menu.researchMask();
-        boolean changed = mask != cachedMask || current.size() != cachedItems.size();
+        boolean creative = minecraft.player.isCreative();
+        boolean changed = mask != cachedMask || creative != cachedCreative || current.size() != cachedItems.size();
         if (!changed) for (int i = 0; i < current.size(); i++) if (!ItemStack.matches(current.get(i), cachedItems.get(i))) { changed = true; break; }
         if (!changed) return;
-        boolean recipesChanged = mask != cachedMask;
-        cachedMask = mask; cachedItems = current;
-        availableRecipes = HandCrafting.recipes(minecraft.level, mask);
+        boolean recipesChanged = mask != cachedMask || creative != cachedCreative;
+        cachedMask = mask; cachedCreative = creative; cachedItems = current;
+        availableRecipes = HandCrafting.recipes(minecraft.level, mask, creative);
         if (recipesChanged) {
             rawCosts.clear();
             var costs = new RecipeCosts(minecraft.level);
@@ -126,6 +167,7 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
         for (CraftingRecipe recipe : availableRecipes) amounts.put(recipe.getId(), planner.craftable(current, recipe));
     }
     private void refresh() {
+        if (!menu.getCarried().isEmpty() && (researchView || mapView)) { researchView = false; mapView = false; }
         boolean inventoryView = !researchView && !mapView;
         if (inventoryView) updateAmounts();
         menu.showStorage(inventoryView);
@@ -144,25 +186,25 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
         startResearch.active = tech != null && tech.available(menu.researchMask()) && ResearchState.selected(minecraft.level) != tech.id;
         String action = tech == null || tech.complete(menu.researchMask()) ? "completed" : ResearchState.selected(minecraft.level) == tech.id ? "active" : !tech.available(menu.researchMask()) ? "locked" : "start";
         startResearch.setMessage(Component.translatable("research.conveyance." + action));
-        var recipes = filtered();
-        scroll = Math.min(scroll, maxScroll(recipes.size()));
+        var groups = grouped();
+        scroll = Math.min(scroll, maxScroll(groups.size()));
         for (int cell = 0; cell < recipeButtons.size(); cell++) {
             Button button = recipeButtons.get(cell);
-            int selected = scroll * columns + cell;
-            button.visible = inventoryView && selected < recipes.size();
-            button.active = button.visible && (minecraft.player.isCreative() || amounts.getOrDefault(recipes.get(selected).getId(), 0) > 0);
+            CraftingRecipe recipe = recipeAt(cell, groups);
+            button.visible = inventoryView && recipe != null;
+            button.active = button.visible && (minecraft.player.isCreative() || amounts.getOrDefault(recipe.getId(), 0) > 0);
         }
     }
-    private int maxScroll(int count) { return Math.max(0, (count + columns - 1) / columns - ROWS); }
+    private int maxScroll(int count) { return Math.max(0, count - rows); }
     @Override protected void containerTick() { super.containerTick(); search.tick(); refresh(); if (mapView) map.tick(imageWidth); }
     @Override public void removed() { map.close(); super.removed(); }
     @Override protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + 21, 0xFF202A35);
         int tabX = mapView ? 216 : researchView ? 138 : 0, tabWidth = mapView ? 44 : researchView ? 74 : 134;
         graphics.fill(leftPos + tabX, topPos + 19, leftPos + tabX + tabWidth, topPos + 22, 0xFF88B9A2);
-        if (researchView || mapView) { panel(graphics, leftPos, topPos + CONTENT, imageWidth, 208); return; }
-        panel(graphics, leftPos, topPos + CONTENT, 176, 208);
-        panel(graphics, leftPos + RIGHT, topPos + CONTENT, imageWidth - RIGHT, 208);
+        if (researchView || mapView) { panel(graphics, leftPos, topPos + CONTENT, imageWidth, bodyHeight()); return; }
+        panel(graphics, leftPos, topPos + CONTENT, 176, bodyHeight());
+        panel(graphics, leftPos + RIGHT, topPos + CONTENT, imageWidth - RIGHT, bodyHeight());
         for (var slot : menu.slots) {
             int x = leftPos + slot.x, y = topPos + slot.y;
             graphics.fill(x - 1, y - 1, x + 17, y + 17, 0xFF596674);
@@ -191,15 +233,19 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
             startResearch.render(graphics, mouseX, mouseY, partialTick);
             return;
         }
-        var recipes = filtered();
+        var groups = grouped();
+        for (int row = 0; row < rows && scroll + row < groups.size(); row++)
+            graphics.drawString(font, Component.translatable("menu.conveyance.group." + groups.get(scroll + row).family),
+                    leftPos + RIGHT + 8, topPos + CONTENT + GRID_Y + row * ROW_HEIGHT, 0xFFB5C5D2, false);
         for (int i = 0; i < categoryButtons.size(); i++) {
             Button button = categoryButtons.get(i);
             boolean selected = CATEGORIES.get(i).equals(category);
             graphics.fill(button.getX(), button.getY(), button.getX() + button.getWidth(), button.getY() + 20, selected ? 0xFF618A78 : 0xFF354353);
             graphics.renderItem(categoryIcon(CATEGORIES.get(i)), button.getX() + (button.getWidth() - 16) / 2, button.getY() + 2);
         }
-        for (int cell = 0; cell < recipeButtons.size() && scroll * columns + cell < recipes.size(); cell++) {
-            CraftingRecipe recipe = recipes.get(scroll * columns + cell);
+        for (int cell = 0; cell < recipeButtons.size(); cell++) {
+            CraftingRecipe recipe = recipeAt(cell, groups);
+            if (recipe == null) continue;
             ItemStack output = recipe.getResultItem(minecraft.level.registryAccess());
             Button button = recipeButtons.get(cell);
             int x = button.getX(), y = button.getY();
@@ -219,10 +265,10 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
             graphics.pose().popPose();
         }
         renderTooltip(graphics, mouseX, mouseY);
-        for (int cell = 0; cell < recipeButtons.size() && scroll * columns + cell < recipes.size(); cell++) {
+        for (int cell = 0; cell < recipeButtons.size(); cell++) {
             if (over(recipeButtons.get(cell), mouseX, mouseY)) {
-                CraftingRecipe recipe = recipes.get(scroll * columns + cell);
-                ingredientTooltip(graphics, recipe, mouseX, mouseY);
+                CraftingRecipe recipe = recipeAt(cell, groups);
+                if (recipe != null) ingredientTooltip(graphics, recipe, mouseX, mouseY);
             }
         }
     }
@@ -232,7 +278,7 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
         case "production" -> FactoryContent.BURNER_MINER_ITEM.get();
         case "power" -> FactoryContent.POWER_POLE_ITEM.get();
         case "science" -> FactoryContent.RED_SCIENCE_ITEM.get();
-        default -> Items.PAPER;
+        default -> FactoryContent.GEAR_ITEM.get();
     }); }
     private void ingredientTooltip(GuiGraphics graphics, CraftingRecipe recipe, int mouseX, int mouseY) {
         var requirements = AssemblyRecipes.requirements(recipe);
@@ -240,9 +286,13 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
         Component title = Component.literal(output.getCount() > 1 ? output.getCount() + " × " : "").append(output.getHoverName());
         var raw = rawCosts.getOrDefault(recipe.getId(), List.of());
         Component rawTitle = Component.translatable("menu.conveyance.total_raw");
-        int boxWidth = Math.min(width - 8, Math.max(160, Math.max(Math.max(font.width(title), font.width(rawTitle)) + 16, Math.max(requirements.size(), raw.size()) * 30 + 16)));
+        int boxWidth = Math.min(width - 8, Math.max(264, Math.max(Math.max(font.width(title), font.width(rawTitle)) + 16, Math.max(requirements.size(), raw.size()) * 30 + 16)));
+        var info = net.minecraft.client.gui.screens.Screen.getTooltipFromItem(minecraft, output);
+        var infoLines = new ArrayList<net.minecraft.util.FormattedCharSequence>();
+        for (int line = 1; line < info.size(); line++) infoLines.addAll(font.split(info.get(line), boxWidth - 16));
+        int infoHeight = infoLines.size() * 10;
         int iconColumns = Math.max(1, (boxWidth - 16) / 30);
-        int rawTitleY = 35 + 24 * Math.max(1, (requirements.size() + iconColumns - 1) / iconColumns) + 6;
+        int rawTitleY = 35 + infoHeight + 24 * Math.max(1, (requirements.size() + iconColumns - 1) / iconColumns) + 6;
         int rawIconsY = rawTitleY + 13;
         int boxHeight = rawIconsY + 24 * Math.max(1, (raw.size() + iconColumns - 1) / iconColumns) + 8;
         int x = Math.max(4, Math.min(mouseX + 12, width - boxWidth - 4));
@@ -251,13 +301,14 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
         graphics.fill(x - 1, y - 1, x + boxWidth + 1, y + boxHeight + 1, 0xFF718292);
         graphics.fill(x, y, x + boxWidth, y + boxHeight, 0xFA17212C);
         graphics.drawString(font, title, x + 8, y + 7, 0xFFE7EEF6, false);
-        graphics.drawString(font, Component.translatable("menu.conveyance.ingredients"), x + 8, y + 23, 0xFFA9BBC9, false);
+        for (int line = 0; line < infoLines.size(); line++) graphics.drawString(font, infoLines.get(line), x + 8, y + 21 + line * 10, 0xFFBBC8D4, false);
+        graphics.drawString(font, Component.translatable("menu.conveyance.ingredients"), x + 8, y + 23 + infoHeight, 0xFFA9BBC9, false);
         boolean possible = minecraft.player.isCreative() || amounts.getOrDefault(recipe.getId(), 0) > 0;
         for (int i = 0; i < requirements.size(); i++) {
             var requirement = requirements.get(i);
             var choices = requirement.ingredient().getItems();
             if (choices.length == 0) continue;
-            int iconX = x + 8 + i % iconColumns * 30, iconY = y + 35 + i / iconColumns * 24;
+            int iconX = x + 8 + i % iconColumns * 30, iconY = y + 35 + infoHeight + i / iconColumns * 24;
             boolean enough = HandCrafting.count(cachedItems, requirement.ingredient()) >= requirement.count();
             costIcon(graphics, choices[0], requirement.count(), iconX, iconY, enough ? 0xFF8AD8A0 : possible ? 0xFFE1BC76 : 0xFFEB8585);
         }
@@ -288,8 +339,8 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
     @Override public boolean mouseScrolled(double x, double y, double amount) {
         if (mapView) return map.scroll(x, y, amount, leftPos, topPos + CONTENT, imageWidth);
         if (researchView) return graph.scroll(x, y, amount, leftPos, topPos + CONTENT, imageWidth);
-        if (x >= leftPos + RIGHT && y >= topPos + CONTENT + GRID_Y && y < topPos + CONTENT + GRID_Y + ROWS * CELL) {
-            scroll = Math.max(0, Math.min(maxScroll(filtered().size()), scroll - (int) Math.signum(amount)));
+        if (x >= leftPos + RIGHT && y >= topPos + CONTENT + GRID_Y && y < topPos + CONTENT + GRID_Y + rows * ROW_HEIGHT) {
+            scroll = Math.max(0, Math.min(maxScroll(grouped().size()), scroll - (int) Math.signum(amount)));
             refresh();
             return true;
         }

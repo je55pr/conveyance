@@ -14,7 +14,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public final class PowerPolePartBlock extends Block {
+public final class PowerPolePartBlock extends FactoryPartBlock {
     public PowerPolePartBlock(Properties properties) { super(properties); registerDefaultState(stateDefinition.any().setValue(PowerPoleBlock.PART, 1)); }
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(PowerPoleBlock.PART); }
     @Override public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) { return PowerPoleBlock.shape(state.getValue(PowerPoleBlock.PART)); }

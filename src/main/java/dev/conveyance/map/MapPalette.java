@@ -2,6 +2,7 @@ package dev.conveyance.map;
 
 import dev.conveyance.factory.FactoryContent;
 import dev.conveyance.world.TerracedTerrain;
+import dev.conveyance.world.TerrainBlocks;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Blocks;
@@ -17,6 +18,7 @@ public final class MapPalette {
     public static int color(int value) { return COLORS[value >= 0 && value < COLORS.length ? value : 0]; }
     public static String name(int value) { return NAMES[value >= 0 && value < NAMES.length ? value : 0]; }
     public static boolean isResource(int value) { return value >= IRON && value <= STONE; }
+    public static int size() { return COLORS.length; }
     public static byte overview(byte[] pixels, int x, int z, int size) {
         if (size == 1) return pixels[z * 16 + x];
         int[] counts = new int[COLORS.length];
@@ -24,14 +26,17 @@ public final class MapPalette {
             int value = pixels[(z + dz) * 16 + x + dx] & 255;
             if (value < counts.length) counts[value]++;
         }
+        return dominant(counts, 0);
+    }
+    public static byte dominant(int[] counts, int offset) {
         // Small deposits stay visible when zooming out instead of disappearing
         // into the most common ground colour.
         int resource = IRON;
-        for (int value = IRON + 1; value <= STONE; value++) if (counts[value] > counts[resource]) resource = value;
-        if (counts[resource] > 0) return (byte) resource;
-        if (counts[FACTORY] > 0) return FACTORY;
+        for (int value = IRON + 1; value <= STONE; value++) if (counts[offset + value] > counts[offset + resource]) resource = value;
+        if (counts[offset + resource] > 0) return (byte) resource;
+        if (counts[offset + FACTORY] > 0) return FACTORY;
         int most = UNKNOWN;
-        for (int value = 1; value < counts.length; value++) if (counts[value] > counts[most]) most = value;
+        for (int value = 1; value < COLORS.length; value++) if (counts[offset + value] > counts[offset + most]) most = value;
         return (byte) most;
     }
     public static byte ore(TerracedTerrain.Ore ore) { return switch (ore) {
@@ -46,10 +51,12 @@ public final class MapPalette {
         return resource != UNKNOWN ? resource : forest ? FOREST : cell.dry() ? DRY : LAND;
     }
     public static byte resource(BlockState state) {
+        state = TerrainBlocks.material(state);
         return state.is(BlockTags.IRON_ORES) ? IRON : state.is(BlockTags.COPPER_ORES) ? COPPER
                 : state.is(BlockTags.COAL_ORES) ? COAL : UNKNOWN;
     }
     public static byte surface(BlockState state, int y) {
+        state = TerrainBlocks.material(state);
         byte resource = resource(state);
         if (resource != UNKNOWN) return resource;
         if (state.is(FactoryContent.TREE_LOG.get()) || state.is(FactoryContent.TREE_LEAVES.get())) return FOREST;

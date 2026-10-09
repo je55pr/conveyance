@@ -7,8 +7,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 public final class MinerEntity extends PoweredMachineEntity {
+    public static final int DEMAND_KW = 90, CYCLE_TICKS = 20;
     private int cursor;
-    public MinerEntity(BlockPos pos, BlockState state) { super(FactoryContent.MINER_ENTITY.get(), pos, state, 90, 20); }
+    public MinerEntity(BlockPos pos, BlockState state) { super(FactoryContent.MINER_ENTITY.get(), pos, state, DEMAND_KW, CYCLE_TICKS); }
 
     @Override public double powerDistanceSquared(BlockPos pole) {
         BlockPos far = MinerBlock.partPosition(worldPosition, getBlockState().getValue(MinerBlock.FACING), MinerBlock.PART_COUNT - 1);

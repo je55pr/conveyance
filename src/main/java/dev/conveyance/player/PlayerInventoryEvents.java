@@ -18,6 +18,7 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import dev.conveyance.factory.FactoryPickups;
 
 public final class PlayerInventoryEvents {
     private static final String PLAYER_THROW = "ConveyancePlayerThrow";
@@ -32,7 +33,10 @@ public final class PlayerInventoryEvents {
         }
     }
     @SubscribeEvent public static void tick(TickEvent.PlayerTickEvent event) {
-        if (event.phase == TickEvent.Phase.END && event.player instanceof ServerPlayer player && player.isAlive()) InventoryAccess.flushReturns(player);
+        if (event.phase == TickEvent.Phase.END && event.player instanceof ServerPlayer player && player.isAlive()) {
+            if (player.level().getGameTime() % 20 == 0) FactoryPickups.normalizeInventory(player);
+            InventoryAccess.flushReturns(player);
+        }
     }
     @SubscribeEvent public static void openContainer(PlayerContainerEvent.Open event) {
         if (event.getEntity() instanceof ServerPlayer player) InventoryAccess.restoreCursor(player, event.getContainer());

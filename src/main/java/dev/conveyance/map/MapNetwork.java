@@ -15,7 +15,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 /** Only revealed tiles in the open map's viewport are sent to its viewer. */
 public final class MapNetwork {
     private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
-            ResourceLocation.fromNamespaceAndPath(Conveyance.MOD_ID, "map"), () -> "2", "2"::equals, "2"::equals);
+            ResourceLocation.fromNamespaceAndPath(Conveyance.MOD_ID, "map"), () -> "3", "3"::equals, "3"::equals);
     public record Query(int minX, int minZ, int maxX, int maxZ, int step) {}
     public record Update(long revision, int count, List<WorldMapData.ViewTile> tiles, long[] radars) {}
     public static void register() {
@@ -78,7 +78,7 @@ public final class MapNetwork {
                 && query.minX <= query.maxX && query.minZ <= query.maxZ
                 && query.maxX - query.minX < 64 && query.maxZ - query.minZ < 64;
     }
-    private static boolean validStep(int step) { return step == 1 || step == 2 || step == 4 || step == 8; }
+    private static boolean validStep(int step) { return step >= 1 && step <= 256 && (step & (step - 1)) == 0; }
     public static void request(int minX, int minZ, int maxX, int maxZ, int step) {
         if (!validStep(step)) return;
         int limit = 1875000 / step;

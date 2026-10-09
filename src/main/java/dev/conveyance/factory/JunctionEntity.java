@@ -19,7 +19,7 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class JunctionEntity extends BlockEntity {
     static final Direction[] SIDES = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
     public static final int CAPACITY = 8;
-    private static final int MOVE_TICKS = 5;
+    public static final int MOVE_TICKS = 5;
     private final NonNullList<ItemStack> items = NonNullList.withSize(CAPACITY, ItemStack.EMPTY);
     private final long[] moveStart = new long[CAPACITY];
     private final float[] fromX = new float[CAPACITY], fromZ = new float[CAPACITY];
@@ -47,7 +47,7 @@ public final class JunctionEntity extends BlockEntity {
                     changed = true;
                 }
             } else if (junction.ready(exit)) {
-                ConveyorEntity belt = ConveyorEntity.at(level, pos.relative(SIDES[side]));
+                ConveyorEntity belt = ConveyorEntity.connection(level, pos.relative(SIDES[side]), SIDES[side].getOpposite());
                 if (belt != null && belt.offer(junction.items.get(exit), SIDES[side].getOpposite())) {
                     junction.items.set(exit, ItemStack.EMPTY);
                     changed = true;
@@ -66,7 +66,7 @@ public final class JunctionEntity extends BlockEntity {
         // Reserved entrance positions prevent a fast lane from taking another lane's space.
         for (int side = 0; side < 4; side++) {
             if (JunctionBlock.port(state, SIDES[side]) != JunctionBlock.Port.INPUT || !junction.items.get(side).isEmpty()) continue;
-            ConveyorEntity belt = ConveyorEntity.at(level, pos.relative(SIDES[side]));
+            ConveyorEntity belt = ConveyorEntity.outletAt(level, pos.relative(SIDES[side]));
             if (belt == null) continue;
             ItemStack stack = belt.takeFront();
             if (!stack.isEmpty()) {

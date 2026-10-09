@@ -3,6 +3,96 @@
 A standalone industrial overhaul for Minecraft Java Edition **1.20.1**, using
 **Forge 47.4.26** and **Java 17**. No other mods are required.
 
+## Version 0.23.1: supplied item textures
+
+Gear, copper wire, electronic circuit and Wood now use Jess's pixel-art item
+textures. Asset generation detects imported item PNGs and preserves those icons
+when rerun. Placed block models remain separate. See [the texture inventory](docs/textures.md)
+for the extra component, construction and GUI textures ready for future content.
+
+## Version 0.23.0: machine facts and building previews
+
+Item tooltips use a shared fact section sourced from machine definitions:
+electricity use, generation, fuel energy, pole connection/coverage ranges,
+transport rates, footprints and storage. The same facts appear in inventories,
+crafting recipes and research unlocks. Research changes the effective power and
+rates shown. Current fuel settings give coal/charcoal 3.6 MJ and Wood 1.8 MJ;
+Burner Efficiency displays the additional usable energy. Fuel balance is retained.
+Belts and slopes move four items per second; junctions support four per port,
+up to sixteen with all four outputs connected.
+
+Held construction blocks, belts and machines show translucent placement ghosts.
+Multiblock ghosts include every part of the structure. Green outlines mean the
+placement fits; red outlines indicate an obstruction or missing support. No
+items are consumed by the preview.
+
+Click an existing belt/slope to extend its output directly. Slope items continue
+uphill at that endpoint, or downhill while sneaking. Air targeting still works.
+The helper no longer falls back to stacking another slope over an existing one.
+
+Crafting categories now contain labelled rows for miners, inserters, conveyors,
+storage, furnaces, assemblers, generators, poles, radars, labs, science and tools.
+Search results use the same groups. Recipe ingredients and raw costs remain as
+icon rows below the item's standard description and facts.
+
+## Version 0.22.3: larger workbench and remembered tabs
+
+E uses the window with twelve pixels of margin on each side. The map, research
+canvas and recipe grid resize with the available width and height. Map overviews
+adapt their detail level to keep large windows and distant zoom views complete.
+Map protocol 3 requires matching client/server versions; explored data remains.
+
+The selected main tab and crafting category are remembered across openings and
+client restarts in `config/conveyance-ui.json`. All Recipes has been removed;
+the five categories remain, while search can find recipes across categories.
+Hover an icon in the research unlocks/upgrades strip for its item details and,
+for an upgrade, the selected technology's effect. Existing icon art is unchanged.
+
+## Version 0.22.2: conveyor corners
+
+The placement helper snaps to the next empty cell while flat belts follow the
+player's facing direction. Turn 90 degrees to place a corner without needing
+to rotate the new belt afterward. Slope routing remains automatic.
+
+## Version 0.22.1: Creative crafting access
+
+Creative players see every Conveyance hand-crafting recipe in E, regardless of
+research. Click to receive a batch for free, or Shift-click for a full stack.
+The menu refreshes when changing game mode; Survival retains its normal research
+and material requirements. Creative access does not change the world's research.
+
+## Version 0.22.0: terrain materials, ordinary pickups and slope belts
+
+Start a **fresh world** for the terrain distinction. Natural earth, rock, sand,
+bedrock and ores are terrain-only block types with no inventory items. Resource
+harvesting and miners leave them in place. Ordinary inventory blocks remain
+placeable and removable; trees can still be felled. Existing generated chunks
+retain their old Minecraft terrain IDs. The former Excavation node now unlocks
+Metal Tools for construction blocks, without unlocking terrain removal.
+
+Factory pickups return a plain, stackable item plus every stored ingredient,
+fuel item, output and held/belt/junction cargo separately. All must fit in the
+72-slot inventory before the object is removed. Machines restart with empty
+slots and fresh progress when placed again. Old packed factory items in player
+storage are unpacked automatically; no machine state stays on the inventory item.
+All factory blocks, crates and multiblock parts take **0.5 seconds** to break in
+Survival, regardless of tool.
+
+**Slope Conveyor** is a starter recipe: two belts and one gear. One block spans
+one horizontal block and one vertical block. Place its base at the lower level
+of the step: a low incoming belt resolves uphill flow; a high incoming belt
+resolves downhill flow. Yellow arrows go up, blue arrows go down. Red slopes are
+stuck: missing/multiple inputs, incompatible/multiple outlets, or blocked
+headroom. Queued items are retained until the connection is resolved. A full
+downstream queue pauses transport without changing direction. Leave the cell
+above the slope clear. Multiple slopes can climb the world's three-block steps.
+
+Belts are now one pixel high and twelve pixels wide. Aim into the empty cell
+ahead of an existing belt and right-click with a belt item to extend a bridge;
+the new flat belt follows the player's facing direction. Sneaking bypasses that snap
+for flat belts. With a slope item, sneak-extension puts the base one level lower
+for a descending ramp. Regular floor placement also supports descending slopes.
+
 ## Version 0.21.2: visible burner miner status
 
 The burner miner's fuel screen shows **Mining**, **No deposit**, **No fuel**,

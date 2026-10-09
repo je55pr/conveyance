@@ -1,0 +1,124 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "facing": "north",
+        "flow": "up"
+      },
+      "apply": {
+        "model": "conveyance:block/slope_conveyor_up",
+        "y": 0
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "flow": "down"
+      },
+      "apply": {
+        "model": "conveyance:block/slope_conveyor_down",
+        "y": 0
+      }
+    },
+    {
+      "when": {
+        "facing": "north",
+        "flow": "unset|stuck_up|stuck_down"
+      },
+      "apply": {
+        "model": "conveyance:block/slope_conveyor_stuck",
+        "y": 0
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "flow": "up"
+      },
+      "apply": {
+        "model": "conveyance:block/slope_conveyor_up",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "flow": "down"
+      },
+      "apply": {
+        "model": "conveyance:block/slope_conveyor_down",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "east",
+        "flow": "unset|stuck_up|stuck_down"
+      },
+      "apply": {
+        "model": "conveyance:block/slope_conveyor_stuck",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "flow": "up"
+      },
+      "apply": {
+        "model": "conveyance:block/slope_conveyor_up",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "flow": "down"
+      },
+      "apply": {
+        "model": "conveyance:block/slope_conveyor_down",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "south",
+        "flow": "unset|stuck_up|stuck_down"
+      },
+      "apply": {
+        "model": "conveyance:block/slope_conveyor_stuck",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "flow": "up"
+      },
+      "apply": {
+        "model": "conveyance:block/slope_conveyor_up",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "flow": "down"
+      },
+      "apply": {
+        "model": "conveyance:block/slope_conveyor_down",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "facing": "west",
+        "flow": "unset|stuck_up|stuck_down"
+      },
+      "apply": {
+        "model": "conveyance:block/slope_conveyor_stuck",
+        "y": 270
+      }
+    }
+  ]
+}

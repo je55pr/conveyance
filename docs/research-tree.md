@@ -1,11 +1,11 @@
-# Conveyance research tree — 0.21.0
+# Conveyance research tree — 0.22.0
 
 All costs are research units: a red+green cost of 40 consumes 40 packs of each colour. Labs consume a complete pack combination together.
 
 | Technology | Cost | Prerequisites | Reward |
 |---|---:|---|---|
 | Automation | 10 red | Basic Industry | Unlock assembling machines. |
-| Excavation | 30 red + 30 green | Electric Mining, Steel Processing, Green Science | Unlock terrain removal and metal mining tools. |
+| Metal Tools | 30 red + 30 green | Electric Mining, Steel Processing, Green Science | Unlock metal tools for construction blocks. Natural terrain remains protected. |
 | Logistics | 20 red | Automation | Unlock electric inserters and balancing junctions. |
 | Electric Mining | 25 red | Automation | Unlock powered miners and quarries. |
 | Metal Storage | 10 red | Basic Industry | Unlock iron crates. |
@@ -23,6 +23,6 @@ All costs are research units: a red+green cost of 40 consumes 40 packs of each c
 | Electrical Efficiency | 50 red + 50 green | Solar Energy | Electrical machines use 20% less power. |
 | Burner Efficiency | 35 red + 35 green | Steel Processing, Green Science | Fuel lasts 25% longer in all burner machines. |
 
-Starter content: burner miner/inserter/furnace, conveyor, wooden crate, gear/wire/circuit, generator/pole, lab and red pack.
+Starter content: burner miner/inserter/furnace, conveyor and slope conveyor, wooden crate, gear/wire/circuit, generator/pole, lab and red pack.
 
 Older research progress restarts with this prototype tree. Unlocks and progress are shared and saved per world.

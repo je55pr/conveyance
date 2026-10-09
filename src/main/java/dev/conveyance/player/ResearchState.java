@@ -14,7 +14,7 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 public final class ResearchState extends SavedData {
     public static final int AUTOMATION = 1, EXCAVATION = 2;
     public static final int LOGISTICS = 4, ELECTRIC_MINING = 8;
-    private static final Set<String> STARTER = Set.of("burner_miner", "burner_inserter", "industrial_furnace", "conveyor", "wood_crate",
+    private static final Set<String> STARTER = Set.of("burner_miner", "burner_inserter", "industrial_furnace", "conveyor", "slope_conveyor", "wood_crate",
             "gear", "copper_wire", "electronic_circuit", "red_science_pack", "research_lab", "generator", "power_pole", "stone_bricks");
     private static int clientMask, clientSelected;
     private static int[] clientProgress = new int[Technology.values().length];

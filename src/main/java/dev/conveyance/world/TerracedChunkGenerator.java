@@ -129,6 +129,9 @@ public final class TerracedChunkGenerator extends ChunkGenerator {
     }
 
     private static BlockState material(int y, int height, TerracedTerrain.Cell cell, BlockState ore) {
+        return TerrainBlocks.generated(vanillaMaterial(y, height, cell, ore));
+    }
+    private static BlockState vanillaMaterial(int y, int height, TerracedTerrain.Cell cell, BlockState ore) {
         if (y < TerracedTerrain.MIN_Y) return Blocks.AIR.defaultBlockState();
         if (y >= height) {
             return (cell.water() && y < TerracedTerrain.SEA_LEVEL ? Blocks.WATER : Blocks.AIR).defaultBlockState();

@@ -75,6 +75,7 @@ public final class WorldMapData extends SavedData {
     }
     /** Each overview page remains 16x16 pixels while covering more chunks. */
     public List<ViewTile> window(int minX, int minZ, int maxX, int maxZ, int step) {
+        if (step >= 16) return overviewWindow(minX, minZ, maxX, maxZ, step);
         var result = new java.util.ArrayList<ViewTile>();
         for (int x = minX; x <= maxX; x++) for (int z = minZ; z <= maxZ; z++) {
             byte[] pixels = null;
@@ -92,6 +93,31 @@ public final class WorldMapData extends SavedData {
             }
             if (pixels != null) result.add(new ViewTile(x, z, step, version, pixels));
         }
+        return result;
+    }
+    private static final class Overview {
+        final int[] colors = new int[256 * MapPalette.size()];
+        long revision;
+    }
+    private List<ViewTile> overviewWindow(int minX, int minZ, int maxX, int maxZ, int step) {
+        var pages = new HashMap<Long, Overview>();
+        int chunksPerPixel = step / 16;
+        // Visit only explored chunks, rather than millions of unknown chunk coordinates.
+        for (Tile tile : tiles.values()) {
+            int x = Math.floorDiv(tile.x, step), z = Math.floorDiv(tile.z, step);
+            if (x < minX || x > maxX || z < minZ || z > maxZ) continue;
+            var page = pages.computeIfAbsent(ChunkPos.asLong(x, z), ignored -> new Overview());
+            int pixel = Math.floorMod(tile.z, step) / chunksPerPixel * 16 + Math.floorMod(tile.x, step) / chunksPerPixel;
+            int value = MapPalette.overview(tile.pixels, 0, 0, 16) & 255;
+            page.colors[pixel * MapPalette.size() + value]++;
+            page.revision = Math.max(page.revision, tile.revision);
+        }
+        var result = new java.util.ArrayList<ViewTile>();
+        pages.forEach((position, page) -> {
+            byte[] pixels = new byte[256];
+            for (int pixel = 0; pixel < 256; pixel++) pixels[pixel] = MapPalette.dominant(page.colors, pixel * MapPalette.size());
+            result.add(new ViewTile(ChunkPos.getX(position), ChunkPos.getZ(position), step, page.revision, pixels));
+        });
         return result;
     }
     public long[] radars(int minX, int minZ, int maxX, int maxZ) {

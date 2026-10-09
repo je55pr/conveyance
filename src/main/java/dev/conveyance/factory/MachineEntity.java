@@ -22,6 +22,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 public final class MachineEntity extends PoweredMachineEntity implements Container, MenuProvider, PowerProducer {
+    public static final int SOLAR_PEAK_KW = 60;
     public enum MiningStatus {
         MINING, NO_DEPOSIT, NO_FUEL, NO_OUTPUT, OUTPUT_BLOCKED;
         public Component label() { return Component.translatable("status.conveyance.miner." + name().toLowerCase(java.util.Locale.ROOT)); }
@@ -34,8 +35,7 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
 
     public MachineEntity(BlockPos pos, BlockState state) {
         super(FactoryContent.MACHINE_ENTITY.get(), pos, state,
-                MachineBlock.kind(state) == MachineKind.ASSEMBLER || MachineBlock.kind(state) == MachineKind.LAB ? 60 : 0,
-                MachineBlock.kind(state) == MachineKind.LAB ? 60 : 40);
+                MachineBlock.kind(state).powerKW, MachineBlock.kind(state).cycleTicks);
         items = NonNullList.withSize(kind().slots, ItemStack.EMPTY);
     }
     public MachineKind kind() { return MachineBlock.kind(getBlockState()); }
@@ -64,7 +64,9 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
         if (resource.stack().isEmpty()) return MiningStatus.NO_DEPOSIT;
         if (burnTicks == 0 && !GeneratorEntity.isFuel(items.get(0))) return MiningStatus.NO_FUEL;
         BlockPos output = worldPosition.relative(facing);
-        if (ItemTransfer.containerAt(level, output) == null && ConveyorEntity.at(level, output) == null && JunctionEntity.at(level, output) == null)
+        ConveyorEntity lower = ConveyorEntity.at(level, output.below());
+        if (ItemTransfer.containerAt(level, output) == null && ConveyorEntity.at(level, output) == null
+                && (lower == null || !lower.slope()) && JunctionEntity.at(level, output) == null)
             return MiningStatus.NO_OUTPUT;
         return ItemTransfer.canOutput(level, output, facing.getOpposite(), resource.stack(), true) ? MiningStatus.MINING : MiningStatus.OUTPUT_BLOCKED;
     }
@@ -106,9 +108,9 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
         var resource = MiningResources.find(level, 4, cursor, part -> MachineBlock.partPosition(worldPosition, facing, kind(), part).below());
         if (resource.stack().isEmpty() || !ItemTransfer.canOutput(level, worldPosition.relative(facing), facing.getOpposite(), resource.stack(), true) || !burn(0)) return;
         coalWork += ResearchState.miningSpeed(level);
-        if (coalWork + 0.000001 < 40) return;
+        if (coalWork + 0.000001 < kind().cycleTicks) return;
         if (ItemTransfer.output(level, worldPosition.relative(facing), facing.getOpposite(), resource.stack(), true)) {
-            coalWork = Math.max(0, coalWork - 40);
+            coalWork = Math.max(0, coalWork - kind().cycleTicks);
             cursor = resource.nextCursor();
             setChanged();
         }
@@ -187,7 +189,7 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
         int clear = 0;
         var facing = getBlockState().getValue(MachineBlock.FACING);
         for (int part = 0; part < kind().parts(); part++) if (level.canSeeSky(MachineBlock.partPosition(worldPosition, facing, kind(), part).above())) clear++;
-        return (int) Math.round(60.0 * clear / kind().parts() * Math.max(0, Math.cos(level.getSunAngle(0))));
+        return (int) Math.round((double) SOLAR_PEAK_KW * clear / kind().parts() * Math.max(0, Math.cos(level.getSunAngle(0))));
     }
     @Override public void onLoad() {
         super.onLoad();

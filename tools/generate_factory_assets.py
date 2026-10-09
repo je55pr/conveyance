@@ -16,6 +16,12 @@ def box(start, end, texture):
             "faces": {side: {"texture": "#" + texture}
                       for side in ("down", "up", "north", "south", "west", "east")}}
 
+for material in ("grass_block", "dirt", "coarse_dirt", "sand", "stone", "andesite", "granite", "bedrock", "iron_ore", "copper_ore", "coal_ore"):
+    name = "terrain_" + material
+    write(f"assets/conveyance/models/block/{name}.json", {"parent": f"minecraft:block/{material}"})
+    write(f"assets/conveyance/blockstates/{name}.json", {"variants": {"": {"model": f"conveyance:block/{name}"}}})
+    write(f"data/conveyance/loot_tables/blocks/{name}.json", {"type": "minecraft:block", "pools": []})
+
 
 for name, body, frame in (("wood_crate", "acacia_planks", "dark_oak_planks"),
                           ("iron_crate", "iron_block", "polished_deepslate")):
@@ -83,10 +89,33 @@ write("assets/conveyance/models/item/miner.json", {"parent": "conveyance:block/m
 write("assets/conveyance/models/block/conveyor.json", {
     "textures": {"body": "minecraft:block/black_concrete", "arrow": "minecraft:block/yellow_concrete",
                  "particle": "minecraft:block/black_concrete"},
-    "elements": [box([0, 0, 0], [16, 2, 16], "body"),
-                 box([7, 2, 5], [9, 2.3, 13], "arrow"),
-                 box([5, 2, 3], [11, 2.3, 6], "arrow"),
-                 box([7, 2, 1], [9, 2.3, 3], "arrow")]})
+    "elements": [box([2, 0, 0], [14, 1, 16], "body"),
+                 box([7, 1, 5], [9, 1.2, 13], "arrow"),
+                 box([5, 1, 3], [11, 1.2, 6], "arrow"),
+                 box([7, 1, 1], [9, 1.2, 3], "arrow")]})
+
+def incline(element):
+    element["rotation"] = {"origin": [8, 8, 8], "axis": "x", "angle": 45, "rescale": False}
+    return element
+
+for mode, color in (("up", "yellow_concrete"), ("down", "light_blue_concrete"), ("stuck", "red_concrete")):
+    body = incline(box([2, 7.5, -3.3137], [14, 8.5, 19.3137], "body"))
+    if mode == "stuck":
+        arrows = [box([3, 8.6, 7], [13, 8.8, 9], "arrow"), box([7, 8.6, 3], [9, 8.8, 13], "arrow")]
+    else:
+        arrows = [box([7, 8.6, 5], [9, 8.8, 13], "arrow"), box([5, 8.6, 3], [11, 8.8, 6], "arrow"), box([7, 8.6, 1], [9, 8.8, 3], "arrow")]
+        if mode == "down":
+            for arrow in arrows:
+                arrow["from"][2], arrow["to"][2] = 16 - arrow["to"][2], 16 - arrow["from"][2]
+    write(f"assets/conveyance/models/block/slope_conveyor_{mode}.json", {
+        "textures": {"body": "minecraft:block/black_concrete", "arrow": f"minecraft:block/{color}", "particle": "minecraft:block/black_concrete"},
+        "elements": [body] + [incline(arrow) for arrow in arrows]})
+write("assets/conveyance/blockstates/slope_conveyor.json", {"multipart": [
+    {"when": {"facing": facing, "flow": flow}, "apply": {"model": f"conveyance:block/slope_conveyor_{mode}", "y": rotation}}
+    for facing, rotation in (("north", 0), ("east", 90), ("south", 180), ("west", 270))
+    for flow, mode in (("up", "up"), ("down", "down"), ("unset|stuck_up|stuck_down", "stuck"))]})
+write("assets/conveyance/models/item/slope_conveyor.json", {"parent": "conveyance:block/slope_conveyor_up"})
+write("data/conveyance/loot_tables/blocks/slope_conveyor.json", {"type": "minecraft:block", "pools": []})
 write("assets/conveyance/models/block/inserter.json", {
     "textures": {"body": "minecraft:block/iron_block", "arm": "minecraft:block/yellow_concrete",
                  "particle": "minecraft:block/iron_block"},
@@ -269,6 +298,7 @@ for name in ("inserter", "long_inserter"):
 
 recipes = {
     "conveyor": ("logistics", {"iron_ingot": 2, "conveyance:gear": 1}, 8),
+    "slope_conveyor": ("logistics", {"conveyance:conveyor": 2, "conveyance:gear": 1}, 1),
     "inserter": ("logistics", {"iron_ingot": 3, "conveyance:gear": 1, "conveyance:electronic_circuit": 1}, 1),
     "burner_inserter": ("logistics", {"iron_ingot": 1, "conveyance:gear": 1}, 1),
     "long_inserter": ("logistics", {"iron_ingot": 2, "conveyance:gear": 1, "conveyance:inserter": 1}, 1),
@@ -312,6 +342,7 @@ for language in ("en_us", "en_gb"):
     data = json.loads((ROOT / file).read_text(encoding="utf-8"))
     data.pop("menu.conveyance.craft_controls", None)
     data.pop("menu.conveyance.recursive", None)
+    data.pop("menu.conveyance.category.all", None)
     data.update({"itemGroup.conveyance.factory": "Conveyance Factory",
                  "block.conveyance.wood_crate": "Wooden Crate",
                  "block.conveyance.iron_crate": "Iron Crate",
@@ -319,7 +350,7 @@ for language in ("en_us", "en_gb"):
                  "block.conveyance.tree_leaves": "Savannah Tree Leaves",
                  "item.conveyance.wood": "Wood",
                  "tooltip.conveyance.wood": "Fuel: 15 seconds in burners/generators (half of coal). Used to craft wooden crates.",
-                 "tooltip.conveyance.crate": "%s slots, up to %s items. Contents stay packed when picked up.",
+                 "tooltip.conveyance.crate": "%s slots, up to %s items. Picking up returns the crate and contents separately.",
                  "block.conveyance.miner": "Miner",
                  "block.conveyance.conveyor": "Conveyor Belt",
                  "block.conveyance.junction": "Conveyor Junction",
@@ -376,7 +407,7 @@ for language in ("en_us", "en_gb"):
                  "menu.conveyance.tree_controls": "Drag to pan | Scroll to zoom",
                  "menu.conveyance.hotbar": "Hotbar",
                  "menu.conveyance.storage_size": "72 slots | 100 per stack",
-                 "menu.conveyance.search": "Search unlocked recipes",
+                 "menu.conveyance.search": "Search recipes",
                  "menu.conveyance.batch": "%s/batch",
                  "menu.conveyance.have_need": "%s / %s  %s",
                  "menu.conveyance.ingredients": "Ingredients",
@@ -442,12 +473,22 @@ for language in ("en_us", "en_gb"):
         "tooltip.conveyance.assembler": "3x3x2 assembler. Base 60 kW. Select a recipe, supply ingredients, extract the output.",
         "tooltip.conveyance.wood": "Base fuel: 15 seconds in burners/generators, half of coal. Burner Efficiency extends fuel duration.",
         "tooltip.conveyance.industrial_furnace": "2x2x3 Stone Furnace. Ore/stone: 3.2s, steel: 16s. Uses coal, charcoal or Wood.",
-        "menu.conveyance.category.all": "All recipes",
         "menu.conveyance.category.intermediates": "Intermediates",
         "menu.conveyance.category.logistics": "Logistics",
         "menu.conveyance.category.production": "Production",
         "menu.conveyance.category.power": "Power",
         "menu.conveyance.category.science": "Science",
+        "tooltip.conveyance.inserter": "Electric arm. Reaches one block on either side, moving two items per second at 15 kW before upgrades.",
+        "tooltip.conveyance.steel_ingot": "Smelt five iron ingots into one steel ingot in a Stone Furnace. Base time: 16 seconds.",
+        "tooltip.conveyance.green_science_pack": "Research material for labs, supplied alongside red science. Made from one belt and one electric inserter.",
+        "tooltip.conveyance.iron_pickaxe": "Construction tool for ordinary placed blocks. Natural terrain remains in place when harvested.",
+        "block.conveyance.slope_conveyor": "Slope Conveyor",
+        "tooltip.conveyance.conveyor": "Aim into the empty cell ahead of a belt to extend it. New belts follow your facing direction, including corners. Sneak to place normally.",
+        "tooltip.conveyance.slope_conveyor": "Changes height by one block. Direction follows the incoming belt; red means stuck. At a belt end, sneak-place to descend. Keep the cell above clear.",
+        "message.conveyance.terrain_protected": "Natural terrain stays in place. Harvest resources or build with ordinary blocks.",
+        "message.conveyance.slope_up": "Slope: uphill",
+        "message.conveyance.slope_down": "Slope: downhill",
+        "message.conveyance.slope_stuck": "Slope stuck: needs one incoming conveyor and an unambiguous outlet. Keep the block above clear.",
         "status.conveyance.miner.mining": "Mining",
         "status.conveyance.miner.no_deposit": "No deposit",
         "status.conveyance.miner.no_fuel": "No fuel",
@@ -468,7 +509,7 @@ for language in ("en_us", "en_gb"):
     })
     technology_text = {
         "automation": ("Automation", "Auto", "Unlock assembling machines."),
-        "excavation": ("Excavation", "Excavate", "Unlock terrain removal and metal mining tools."),
+        "excavation": ("Metal Tools", "Tools", "Unlock metal tools for faster construction block mining. Natural terrain remains protected."),
         "logistics": ("Logistics", "Logistics", "Unlock electric inserters and balancing junctions."),
         "electric_mining": ("Electric Mining", "Mining", "Unlock powered miners and quarries."),
         "metal_storage": ("Metal Storage", "Storage", "Unlock iron crates."),
@@ -489,4 +530,55 @@ for language in ("en_us", "en_gb"):
     for key, (title, short, description) in technology_text.items():
         for suffix, text in (("name", title), ("short", short), ("description", description)):
             data[f"technology.conveyance.{key}.{suffix}"] = text
+    data.update({
+        "tooltip.conveyance.wood": "Fuel and a material for wooden crates.",
+        "tooltip.conveyance.crate": "Stores items. Pickup returns the crate and its contents separately.",
+        "tooltip.conveyance.miner": "Electric miner and quarry. Delivers resources directly to the connected output.",
+        "tooltip.conveyance.burner_miner": "Fuel-powered miner and quarry. Delivers resources at its furnace face; facing coal miners can feed each other.",
+        "tooltip.conveyance.assembler": "Automates the selected crafting recipe from supplied ingredients.",
+        "tooltip.conveyance.industrial_furnace": "Smelts ore, stone and steel using fuel.",
+        "tooltip.conveyance.research_lab": "Consumes the science pack combination required by the selected research.",
+        "tooltip.conveyance.solar_panel": "Generates electricity in daylight with a clear view of the sky.",
+        "tooltip.conveyance.generator": "Generates electricity while burning fuel.",
+        "tooltip.conveyance.inserter": "Moves items from behind the arm to its front, using electricity.",
+        "tooltip.conveyance.long_inserter": "Electric arm that moves items across a larger gap.",
+        "tooltip.conveyance.burner_inserter": "Moves items using fuel. Can take fuel from its input to start itself.",
+        "tooltip.conveyance.radar": "Automatically explores the map while loaded and powered.",
+        "tooltip.conveyance.power_pole": "Connects nearby poles and supplies machines within its coverage.",
+        "tooltip.conveyance.junction": "Shares incoming items evenly between connected conveyor outputs.",
+        "tooltip.conveyance.conveyor": "Moves an owned item queue. Aim at the air ahead of a belt or click its end to extend it; your facing direction sets the output.",
+        "tooltip.conveyance.slope_conveyor": "Moves a queue between heights. Click a belt end to extend uphill; sneak-click to extend downhill. Red means an ambiguous connection.",
+        "tooltip.conveyance.stat.power_usage": "Power usage: %s kW",
+        "tooltip.conveyance.stat.generation": "Power generation: %s kW",
+        "tooltip.conveyance.stat.generation_peak": "Power generation: %s kW (peak)",
+        "tooltip.conveyance.stat.fuel_usage": "Fuel consumption: %s kW while working",
+        "tooltip.conveyance.stat.fuel_energy": "Fuel energy: %s MJ",
+        "tooltip.conveyance.stat.fuel_energy_effective": "With current research: %s MJ",
+        "tooltip.conveyance.stat.throughput": "Throughput: %s items/s",
+        "tooltip.conveyance.stat.throughput_port": "Per port: %s items/s",
+        "tooltip.conveyance.stat.throughput_max": "Maximum throughput: %s items/s",
+        "tooltip.conveyance.stat.electric_throughput": "Electrical throughput: unlimited",
+        "tooltip.conveyance.stat.link_range": "Connection range: %s blocks",
+        "tooltip.conveyance.stat.coverage": "Coverage radius: %s blocks",
+        "tooltip.conveyance.stat.transfer": "Transfer rate: %s items/s",
+        "tooltip.conveyance.stat.reach": "Reach: %s blocks on each side",
+        "tooltip.conveyance.stat.mining": "Mining rate: %s items/s at full power",
+        "tooltip.conveyance.stat.assembly": "Assembly rate: %s batches/s at full power",
+        "tooltip.conveyance.stat.research": "Research rate: %s units/s at full power",
+        "tooltip.conveyance.stat.size": "Size: %s × %s × %s blocks",
+        "tooltip.conveyance.stat.buffer": "Belt buffer: %s items",
+        "tooltip.conveyance.stat.storage": "Storage: %s slots",
+        "tooltip.conveyance.stat.scan_area": "Scan area: %s × %s blocks"
+    })
+    for group, label in {"miners": "Miners", "inserters": "Inserters", "conveyors": "Conveyors", "storage": "Storage",
+                         "furnaces": "Furnaces", "assemblers": "Assemblers", "generators": "Generators", "poles": "Power poles",
+                         "radars": "Radars", "labs": "Labs", "science": "Science packs", "tools": "Tools", "components": "Components"}.items():
+        data[f"menu.conveyance.group.{group}"] = label
     write(file, data)
+
+# User-supplied item sprites take precedence over prototype voxel icons. Keep
+# this last so regenerating assets never replaces imported art with a block model.
+for sprite in sorted((ROOT / "assets/conveyance/textures/item").glob("*.png")):
+    write(f"assets/conveyance/models/item/{sprite.stem}.json", {
+        "parent": "minecraft:item/generated",
+        "textures": {"layer0": f"conveyance:item/{sprite.stem}"}})

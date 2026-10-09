@@ -46,6 +46,7 @@ public final class FactoryContent {
     public static final RegistryObject<MinerBlock> MINER = BLOCKS.register("miner", () -> new MinerBlock(metal()));
     public static final RegistryObject<MinerPartBlock> MINER_PART = BLOCKS.register("miner_part", () -> new MinerPartBlock(metal()));
     public static final RegistryObject<ConveyorBlock> CONVEYOR = BLOCKS.register("conveyor", () -> new ConveyorBlock(metal().noOcclusion()));
+    public static final RegistryObject<SlopeConveyorBlock> SLOPE_CONVEYOR = BLOCKS.register("slope_conveyor", () -> new SlopeConveyorBlock(metal().noOcclusion()));
     public static final RegistryObject<JunctionBlock> JUNCTION = BLOCKS.register("junction", () -> new JunctionBlock(metal().noOcclusion()));
     public static final RegistryObject<InserterBlock> INSERTER = BLOCKS.register("inserter", () -> new InserterBlock(metal().noOcclusion()));
     public static final RegistryObject<InserterBlock> LONG_INSERTER = BLOCKS.register("long_inserter", () -> new InserterBlock(metal().noOcclusion(), 2));
@@ -66,7 +67,8 @@ public final class FactoryContent {
     public static final RegistryObject<MachineBlock> SOLAR_PANEL = BLOCKS.register("solar_panel", () -> new MachineBlock(metal().noOcclusion(), MachineKind.SOLAR_PANEL));
     public static final RegistryObject<MachinePartBlock> SOLAR_PANEL_PART = BLOCKS.register("solar_panel_part", () -> new MachinePartBlock(metal().noOcclusion(), MachineKind.SOLAR_PANEL));
     public static final RegistryObject<Item> MINER_ITEM = ITEMS.register("miner", () -> new MinerItem(MINER.get(), new Item.Properties().stacksTo(100)));
-    public static final RegistryObject<Item> CONVEYOR_ITEM = ITEMS.register("conveyor", () -> new BlockItem(CONVEYOR.get(), new Item.Properties()));
+    public static final RegistryObject<Item> CONVEYOR_ITEM = ITEMS.register("conveyor", () -> new ConveyorItem(CONVEYOR.get(), new Item.Properties().stacksTo(100)));
+    public static final RegistryObject<Item> SLOPE_CONVEYOR_ITEM = ITEMS.register("slope_conveyor", () -> new ConveyorItem(SLOPE_CONVEYOR.get(), new Item.Properties().stacksTo(100)));
     public static final RegistryObject<Item> JUNCTION_ITEM = ITEMS.register("junction", () -> new BlockItem(JUNCTION.get(), new Item.Properties().stacksTo(100)));
     public static final RegistryObject<Item> INSERTER_ITEM = ITEMS.register("inserter", () -> new BlockItem(INSERTER.get(), new Item.Properties()));
     public static final RegistryObject<Item> LONG_INSERTER_ITEM = ITEMS.register("long_inserter", () -> new BlockItem(LONG_INSERTER.get(), new Item.Properties().stacksTo(100)));
@@ -89,7 +91,7 @@ public final class FactoryContent {
     public static final RegistryObject<BlockEntityType<CrateEntity>> CRATE_ENTITY = ENTITIES.register("crate",
             () -> BlockEntityType.Builder.of(CrateEntity::new, WOOD_CRATE.get(), IRON_CRATE.get()).build(null));
     public static final RegistryObject<BlockEntityType<ConveyorEntity>> CONVEYOR_ENTITY = ENTITIES.register("conveyor",
-            () -> BlockEntityType.Builder.of(ConveyorEntity::new, CONVEYOR.get()).build(null));
+            () -> BlockEntityType.Builder.of(ConveyorEntity::new, CONVEYOR.get(), SLOPE_CONVEYOR.get()).build(null));
     public static final RegistryObject<BlockEntityType<JunctionEntity>> JUNCTION_ENTITY = ENTITIES.register("junction",
             () -> BlockEntityType.Builder.of(JunctionEntity::new, JUNCTION.get()).build(null));
     public static final RegistryObject<BlockEntityType<InserterEntity>> INSERTER_ENTITY = ENTITIES.register("inserter",
@@ -125,7 +127,7 @@ public final class FactoryContent {
         TABS.register("factory", () -> CreativeModeTab.builder().title(Component.translatable("itemGroup.conveyance.factory"))
                 .icon(() -> MINER_ITEM.get().getDefaultInstance()).displayItems((parameters, output) -> {
                     output.accept(WOOD_ITEM.get()); output.accept(WOOD_CRATE_ITEM.get()); output.accept(IRON_CRATE_ITEM.get());
-                    output.accept(MINER_ITEM.get()); output.accept(CONVEYOR_ITEM.get()); output.accept(INSERTER_ITEM.get());
+                    output.accept(MINER_ITEM.get()); output.accept(CONVEYOR_ITEM.get()); output.accept(SLOPE_CONVEYOR_ITEM.get()); output.accept(INSERTER_ITEM.get());
                     output.accept(JUNCTION_ITEM.get());
                     output.accept(POWER_POLE_ITEM.get()); output.accept(GENERATOR_ITEM.get());
                     output.accept(RADAR_ITEM.get());

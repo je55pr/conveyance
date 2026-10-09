@@ -8,10 +8,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 public final class InserterEntity extends PoweredMachineEntity {
+    public static final int DEMAND_KW = 15, SHORT_CYCLE_TICKS = 10, LONG_CYCLE_TICKS = 20;
     private ItemStack held = ItemStack.EMPTY;
+    public ItemStack heldItem() { return held.copy(); }
     public InserterEntity(BlockPos pos, BlockState state) {
         super(((InserterBlock) state.getBlock()).reach() == 2 ? FactoryContent.LONG_INSERTER_ENTITY.get() : FactoryContent.INSERTER_ENTITY.get(), pos, state,
-                15, ((InserterBlock) state.getBlock()).reach() == 2 ? 20 : 10);
+                DEMAND_KW, ((InserterBlock) state.getBlock()).reach() == 2 ? LONG_CYCLE_TICKS : SHORT_CYCLE_TICKS);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, InserterEntity inserter) {

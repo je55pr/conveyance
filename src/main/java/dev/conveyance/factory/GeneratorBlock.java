@@ -19,7 +19,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 
-public final class GeneratorBlock extends BaseEntityBlock {
+public final class GeneratorBlock extends FactoryBlock {
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
     public GeneratorBlock(Properties properties) { super(properties); registerDefaultState(stateDefinition.any().setValue(LIT, false)); }
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(LIT); }

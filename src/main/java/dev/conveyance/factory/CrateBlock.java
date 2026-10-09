@@ -18,7 +18,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
-public final class CrateBlock extends BaseEntityBlock {
+public final class CrateBlock extends FactoryBlock {
     public final int slots;
     public CrateBlock(Properties properties, int slots) { super(properties); this.slots = slots; }
     @Override public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }

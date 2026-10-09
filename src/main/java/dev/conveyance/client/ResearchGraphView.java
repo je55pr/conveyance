@@ -14,7 +14,8 @@ import net.minecraft.world.item.ItemStack;
 
 /** A clipped, pannable research canvas. Inspection is independent of the active technology. */
 public final class ResearchGraphView {
-    private static final int NODE = 44, CANVAS_HEIGHT = 128;
+    private static final int NODE = 44;
+    private int canvasHeight = 128, bodyHeight = 208, fittedWidth;
     private static final int[] NODES = java.util.stream.IntStream.concat(java.util.stream.IntStream.of(0),
             java.util.Arrays.stream(Technology.values()).mapToInt(tech -> tech.id)).toArray();
     private final Minecraft game = Minecraft.getInstance();
@@ -22,6 +23,11 @@ public final class ResearchGraphView {
     private float zoom, panX, panY;
     private boolean dragging, opened;
     public int inspected() { return inspected; }
+    public void resize(int width, int height) {
+        boolean changed = fittedWidth != width || bodyHeight != height;
+        fittedWidth = width; bodyHeight = height; canvasHeight = Math.max(80, height - 80);
+        if (changed || zoom == 0) fit(width);
+    }
     public void open() {
         if (opened) return;
         opened = true;
@@ -31,9 +37,9 @@ public final class ResearchGraphView {
     public void fit(int width) {
         int graphWidth = java.util.Arrays.stream(Technology.values()).mapToInt(tech -> tech.x + NODE + 20).max().orElse(64);
         int graphHeight = java.util.Arrays.stream(Technology.values()).mapToInt(tech -> tech.y + NODE + 16).max().orElse(64);
-        zoom = Math.min(0.8F, Math.min((width - 28) / (float) graphWidth, (CANVAS_HEIGHT - 26) / (float) graphHeight));
+        zoom = Math.min(1.25F, Math.min((width - 28) / (float) graphWidth, (canvasHeight - 26) / (float) graphHeight));
         panX = (width - 16 - graphWidth * zoom) / 2 + 10 * zoom;
-        panY = 18 + (CANVAS_HEIGHT - 26 - graphHeight * zoom) / 2;
+        panY = 18 + (canvasHeight - 26 - graphHeight * zoom) / 2;
     }
     private static int x(int id) { Technology tech = Technology.byId(id); return tech == null ? 0 : tech.x; }
     private static int y(int id) { Technology tech = Technology.byId(id); return tech == null ? 96 : tech.y; }
@@ -57,12 +63,12 @@ public final class ResearchGraphView {
     }
     public void render(GuiGraphics graphics, int left, int top, int width, int mouseX, int mouseY) {
         int canvasX = left + 8, canvasY = top + 8, canvasWidth = width - 16;
-        graphics.fill(canvasX - 1, canvasY - 1, canvasX + canvasWidth + 1, canvasY + CANVAS_HEIGHT + 1, 0xFF53697A);
-        graphics.fill(canvasX, canvasY, canvasX + canvasWidth, canvasY + CANVAS_HEIGHT, 0xFF111B26);
-        graphics.enableScissor(canvasX, canvasY, canvasX + canvasWidth, canvasY + CANVAS_HEIGHT);
+        graphics.fill(canvasX - 1, canvasY - 1, canvasX + canvasWidth + 1, canvasY + canvasHeight + 1, 0xFF53697A);
+        graphics.fill(canvasX, canvasY, canvasX + canvasWidth, canvasY + canvasHeight, 0xFF111B26);
+        graphics.enableScissor(canvasX, canvasY, canvasX + canvasWidth, canvasY + canvasHeight);
         int step = Math.max(8, (int) (32 * zoom));
-        for (int gridX = canvasX + Math.floorMod((int) panX, step); gridX < canvasX + canvasWidth; gridX += step) graphics.fill(gridX, canvasY, gridX + 1, canvasY + CANVAS_HEIGHT, 0xFF192633);
-        for (int gridY = canvasY + Math.floorMod((int) panY, step); gridY < canvasY + CANVAS_HEIGHT; gridY += step) graphics.fill(canvasX, gridY, canvasX + canvasWidth, gridY + 1, 0xFF192633);
+        for (int gridX = canvasX + Math.floorMod((int) panX, step); gridX < canvasX + canvasWidth; gridX += step) graphics.fill(gridX, canvasY, gridX + 1, canvasY + canvasHeight, 0xFF192633);
+        for (int gridY = canvasY + Math.floorMod((int) panY, step); gridY < canvasY + canvasHeight; gridY += step) graphics.fill(canvasX, gridY, canvasX + canvasWidth, gridY + 1, 0xFF192633);
         graphics.pose().pushPose();
         graphics.pose().translate(canvasX + panX, canvasY + panY, 0);
         graphics.pose().scale(zoom, zoom, 1);
@@ -77,6 +83,7 @@ public final class ResearchGraphView {
         details(graphics, left, top, width);
         int hovered = hit(mouseX, mouseY, left, top, width);
         if (hovered >= 0) tooltip(graphics, hovered, mouseX, mouseY);
+        unlockTooltip(graphics, left, top, mouseX, mouseY);
     }
     private void connection(GuiGraphics graphics, int from, int to) {
         int sourceX = x(from) + NODE, sourceY = y(from) + NODE / 2, targetX = x(to), targetY = y(to) + NODE / 2;
@@ -117,6 +124,7 @@ public final class ResearchGraphView {
         graphics.drawCenteredString(game.font, tech == null ? name(id) : tech.shortName(), x + NODE / 2, y + NODE + 6, 0xFFD3DEE8);
     }
     private void details(GuiGraphics graphics, int left, int top, int width) {
+        top += canvasHeight - 128;
         Technology tech = Technology.byId(inspected);
         graphics.fill(left + 1, top + 142, left + width - 1, top + 208, 0xFF263644);
         graphics.drawString(game.font, name(inspected), left + 8, top + 149, 0xFFE7EEF6, false);
@@ -132,9 +140,31 @@ public final class ResearchGraphView {
             graphics.drawString(game.font, game.font.plainSubstrByWidth(needed, width - 116), left + 108, top + 168, 0xFFBAC9D7, false);
         }
         graphics.drawString(game.font, Component.translatable(tech != null && tech.recipes.isEmpty() ? "research.conveyance.upgrades" : "research.conveyance.unlocks"), left + 8, top + 188, 0xFFBAC9D7, false);
-        List<ItemStack> unlocks = tech == null ? List.of(new ItemStack(FactoryContent.BURNER_MINER_ITEM.get()), new ItemStack(FactoryContent.FURNACE_ITEM.get()),
-                new ItemStack(FactoryContent.CONVEYOR_ITEM.get()), new ItemStack(FactoryContent.BURNER_INSERTER_ITEM.get()), new ItemStack(FactoryContent.LAB_ITEM.get())) : tech.unlocks();
+        List<ItemStack> unlocks = unlocks(tech);
         for (int index = 0; index < unlocks.size(); index++) graphics.renderItem(unlocks.get(index), left + 56 + index * 20, top + 184);
+    }
+    private static List<ItemStack> unlocks(Technology tech) {
+        return tech == null ? List.of(new ItemStack(FactoryContent.BURNER_MINER_ITEM.get()), new ItemStack(FactoryContent.FURNACE_ITEM.get()),
+                new ItemStack(FactoryContent.CONVEYOR_ITEM.get()), new ItemStack(FactoryContent.BURNER_INSERTER_ITEM.get()), new ItemStack(FactoryContent.LAB_ITEM.get())) : tech.unlocks();
+    }
+    private void unlockTooltip(GuiGraphics graphics, int left, int top, int mouseX, int mouseY) {
+        Technology tech = Technology.byId(inspected);
+        List<ItemStack> items = unlocks(tech);
+        int iconY = top + canvasHeight + 56;
+        for (int index = 0; index < items.size(); index++) {
+            int iconX = left + 56 + index * 20;
+            if (mouseX < iconX || mouseX >= iconX + 16 || mouseY < iconY || mouseY >= iconY + 16) continue;
+            ItemStack item = items.get(index);
+            var lines = new ArrayList<Component>(net.minecraft.client.gui.screens.Screen.getTooltipFromItem(game, item));
+            String extra = "tooltip.conveyance." + net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item.getItem()).getPath();
+            if (net.minecraft.client.resources.language.I18n.exists(extra) && !net.minecraft.client.resources.language.I18n.get(extra).contains("%s")) {
+                Component description = Component.translatable(extra);
+                if (lines.stream().noneMatch(line -> line.getString().equals(description.getString()))) lines.add(description.copy().withStyle(ChatFormatting.GRAY));
+            }
+            if (tech != null && tech.recipes.isEmpty()) lines.add(tech.description().copy().withStyle(ChatFormatting.GREEN));
+            graphics.renderComponentTooltip(game.font, lines, mouseX, mouseY);
+            return;
+        }
     }
     private void tooltip(GuiGraphics graphics, int id, int mouseX, int mouseY) {
         var lines = new ArrayList<Component>();
@@ -151,8 +181,8 @@ public final class ResearchGraphView {
         }
         graphics.renderComponentTooltip(game.font, lines, mouseX, mouseY);
     }
-    private static boolean canvas(double mouseX, double mouseY, int left, int top, int width) {
-        return mouseX >= left + 8 && mouseX < left + width - 8 && mouseY >= top + 8 && mouseY < top + 8 + CANVAS_HEIGHT;
+    private boolean canvas(double mouseX, double mouseY, int left, int top, int width) {
+        return mouseX >= left + 8 && mouseX < left + width - 8 && mouseY >= top + 8 && mouseY < top + 8 + canvasHeight;
     }
     private int hit(double mouseX, double mouseY, int left, int top, int width) {
         if (!canvas(mouseX, mouseY, left, top, width)) return -1;

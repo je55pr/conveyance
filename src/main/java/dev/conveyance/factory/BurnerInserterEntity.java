@@ -18,8 +18,9 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /** Fuel and cargo are separate: available coal or Wood can bootstrap an empty arm. */
 public final class BurnerInserterEntity extends BlockEntity implements Container, MenuProvider {
-    private static final int CYCLE_TICKS = 20;
+    public static final int CYCLE_TICKS = 20;
     private ItemStack fuel = ItemStack.EMPTY, held = ItemStack.EMPTY;
+    public ItemStack heldItem() { return held.copy(); }
     private int burnTicks;
     private double work;
     private boolean recovered;

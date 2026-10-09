@@ -7,6 +7,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import dev.conveyance.world.WorldGeneration;
 import dev.conveyance.factory.FactoryContent;
 import dev.conveyance.factory.InventoryBreaking;
+import dev.conveyance.factory.FactoryTooltips;
 import dev.conveyance.player.InventoryNetwork;
 import dev.conveyance.player.PlayerInventoryEvents;
 import dev.conveyance.player.TerrainHarvest;
@@ -32,6 +33,7 @@ public final class Conveyance {
         MinecraftForge.EVENT_BUS.register(PlayerInventoryEvents.class);
         MinecraftForge.EVENT_BUS.register(TerrainHarvest.class);
         MinecraftForge.EVENT_BUS.register(InventoryBreaking.class);
+        MinecraftForge.EVENT_BUS.register(FactoryTooltips.class);
         MinecraftForge.EVENT_BUS.register(WorldGeneration.class);
         LogUtils.getLogger().info("Conveyance loaded: stripped-back industrial baseline enabled.");
     }
