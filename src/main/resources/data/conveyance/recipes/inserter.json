@@ -1,19 +1,20 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "category": "misc",
-  "pattern": [
-    " I ",
-    "ICI",
-    " C "
-  ],
-  "key": {
-    "I": {
-      "item": "minecraft:iron_ingot"
+  "type": "conveyance:factory_crafting",
+  "tab": "logistics",
+  "ingredients": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 3
     },
-    "C": {
-      "item": "minecraft:copper_ingot"
+    {
+      "item": "conveyance:gear",
+      "count": 1
+    },
+    {
+      "item": "conveyance:electronic_circuit",
+      "count": 1
     }
-  },
+  ],
   "result": {
     "item": "conveyance:inserter",
     "count": 1

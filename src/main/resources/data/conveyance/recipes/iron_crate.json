@@ -1,0 +1,14 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "logistics",
+  "ingredients": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 8
+    }
+  ],
+  "result": {
+    "item": "conveyance:iron_crate",
+    "count": 1
+  }
+}

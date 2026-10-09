@@ -1,6 +1,8 @@
 package dev.conveyance.factory;
 
 import dev.conveyance.ItemPolicy;
+import dev.conveyance.player.ResearchState;
+import dev.conveyance.player.Technology;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
@@ -14,26 +16,58 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
-public final class MachineEntity extends PoweredMachineEntity implements Container, MenuProvider {
+public final class MachineEntity extends PoweredMachineEntity implements Container, MenuProvider, PowerProducer {
+    public enum MiningStatus {
+        MINING, NO_DEPOSIT, NO_FUEL, NO_OUTPUT, OUTPUT_BLOCKED;
+        public Component label() { return Component.translatable("status.conveyance.miner." + name().toLowerCase(java.util.Locale.ROOT)); }
+        public Component description() { return Component.translatable("status.conveyance.miner." + name().toLowerCase(java.util.Locale.ROOT) + ".description"); }
+    }
     private NonNullList<ItemStack> items;
     private ResourceLocation selectedRecipe, smeltingRecipe;
-    private int burnTicks, coalWork, cookingTime = 200, cursor;
+    private int burnTicks, cookingTime = 64, cursor, labResearch;
+    private double coalWork;
 
     public MachineEntity(BlockPos pos, BlockState state) {
-        super(FactoryContent.MACHINE_ENTITY.get(), pos, state, MachineBlock.kind(state) == MachineKind.ASSEMBLER ? 60 : 0, 40);
+        super(FactoryContent.MACHINE_ENTITY.get(), pos, state,
+                MachineBlock.kind(state) == MachineKind.ASSEMBLER || MachineBlock.kind(state) == MachineKind.LAB ? 60 : 0,
+                MachineBlock.kind(state) == MachineKind.LAB ? 60 : 40);
         items = NonNullList.withSize(kind().slots, ItemStack.EMPTY);
     }
     public MachineKind kind() { return MachineBlock.kind(getBlockState()); }
-    public int outputSlot() { return kind() == MachineKind.BURNER_MINER ? -1 : kind() == MachineKind.FURNACE ? 2 : 4; }
+    public int outputSlot() { return kind() == MachineKind.BURNER_MINER || kind() == MachineKind.LAB || kind() == MachineKind.SOLAR_PANEL ? -1 : kind() == MachineKind.FURNACE ? 2 : 4; }
     public int fuelRemaining() { return burnTicks; }
-    public int progressPixels() { return (int) (24 * (kind() == MachineKind.ASSEMBLER ? currentWork() / 40 : (double) coalWork / cookingTime)); }
+    public int automaticInputLimit(int slot, ItemStack stack) {
+        return switch (kind()) {
+            case ASSEMBLER -> {
+                CraftingRecipe recipe = level == null ? null : selectedRecipe();
+                var requirements = recipe == null ? java.util.List.<AssemblyRecipes.Requirement>of() : AssemblyRecipes.requirements(recipe);
+                yield slot < requirements.size() ? requirements.get(slot).count() * 2 : 0;
+            }
+            case FURNACE -> {
+                var recipe = slot == 0 ? IndustrialSmelting.find(level, stack) : null;
+                yield slot == 0 ? recipe == null ? 0 : 2 * IndustrialSmelting.inputCount(recipe) : slot == 1 ? ItemTransfer.smallBuffer(stack) : 0;
+            }
+            case BURNER_MINER, LAB -> ItemTransfer.smallBuffer(stack);
+            case SOLAR_PANEL -> 0;
+        };
+    }
+    public int progressPixels() { return (int) (24 * (kind() == MachineKind.LAB ? currentWork() / 60 : kind() == MachineKind.ASSEMBLER ? currentWork() / 40 : coalWork / (kind() == MachineKind.BURNER_MINER ? 40 : cookingTime))); }
+    public MiningStatus miningStatus() {
+        if (level == null || kind() != MachineKind.BURNER_MINER) return MiningStatus.NO_DEPOSIT;
+        var facing = getBlockState().getValue(MachineBlock.FACING);
+        var resource = MiningResources.find(level, 4, cursor, part -> MachineBlock.partPosition(worldPosition, facing, kind(), part).below());
+        if (resource.stack().isEmpty()) return MiningStatus.NO_DEPOSIT;
+        if (burnTicks == 0 && !GeneratorEntity.isFuel(items.get(0))) return MiningStatus.NO_FUEL;
+        BlockPos output = worldPosition.relative(facing);
+        if (ItemTransfer.containerAt(level, output) == null && ConveyorEntity.at(level, output) == null && JunctionEntity.at(level, output) == null)
+            return MiningStatus.NO_OUTPUT;
+        return ItemTransfer.canOutput(level, output, facing.getOpposite(), resource.stack(), true) ? MiningStatus.MINING : MiningStatus.OUTPUT_BLOCKED;
+    }
 
     @Override public double powerDistanceSquared(BlockPos pole) {
         BlockPos far = MachineBlock.partPosition(worldPosition, getBlockState().getValue(MachineBlock.FACING), kind(), kind().parts() - 1);
@@ -43,19 +77,24 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
         return pole.distSqr(new BlockPos(x, y, z));
     }
     public static void tick(Level level, BlockPos pos, BlockState state, MachineEntity machine) {
+        if (machine.kind() == MachineKind.SOLAR_PANEL && level.getGameTime() % 20 != 0) return;
         switch (machine.kind()) {
             case BURNER_MINER -> machine.mine();
             case FURNACE -> machine.smelt();
             case ASSEMBLER -> machine.assemble();
+            case LAB -> machine.research();
+            case SOLAR_PANEL -> {}
         }
-        boolean lit = machine.kind() != MachineKind.ASSEMBLER && machine.burnTicks > 0;
+        boolean lit = machine.kind() == MachineKind.SOLAR_PANEL ? machine.outputPower() > 0 : machine.kind() == MachineKind.LAB
+                ? machine.hasScience(Technology.byId(ResearchState.selected(level))) && PowerNetwork.fraction(level, pos) > 0
+                : machine.kind() != MachineKind.ASSEMBLER && machine.burnTicks > 0;
         if (state.getValue(MachineBlock.LIT) != lit) level.setBlockAndUpdate(pos, state.setValue(MachineBlock.LIT, lit));
     }
     private boolean burn(int slot) {
         if (burnTicks == 0) {
             if (!GeneratorEntity.isFuel(items.get(slot))) return false;
+            burnTicks = GeneratorEntity.fuelTicks(items.get(slot), level);
             items.get(slot).shrink(1);
-            burnTicks = GeneratorEntity.FUEL_TICKS;
             setChanged();
         }
         burnTicks--;
@@ -64,35 +103,29 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
     }
     private void mine() {
         var facing = getBlockState().getValue(MachineBlock.FACING);
-        ConveyorEntity belt = ConveyorEntity.at(level, worldPosition.relative(facing));
-        if (belt == null || !belt.canAccept(facing.getOpposite())) return;
-        ItemStack output = ItemStack.EMPTY;
-        int nextCursor = cursor;
-        for (int attempt = 0; attempt < 4; attempt++) {
-            int part = (cursor + attempt) % 4;
-            var ore = level.getBlockState(MachineBlock.partPosition(worldPosition, facing, kind(), part).below());
-            output = ore.is(Blocks.IRON_ORE) ? new ItemStack(Items.RAW_IRON) : ore.is(Blocks.COPPER_ORE) ? new ItemStack(Items.RAW_COPPER)
-                    : ore.is(Blocks.COAL_ORE) ? new ItemStack(Items.COAL) : ItemStack.EMPTY;
-            if (!output.isEmpty()) { nextCursor = (part + 1) % 4; break; }
+        var resource = MiningResources.find(level, 4, cursor, part -> MachineBlock.partPosition(worldPosition, facing, kind(), part).below());
+        if (resource.stack().isEmpty() || !ItemTransfer.canOutput(level, worldPosition.relative(facing), facing.getOpposite(), resource.stack(), true) || !burn(0)) return;
+        coalWork += ResearchState.miningSpeed(level);
+        if (coalWork + 0.000001 < 40) return;
+        if (ItemTransfer.output(level, worldPosition.relative(facing), facing.getOpposite(), resource.stack(), true)) {
+            coalWork = Math.max(0, coalWork - 40);
+            cursor = resource.nextCursor();
+            setChanged();
         }
-        if (output.isEmpty() || !burn(0)) return;
-        if (++coalWork < 40) return;
-        belt.offer(output, facing.getOpposite());
-        coalWork = 0;
-        cursor = nextCursor;
-        setChanged();
     }
     private void smelt() {
-        var recipe = level.getRecipeManager().getRecipeFor(RecipeType.SMELTING, new SimpleContainer(items.get(0)), level).orElse(null);
+        var recipe = IndustrialSmelting.find(level, items.get(0));
         if (recipe == null) { coalWork = 0; return; }
         if (!recipe.getId().equals(smeltingRecipe)) { smeltingRecipe = recipe.getId(); coalWork = 0; setChanged(); }
+        cookingTime = Math.max(1, IndustrialSmelting.cookingTime(recipe));
+        int required = IndustrialSmelting.inputCount(recipe);
         ItemStack result = recipe.assemble(new SimpleContainer(items.get(0)), level.registryAccess());
-        if (!fitsOutput(result) || !burn(1)) return;
-        cookingTime = Math.max(1, recipe.getCookingTime());
-        if (++coalWork < cookingTime) return;
-        items.get(0).shrink(1);
+        if (items.get(0).getCount() < required || !fitsOutput(result) || !burn(1)) return;
+        coalWork += ResearchState.smeltingSpeed(level);
+        if (coalWork + 0.000001 < cookingTime) return;
+        items.get(0).shrink(required);
         putOutput(result);
-        coalWork = 0;
+        coalWork = Math.max(0, coalWork - cookingTime);
         setChanged();
     }
     public CraftingRecipe selectedRecipe() {
@@ -102,6 +135,7 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
             selectedRecipe = recipes.stream().filter(recipe -> recipe.getId().getPath().equals("conveyor")).findFirst().orElse(recipes.get(0)).getId();
             setChanged();
         }
+        if (!dev.conveyance.player.ResearchState.recipeUnlocked(selectedRecipe, dev.conveyance.player.ResearchState.mask(level))) return null;
         var recipe = level.getRecipeManager().byKey(selectedRecipe).orElse(null);
         return recipe instanceof CraftingRecipe crafting ? crafting : null;
     }
@@ -133,6 +167,36 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
         putOutput(result);
         setChanged();
     }
+    private void research() {
+        int selected = ResearchState.selected(level);
+        if (selected != labResearch) { labResearch = selected; resetWork(); }
+        Technology tech = Technology.byId(selected);
+        if (!hasScience(tech) || !advanceWork()) return;
+        if (ResearchState.applyScience(level, selected)) {
+            items.get(0).shrink(1);
+            if (tech.green) items.get(1).shrink(1);
+            setChanged();
+        }
+    }
+    private boolean hasScience(Technology tech) {
+        return tech != null && items.get(0).is(FactoryContent.RED_SCIENCE_ITEM.get())
+                && (!tech.green || items.get(1).is(FactoryContent.GREEN_SCIENCE_ITEM.get()));
+    }
+    @Override public int outputPower() {
+        if (kind() != MachineKind.SOLAR_PANEL || level == null || !level.isDay()) return 0;
+        int clear = 0;
+        var facing = getBlockState().getValue(MachineBlock.FACING);
+        for (int part = 0; part < kind().parts(); part++) if (level.canSeeSky(MachineBlock.partPosition(worldPosition, facing, kind(), part).above())) clear++;
+        return (int) Math.round(60.0 * clear / kind().parts() * Math.max(0, Math.cos(level.getSunAngle(0))));
+    }
+    @Override public void onLoad() {
+        super.onLoad();
+        if (kind() == MachineKind.SOLAR_PANEL) PowerNetwork.register(level, worldPosition, PowerNetwork.Kind.GENERATOR);
+    }
+    @Override public void setRemoved() {
+        if (kind() == MachineKind.SOLAR_PANEL) PowerNetwork.unregister(level, worldPosition, PowerNetwork.Kind.GENERATOR);
+        super.setRemoved();
+    }
     private boolean fitsOutput(ItemStack result) {
         if (result.isEmpty() || ItemPolicy.isDisabled(result)) return false;
         ItemStack stored = items.get(outputSlot());
@@ -146,13 +210,14 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
     @Override public boolean canPlaceItem(int slot, ItemStack stack) {
         return switch (kind()) {
             case BURNER_MINER -> GeneratorEntity.isFuel(stack);
-            case FURNACE -> slot == 1 ? GeneratorEntity.isFuel(stack) : slot == 0 && level != null
-                    && level.getRecipeManager().getRecipeFor(RecipeType.SMELTING, new SimpleContainer(stack), level).isPresent();
+            case FURNACE -> slot == 1 ? GeneratorEntity.isFuel(stack) : slot == 0 && IndustrialSmelting.find(level, stack) != null;
             case ASSEMBLER -> {
                 CraftingRecipe recipe = level == null ? null : selectedRecipe();
                 var requirements = recipe == null ? java.util.List.<AssemblyRecipes.Requirement>of() : AssemblyRecipes.requirements(recipe);
                 yield slot < requirements.size() && requirements.get(slot).ingredient().test(stack);
             }
+            case LAB -> slot == 0 ? stack.is(FactoryContent.RED_SCIENCE_ITEM.get()) : slot == 1 && stack.is(FactoryContent.GREEN_SCIENCE_ITEM.get());
+            case SOLAR_PANEL -> false;
         };
     }
     @Override public boolean canTakeItem(Container destination, int slot, ItemStack stack) { return slot == outputSlot(); }
@@ -166,12 +231,15 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
     @Override public boolean stillValid(Player player) { return !isRemoved() && player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) < 100; }
     @Override public Component getDisplayName() { return Component.translatable("block.conveyance." + kind().id); }
     @Override public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
-        return kind() == MachineKind.BURNER_MINER ? new GeneratorMenu(id, inventory, this) : new ProcessingMenu(id, inventory, this);
+        if (kind() == MachineKind.SOLAR_PANEL) return null;
+        return kind() == MachineKind.BURNER_MINER ? new GeneratorMenu(id, inventory, this)
+                : kind() == MachineKind.LAB ? new GeneratorMenu(id, inventory, this, true) : new ProcessingMenu(id, inventory, this);
     }
     @Override protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         ContainerHelper.saveAllItems(tag, items);
-        tag.putInt("BurnTicks", burnTicks); tag.putInt("CoalWork", coalWork); tag.putInt("Cursor", cursor);
+        tag.putInt("BurnTicks", burnTicks); tag.putDouble("CoalWork", coalWork); tag.putInt("Cursor", cursor);
+        tag.putInt("LabResearch", labResearch);
         if (smeltingRecipe != null) tag.putString("SmeltingRecipe", smeltingRecipe.toString());
         if (selectedRecipe != null) {
             tag.putString("SelectedRecipe", selectedRecipe.toString());
@@ -181,8 +249,9 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
         super.load(tag);
         items = NonNullList.withSize(kind().slots, ItemStack.EMPTY);
         ContainerHelper.loadAllItems(tag, items);
-        burnTicks = Math.max(0, Math.min(GeneratorEntity.FUEL_TICKS, tag.getInt("BurnTicks")));
-        coalWork = Math.max(0, tag.getInt("CoalWork")); cursor = Math.floorMod(tag.getInt("Cursor"), 4);
+        burnTicks = Math.max(0, Math.min(GeneratorEntity.MAX_FUEL_TICKS, tag.getInt("BurnTicks")));
+        coalWork = Math.max(0, tag.getDouble("CoalWork")); cursor = Math.floorMod(tag.getInt("Cursor"), 4);
+        labResearch = tag.getInt("LabResearch");
         selectedRecipe = tag.contains("SelectedRecipe") ? ResourceLocation.tryParse(tag.getString("SelectedRecipe")) : null;
         smeltingRecipe = tag.contains("SmeltingRecipe") ? ResourceLocation.tryParse(tag.getString("SmeltingRecipe")) : null;
     }

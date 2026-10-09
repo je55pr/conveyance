@@ -1,0 +1,18 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "intermediates",
+  "ingredients": [
+    {
+      "item": "conveyance:copper_wire",
+      "count": 3
+    },
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 1
+    }
+  ],
+  "result": {
+    "item": "conveyance:electronic_circuit",
+    "count": 1
+  }
+}

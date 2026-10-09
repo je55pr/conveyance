@@ -1,0 +1,104 @@
+{
+  "textures": {
+    "arrow": "minecraft:block/yellow_concrete",
+    "particle": "minecraft:block/yellow_concrete"
+  },
+  "elements": [
+    {
+      "from": [
+        7,
+        8,
+        2
+      ],
+      "to": [
+        9,
+        8.2,
+        7
+      ],
+      "faces": {
+        "down": {
+          "texture": "#arrow"
+        },
+        "up": {
+          "texture": "#arrow"
+        },
+        "north": {
+          "texture": "#arrow"
+        },
+        "south": {
+          "texture": "#arrow"
+        },
+        "west": {
+          "texture": "#arrow"
+        },
+        "east": {
+          "texture": "#arrow"
+        }
+      }
+    },
+    {
+      "from": [
+        5,
+        8,
+        2
+      ],
+      "to": [
+        11,
+        8.2,
+        4
+      ],
+      "faces": {
+        "down": {
+          "texture": "#arrow"
+        },
+        "up": {
+          "texture": "#arrow"
+        },
+        "north": {
+          "texture": "#arrow"
+        },
+        "south": {
+          "texture": "#arrow"
+        },
+        "west": {
+          "texture": "#arrow"
+        },
+        "east": {
+          "texture": "#arrow"
+        }
+      }
+    },
+    {
+      "from": [
+        7,
+        8,
+        0
+      ],
+      "to": [
+        9,
+        8.2,
+        2
+      ],
+      "faces": {
+        "down": {
+          "texture": "#arrow"
+        },
+        "up": {
+          "texture": "#arrow"
+        },
+        "north": {
+          "texture": "#arrow"
+        },
+        "south": {
+          "texture": "#arrow"
+        },
+        "west": {
+          "texture": "#arrow"
+        },
+        "east": {
+          "texture": "#arrow"
+        }
+      }
+    }
+  ]
+}

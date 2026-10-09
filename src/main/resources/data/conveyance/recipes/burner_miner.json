@@ -1,22 +1,20 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "category": "misc",
-  "pattern": [
-    "III",
-    "IFI",
-    "CCC"
-  ],
-  "key": {
-    "I": {
-      "item": "minecraft:iron_ingot"
+  "type": "conveyance:factory_crafting",
+  "tab": "production",
+  "ingredients": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 3
     },
-    "F": {
-      "item": "minecraft:furnace"
+    {
+      "item": "conveyance:gear",
+      "count": 3
     },
-    "C": {
-      "item": "minecraft:cobblestone"
+    {
+      "item": "conveyance:industrial_furnace",
+      "count": 1
     }
-  },
+  ],
   "result": {
     "item": "conveyance:burner_miner",
     "count": 1

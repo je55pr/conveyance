@@ -35,7 +35,7 @@ public final class TerracedChunkGenerator extends ChunkGenerator {
     private final Holder<Biome> biome;
     private volatile TerrainContext cachedTerrain;
 
-    private record TerrainContext(RandomState state, TerracedTerrain terrain) {}
+    private record TerrainContext(RandomState state, TerracedTerrain terrain, ForestTerrain forest) {}
 
     public TerracedChunkGenerator(Holder<Biome> biome) {
         super(new FixedBiomeSource(biome));
@@ -45,25 +45,44 @@ public final class TerracedChunkGenerator extends ChunkGenerator {
     @Override
     protected Codec<? extends ChunkGenerator> codec() { return CODEC; }
 
-    private TerracedTerrain terrain(RandomState state) {
+    private TerrainContext context(RandomState state) {
         TerrainContext context = cachedTerrain;
         if (context == null || context.state() != state) {
             synchronized (this) {
                 context = cachedTerrain;
                 if (context == null || context.state() != state) {
                     long seed = state.getOrCreateRandomFactory(TERRAIN_RANDOM).at(0, 0, 0).nextLong();
-                    context = new TerrainContext(state, new TerracedTerrain(seed));
+                    var terrain = new TerracedTerrain(seed);
+                    context = new TerrainContext(state, terrain, new ForestTerrain(seed, terrain));
                     cachedTerrain = context;
                 }
             }
         }
-        return context.terrain();
+        return context;
+    }
+    private TerracedTerrain terrain(RandomState state) { return context(state).terrain(); }
+
+    public byte[] mapTile(RandomState state, int chunkX, int chunkZ) {
+        TerrainContext context = context(state);
+        int minX = chunkX * 16, minZ = chunkZ * 16;
+        boolean[] forest = context.forest().canopyPixels(minX, minZ);
+        byte[] pixels = new byte[256];
+        var cells = new TerracedTerrain.Cell[16];
+        for (int z = 0; z < 16; z++) for (int x = 0; x < 16; x++) {
+            int cellIndex = z / 4 * 4 + x / 4;
+            if (cells[cellIndex] == null) cells[cellIndex] = context.terrain().cellAt(minX + x, minZ + z);
+            var cell = cells[cellIndex];
+            var ore = cell.feature() == TerracedTerrain.Feature.PLAIN ? context.terrain().oreAt(minX + x, minZ + z) : TerracedTerrain.Ore.NONE;
+            pixels[z * 16 + x] = dev.conveyance.map.MapPalette.terrain(cell, ore, forest[z * 16 + x]);
+        }
+        return pixels;
     }
 
     @Override
     public CompletableFuture<ChunkAccess> fillFromNoise(Executor executor, Blender blender,
             RandomState randomState, StructureManager structures, ChunkAccess chunk) {
-        TerracedTerrain terrain = terrain(randomState);
+        TerrainContext context = context(randomState);
+        TerracedTerrain terrain = context.terrain();
         var position = new BlockPos.MutableBlockPos();
         var surface = chunk.getOrCreateHeightmapUnprimed(Heightmap.Types.WORLD_SURFACE_WG);
         var floor = chunk.getOrCreateHeightmapUnprimed(Heightmap.Types.OCEAN_FLOOR_WG);
@@ -92,6 +111,7 @@ public final class TerracedChunkGenerator extends ChunkGenerator {
                 }
             }
         }
+        context.forest().generate(chunk);
         return CompletableFuture.completedFuture(chunk);
     }
 
@@ -103,6 +123,7 @@ public final class TerracedChunkGenerator extends ChunkGenerator {
             case IRON -> Blocks.IRON_ORE.defaultBlockState();
             case COPPER -> Blocks.COPPER_ORE.defaultBlockState();
             case COAL -> Blocks.COAL_ORE.defaultBlockState();
+            case STONE -> Blocks.STONE.defaultBlockState();
             case NONE -> null;
         };
     }
@@ -149,8 +170,8 @@ public final class TerracedChunkGenerator extends ChunkGenerator {
     }
 
     // This prototype owns every generation pass. There is no inherited carving,
-    // biome decoration, ore placement, vegetation, structure or mob pass.
-    // Seas and rivers are filled directly by our own terrain rules.
+    // biome decoration, ore placement, structure or mob pass. Seas, rivers,
+    // resources and forests are filled directly by our own generation rules.
     @Override public void applyCarvers(WorldGenRegion region, long seed, RandomState state,
             BiomeManager biomes, StructureManager structures, ChunkAccess chunk, GenerationStep.Carving step) {}
     @Override public void buildSurface(WorldGenRegion region, StructureManager structures,

@@ -1,18 +1,16 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "category": "misc",
-  "pattern": [
-    "III",
-    "CCC"
-  ],
-  "key": {
-    "I": {
-      "item": "minecraft:iron_ingot"
+  "type": "conveyance:factory_crafting",
+  "tab": "logistics",
+  "ingredients": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 2
     },
-    "C": {
-      "item": "minecraft:copper_ingot"
+    {
+      "item": "conveyance:gear",
+      "count": 1
     }
-  },
+  ],
   "result": {
     "item": "conveyance:conveyor",
     "count": 8

@@ -40,6 +40,9 @@ redstone redstone_ore deepslate_redstone_ore redstone_block redstone_wire
 redstone_torch redstone_wall_torch redstone_lamp repeater comparator lever
 piston sticky_piston piston_head moving_piston observer dispenser dropper hopper
 hopper_minecart powered_rail detector_rail activator_rail trapped_chest
+chest chest_minecart bamboo_chest_raft oak_chest_boat spruce_chest_boat
+birch_chest_boat jungle_chest_boat acacia_chest_boat dark_oak_chest_boat
+mangrove_chest_boat cherry_chest_boat
 tripwire tripwire_hook daylight_detector target fishing_rod
 anvil chipped_anvil damaged_anvil grindstone bee_nest beehive
 cod_bucket salmon_bucket tropical_fish_bucket pufferfish_bucket axolotl_bucket tadpole_bucket

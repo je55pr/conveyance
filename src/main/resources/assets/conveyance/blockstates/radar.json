@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "conveyance:block/radar"
+    },
+    "lit=true": {
+      "model": "conveyance:block/radar_on"
+    }
+  }
+}

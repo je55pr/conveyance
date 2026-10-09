@@ -75,6 +75,10 @@ public final class ConveyorEntity extends BlockEntity {
     }
 
     /** Only the item at the finished end of the lane is available to an inserter. */
+    public ItemStack peekFront() {
+        int front = CAPACITY - 1;
+        return level != null && !level.isClientSide && ready(front) ? items.get(front).copy() : ItemStack.EMPTY;
+    }
     public ItemStack takeFront() {
         int front = CAPACITY - 1;
         if (level == null || level.isClientSide || !ready(front)) return ItemStack.EMPTY;

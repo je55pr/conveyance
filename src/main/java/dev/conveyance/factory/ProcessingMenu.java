@@ -8,6 +8,8 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.inventory.ClickType;
+import dev.conveyance.player.InventoryAccess;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -43,6 +45,9 @@ public final class ProcessingMenu extends AbstractContainerMenu {
         addDataSlots(data);
     }
     public boolean assembler() { return kind == MachineKind.ASSEMBLER; }
+    @Override public void clicked(int slot, int button, ClickType type, Player player) {
+        InventoryAccess.click(slot, type, () -> super.clicked(slot, button, type, player));
+    }
     public int progress() { return Math.max(0, Math.min(24, data.get(1))); }
     public boolean burning() { return data.get(0) > 0; }
     public CraftingRecipe recipe() {
@@ -53,7 +58,7 @@ public final class ProcessingMenu extends AbstractContainerMenu {
     private boolean accepts(int index, ItemStack stack) {
         if (machine != null) return machine.canPlaceItem(index, stack);
         if (kind == MachineKind.FURNACE) return index == 1 ? GeneratorEntity.isFuel(stack)
-                : index == 0 && level.getRecipeManager().getRecipeFor(RecipeType.SMELTING, new SimpleContainer(stack), level).isPresent();
+                : index == 0 && IndustrialSmelting.find(level, stack) != null;
         CraftingRecipe recipe = recipe();
         var requirements = recipe == null ? java.util.List.<AssemblyRecipes.Requirement>of() : AssemblyRecipes.requirements(recipe);
         return index < requirements.size() && requirements.get(index).ingredient().test(stack);

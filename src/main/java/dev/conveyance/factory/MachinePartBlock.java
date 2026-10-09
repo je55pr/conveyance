@@ -12,6 +12,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 public final class MachinePartBlock extends Block {
     public final MachineKind kind;
@@ -21,6 +23,9 @@ public final class MachinePartBlock extends Block {
         registerDefaultState(stateDefinition.any().setValue(MachineBlock.PART, 1).setValue(MachineBlock.FACING, Direction.NORTH).setValue(MachineBlock.LIT, false));
     }
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(MachineBlock.PART, MachineBlock.FACING, MachineBlock.LIT); }
+    @Override public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return kind == MachineKind.SOLAR_PANEL ? Block.box(0, 0, 0, 16, 4, 16) : super.getShape(state, level, pos, context);
+    }
     @Override public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) { return new ItemStack(kind.item()); }
     @Override public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) { return MachineBlock.interact(level, pos, player, hand); }
     @Override public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {

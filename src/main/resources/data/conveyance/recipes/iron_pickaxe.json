@@ -1,0 +1,14 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "production",
+  "ingredients": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 5
+    }
+  ],
+  "result": {
+    "item": "minecraft:iron_pickaxe",
+    "count": 1
+  }
+}

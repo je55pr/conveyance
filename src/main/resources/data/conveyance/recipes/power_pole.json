@@ -1,19 +1,16 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "category": "misc",
-  "pattern": [
-    " C ",
-    " I ",
-    " I "
-  ],
-  "key": {
-    "I": {
-      "item": "minecraft:iron_ingot"
+  "type": "conveyance:factory_crafting",
+  "tab": "power",
+  "ingredients": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 2
     },
-    "C": {
-      "item": "minecraft:copper_ingot"
+    {
+      "item": "conveyance:copper_wire",
+      "count": 1
     }
-  },
+  ],
   "result": {
     "item": "conveyance:power_pole",
     "count": 1

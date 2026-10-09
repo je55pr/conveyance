@@ -1,0 +1,18 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "logistics",
+  "ingredients": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 1
+    },
+    {
+      "item": "conveyance:gear",
+      "count": 1
+    }
+  ],
+  "result": {
+    "item": "conveyance:burner_inserter",
+    "count": 1
+  }
+}

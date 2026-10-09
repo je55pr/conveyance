@@ -1,6 +1,7 @@
 package dev.conveyance.factory;
 
 import net.minecraft.core.BlockPos;
+import dev.conveyance.player.ResearchState;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -16,8 +17,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-public final class GeneratorEntity extends BlockEntity implements Container, MenuProvider {
+public final class GeneratorEntity extends BlockEntity implements Container, MenuProvider, PowerProducer {
     public static final int OUTPUT_KW = 120, FUEL_TICKS = 600;
+    public static final int MAX_FUEL_TICKS = 750;
     private NonNullList<ItemStack> items = NonNullList.withSize(1, ItemStack.EMPTY);
     private int burnTicks;
     boolean recovered;
@@ -29,8 +31,8 @@ public final class GeneratorEntity extends BlockEntity implements Container, Men
         if (generator.burnTicks == 0) {
             for (ItemStack stack : generator.items) {
                 if (isFuel(stack)) {
+                    generator.burnTicks = fuelTicks(stack, level);
                     stack.shrink(1);
-                    generator.burnTicks = FUEL_TICKS;
                     generator.setChanged();
                     break;
                 }
@@ -42,7 +44,14 @@ public final class GeneratorEntity extends BlockEntity implements Container, Men
         if (generator.burnTicks % 20 == 0 && (wasBurning || burning)) generator.setChanged();
     }
     public int outputPower() { return burnTicks > 0 ? OUTPUT_KW : 0; }
-    static boolean isFuel(ItemStack stack) { return !stack.isEmpty() && (stack.is(Items.COAL) || stack.is(Items.CHARCOAL)); }
+    public int fuelRemaining() { return burnTicks; }
+    public static int fuelTicks(ItemStack stack) {
+        if (stack.isEmpty()) return 0;
+        return stack.is(FactoryContent.WOOD_ITEM.get()) ? FUEL_TICKS / 2
+                : stack.is(Items.COAL) || stack.is(Items.CHARCOAL) ? FUEL_TICKS : 0;
+    }
+    static boolean isFuel(ItemStack stack) { return fuelTicks(stack) > 0; }
+    static int fuelTicks(ItemStack stack, Level level) { return (int) Math.round(fuelTicks(stack) * ResearchState.fuelDuration(level)); }
     @Override public void onLoad() {
         super.onLoad();
         PowerNetwork.register(level, worldPosition, PowerNetwork.Kind.GENERATOR);
@@ -69,6 +78,6 @@ public final class GeneratorEntity extends BlockEntity implements Container, Men
         items = NonNullList.withSize(1, ItemStack.EMPTY);
         ContainerHelper.loadAllItems(tag, items);
         if (!isFuel(items.get(0))) items.set(0, ItemStack.EMPTY);
-        burnTicks = Math.max(0, Math.min(FUEL_TICKS, tag.getInt("BurnTicks")));
+        burnTicks = Math.max(0, Math.min(MAX_FUEL_TICKS, tag.getInt("BurnTicks")));
     }
 }

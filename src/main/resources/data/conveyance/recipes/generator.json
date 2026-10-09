@@ -1,22 +1,20 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "category": "misc",
-  "pattern": [
-    "III",
-    "IFI",
-    "ICI"
-  ],
-  "key": {
-    "I": {
-      "item": "minecraft:iron_ingot"
+  "type": "conveyance:factory_crafting",
+  "tab": "power",
+  "ingredients": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 6
     },
-    "F": {
-      "item": "minecraft:furnace"
+    {
+      "item": "conveyance:gear",
+      "count": 1
     },
-    "C": {
-      "item": "minecraft:copper_ingot"
+    {
+      "item": "conveyance:copper_wire",
+      "count": 1
     }
-  },
+  ],
   "result": {
     "item": "conveyance:generator",
     "count": 1

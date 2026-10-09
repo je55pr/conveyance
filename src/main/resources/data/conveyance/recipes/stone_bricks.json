@@ -1,0 +1,12 @@
+{
+  "type": "conveyance:bulk_smelting",
+  "ingredient": {
+    "item": "minecraft:cobblestone"
+  },
+  "input_count": 2,
+  "result": {
+    "item": "minecraft:stone_bricks",
+    "count": 1
+  },
+  "cookingtime": 64
+}

@@ -9,35 +9,25 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public final class InserterEntity extends PoweredMachineEntity {
     private ItemStack held = ItemStack.EMPTY;
-    public InserterEntity(BlockPos pos, BlockState state) { super(FactoryContent.INSERTER_ENTITY.get(), pos, state, 15, 10); }
+    public InserterEntity(BlockPos pos, BlockState state) {
+        super(((InserterBlock) state.getBlock()).reach() == 2 ? FactoryContent.LONG_INSERTER_ENTITY.get() : FactoryContent.INSERTER_ENTITY.get(), pos, state,
+                15, ((InserterBlock) state.getBlock()).reach() == 2 ? 20 : 10);
+    }
 
     public static void tick(Level level, BlockPos pos, BlockState state, InserterEntity inserter) {
         if (!inserter.advanceWork()) return;
         var facing = state.getValue(InserterBlock.FACING);
-        BlockPos from = pos.relative(facing.getOpposite()), to = pos.relative(facing);
+        int reach = ((InserterBlock) state.getBlock()).reach();
+        BlockPos from = pos.relative(facing.getOpposite(), reach), to = pos.relative(facing, reach);
         if (inserter.held.isEmpty()) {
-            var source = ItemTransfer.containerAt(level, from);
-            if (source != null) {
-                for (int slot = 0; slot < source.getContainerSize(); slot++) {
-                    if (!source.getItem(slot).isEmpty() && source.canTakeItem(source, slot, source.getItem(slot))) {
-                        inserter.held = source.removeItem(slot, 1);
-                        source.setChanged();
-                        break;
-                    }
-                }
-            } else {
-                ConveyorEntity belt = ConveyorEntity.at(level, from);
-                if (belt != null) inserter.held = belt.takeFront();
-            }
-            if (!inserter.held.isEmpty()) inserter.setChanged();
+            ItemStack candidate = ItemTransfer.peekForOutput(level, from, to, facing);
+            if (candidate.isEmpty()) return;
+            inserter.held = ItemTransfer.takeSource(level, from, facing, candidate);
+            if (inserter.held.isEmpty()) return;
+            inserter.setChanged();
         }
-        if (!inserter.held.isEmpty()) {
-            var target = ItemTransfer.containerAt(level, to);
-            if (target != null) inserter.held = ItemTransfer.insert(target, inserter.held, false);
-            else {
-                ConveyorEntity belt = ConveyorEntity.at(level, to);
-                if (belt != null && belt.offer(inserter.held, facing.getOpposite())) inserter.held.shrink(1);
-            }
+        if (ItemTransfer.output(level, to, facing.getOpposite(), inserter.held)) {
+            inserter.held = ItemStack.EMPTY;
             inserter.setChanged();
         }
     }

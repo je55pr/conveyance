@@ -1,0 +1,14 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "logistics",
+  "ingredients": [
+    {
+      "item": "conveyance:wood",
+      "count": 8
+    }
+  ],
+  "result": {
+    "item": "conveyance:wood_crate",
+    "count": 1
+  }
+}

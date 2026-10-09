@@ -1,0 +1,22 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "production",
+  "ingredients": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 6
+    },
+    {
+      "item": "conveyance:electronic_circuit",
+      "count": 2
+    },
+    {
+      "item": "conveyance:gear",
+      "count": 1
+    }
+  ],
+  "result": {
+    "item": "conveyance:radar",
+    "count": 1
+  }
+}

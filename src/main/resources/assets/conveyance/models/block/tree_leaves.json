@@ -1,0 +1,54 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "leaf": "minecraft:block/acacia_leaves",
+    "particle": "minecraft:block/acacia_leaves"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "down": {
+          "texture": "#leaf",
+          "tintindex": 0,
+          "cullface": "down"
+        },
+        "up": {
+          "texture": "#leaf",
+          "tintindex": 0,
+          "cullface": "up"
+        },
+        "north": {
+          "texture": "#leaf",
+          "tintindex": 0,
+          "cullface": "north"
+        },
+        "south": {
+          "texture": "#leaf",
+          "tintindex": 0,
+          "cullface": "south"
+        },
+        "west": {
+          "texture": "#leaf",
+          "tintindex": 0,
+          "cullface": "west"
+        },
+        "east": {
+          "texture": "#leaf",
+          "tintindex": 0,
+          "cullface": "east"
+        }
+      }
+    }
+  ]
+}

@@ -73,7 +73,7 @@ public final class PowerNetwork {
         for (Network network : grid.networks) {
             network.supply = network.demand = 0;
             for (BlockPos pos : network.generators) {
-                if (level.hasChunkAt(pos) && level.getBlockEntity(pos) instanceof GeneratorEntity generator) {
+                if (level.hasChunkAt(pos) && level.getBlockEntity(pos) instanceof PowerProducer generator) {
                     network.supply += generator.outputPower();
                 }
             }
@@ -92,7 +92,7 @@ public final class PowerNetwork {
         if (entity == null || entity.isRemoved()) return false;
         return switch (kind) {
             case POLE -> entity instanceof PowerPoleEntity;
-            case GENERATOR -> entity instanceof GeneratorEntity;
+            case GENERATOR -> entity instanceof PowerProducer;
             case MACHINE -> entity instanceof PoweredMachineEntity;
         };
     }

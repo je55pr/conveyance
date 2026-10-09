@@ -1,0 +1,18 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "science",
+  "ingredients": [
+    {
+      "item": "conveyance:gear",
+      "count": 1
+    },
+    {
+      "item": "minecraft:copper_ingot",
+      "count": 1
+    }
+  ],
+  "result": {
+    "item": "conveyance:red_science_pack",
+    "count": 1
+  }
+}

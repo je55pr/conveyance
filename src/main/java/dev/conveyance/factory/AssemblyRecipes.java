@@ -2,6 +2,7 @@ package dev.conveyance.factory;
 
 import dev.conveyance.Conveyance;
 import dev.conveyance.ItemPolicy;
+import dev.conveyance.player.ResearchState;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,6 +14,7 @@ import net.minecraft.world.level.Level;
 public final class AssemblyRecipes {
     public record Requirement(Ingredient ingredient, int count) {}
     public static List<Requirement> requirements(CraftingRecipe recipe) {
+        if (recipe instanceof FactoryCraftingRecipe factory) return factory.requirements();
         var grouped = new LinkedHashMap<String, Requirement>();
         for (Ingredient ingredient : recipe.getIngredients()) {
             if (ingredient.isEmpty()) continue;
@@ -24,6 +26,7 @@ public final class AssemblyRecipes {
     public static List<CraftingRecipe> available(Level level) {
         return level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING).stream()
                 .filter(recipe -> recipe.getId().getNamespace().equals(Conveyance.MOD_ID))
+                .filter(recipe -> ResearchState.recipeUnlocked(recipe.getId(), ResearchState.mask(level)))
                 .filter(recipe -> !recipe.getResultItem(level.registryAccess()).isEmpty() && !ItemPolicy.isDisabled(recipe.getResultItem(level.registryAccess())))
                 .filter(recipe -> !requirements(recipe).isEmpty() && requirements(recipe).size() <= 4)
                 .sorted(Comparator.comparing(recipe -> recipe.getId().toString())).toList();

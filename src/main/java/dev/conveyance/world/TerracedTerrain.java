@@ -25,7 +25,7 @@ public final class TerracedTerrain {
     private final List<OrePatch> startingOres;
 
     public enum Feature { PLAIN, LOW_RIDGE, ROCK_WALL, SHORE, SEA, RIVER }
-    public enum Ore { NONE, IRON, COPPER, COAL }
+    public enum Ore { NONE, IRON, COPPER, COAL, STONE }
     private record OrePatch(Ore ore, double x, double z, double radiusX, double radiusZ,
             double angle, long salt) {}
     public record Cell(int surfaceHeight, Feature feature, boolean dry) {
@@ -87,7 +87,8 @@ public final class TerracedTerrain {
         startingOres = List.of(
                 new OrePatch(Ore.IRON, -8, -8, 5.5, 4.5, 0.3, 0x428A2F98L),
                 new OrePatch(Ore.COPPER, 8, -8, 5.0, 5.5, -0.4, 0x71374491L),
-                new OrePatch(Ore.COAL, -8, 8, 5.5, 4.0, 0.6, 0xB5C0FBCFL));
+                new OrePatch(Ore.COAL, -8, 8, 5.5, 4.0, 0.6, 0xB5C0FBCFL),
+                new OrePatch(Ore.STONE, 8, 8, 5.5, 5.0, -0.2, 0x3956C25BL));
     }
 
     /** First block above solid ground or seabed; water may occupy this position. */
@@ -269,7 +270,8 @@ public final class TerracedTerrain {
                 var patches = oreRegions.computeIfAbsent(key, ignored -> List.of(
                         makeOre(regionX, regionZ, Ore.IRON),
                         makeOre(regionX, regionZ, Ore.COPPER),
-                        makeOre(regionX, regionZ, Ore.COAL)));
+                        makeOre(regionX, regionZ, Ore.COAL),
+                        makeOre(regionX, regionZ, Ore.STONE)));
                 for (OrePatch patch : patches) {
                     if (insidePatch(patch, blockX, blockZ)) return patch.ore();
                 }

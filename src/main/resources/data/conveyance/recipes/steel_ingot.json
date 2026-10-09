@@ -1,0 +1,12 @@
+{
+  "type": "conveyance:bulk_smelting",
+  "ingredient": {
+    "item": "minecraft:iron_ingot"
+  },
+  "input_count": 5,
+  "result": {
+    "item": "conveyance:steel_ingot",
+    "count": 1
+  },
+  "cookingtime": 320
+}

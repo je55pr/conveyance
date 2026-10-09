@@ -3,9 +3,7 @@ package dev.conveyance.factory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 public final class MinerEntity extends PoweredMachineEntity {
@@ -22,20 +20,12 @@ public final class MinerEntity extends PoweredMachineEntity {
 
     public static void tick(Level level, BlockPos pos, BlockState state, MinerEntity miner) {
         var facing = state.getValue(MinerBlock.FACING);
-        ConveyorEntity belt = ConveyorEntity.at(level, pos.relative(facing));
-        if (belt == null || !belt.canAccept(facing.getOpposite())) return;
+        var resource = MiningResources.find(level, 16, miner.cursor, part -> MinerBlock.partPosition(pos, facing, part).below());
+        if (resource.stack().isEmpty() || !ItemTransfer.canOutput(level, pos.relative(facing), facing.getOpposite(), resource.stack())) return;
         if (!miner.advanceWork()) return;
-        for (int attempt = 0; attempt < 16; attempt++) {
-            BlockPos ore = MinerBlock.partPosition(pos, state.getValue(MinerBlock.FACING), miner.cursor++ % 16).below();
-            BlockState resource = level.getBlockState(ore);
-            ItemStack output = resource.is(Blocks.IRON_ORE) ? new ItemStack(Items.RAW_IRON)
-                    : resource.is(Blocks.COPPER_ORE) ? new ItemStack(Items.RAW_COPPER)
-                    : resource.is(Blocks.COAL_ORE) ? new ItemStack(Items.COAL) : ItemStack.EMPTY;
-            if (!output.isEmpty()) {
-                belt.offer(output, facing.getOpposite());
-                miner.setChanged();
-                return;
-            }
+        if (ItemTransfer.output(level, pos.relative(facing), facing.getOpposite(), resource.stack())) {
+            miner.cursor = resource.nextCursor();
+            miner.setChanged();
         }
     }
 

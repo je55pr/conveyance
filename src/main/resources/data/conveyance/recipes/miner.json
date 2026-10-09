@@ -1,19 +1,20 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "category": "misc",
-  "pattern": [
-    "III",
-    "ICI",
-    "III"
-  ],
-  "key": {
-    "I": {
-      "item": "minecraft:iron_block"
+  "type": "conveyance:factory_crafting",
+  "tab": "production",
+  "ingredients": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 10
     },
-    "C": {
-      "item": "minecraft:copper_block"
+    {
+      "item": "conveyance:gear",
+      "count": 5
+    },
+    {
+      "item": "conveyance:electronic_circuit",
+      "count": 3
     }
-  },
+  ],
   "result": {
     "item": "conveyance:miner",
     "count": 1

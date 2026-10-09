@@ -1,0 +1,22 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "power",
+  "ingredients": [
+    {
+      "item": "conveyance:steel_ingot",
+      "count": 4
+    },
+    {
+      "item": "conveyance:electronic_circuit",
+      "count": 4
+    },
+    {
+      "item": "conveyance:copper_wire",
+      "count": 1
+    }
+  ],
+  "result": {
+    "item": "conveyance:solar_panel",
+    "count": 1
+  }
+}
