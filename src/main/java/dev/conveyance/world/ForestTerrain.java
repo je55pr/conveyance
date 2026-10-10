@@ -52,6 +52,11 @@ public final class ForestTerrain {
         }
         return pixels;
     }
+    public int treeCount(int minX, int minZ) {
+        int count = 0;
+        for (Tree tree : trees(minX, minZ)) if (inside(tree.x, tree.z, minX, minZ)) count++;
+        return count;
+    }
     public void generate(ChunkAccess chunk) {
         int minX = chunk.getPos().getMinBlockX(), minZ = chunk.getPos().getMinBlockZ();
         List<Tree> trees = trees(minX, minZ);
@@ -90,13 +95,14 @@ public final class ForestTerrain {
     }
     private Tree makeTree(int gx, int gz) {
         int x = gx * 3 + (int) (unit(gx, gz, 1) * 3), z = gz * 3 + (int) (unit(gx, gz, 2) * 3);
-        if (Math.abs(x) < 18 && Math.abs(z) < 18) return null;
-        double forest = noise(x, z, 96, 3) * 0.8 + noise(x, z, 32, 4) * 0.2;
-        // A nearby grove makes the first Wood/crate/fuel loop quick to try.
-        double groveX = x - 48.0, groveZ = z + 24.0;
-        double grove = 1 - (groveX * groveX / 1600.0 + groveZ * groveZ / 900.0);
-        forest = Math.max(forest, grove);
+        if (Math.hypot(x, z) < 64) return null;
+        double open = terrain.openAreaWeight(x, z), grove = terrain.startingGroveWeight(x, z);
+        if (open > 0.6 && grove == 0) return null;
+        double forest = terrain.forestCover(x, z);
         double density = forest < 0.44 ? 0.008 : Math.min(0.92, 0.18 + (forest - 0.44) * 3.5);
+        density *= (1 - open) * (1 - open);
+        // Keep accessible Wood near the edge of the starter clearing.
+        if (grove > 0) density = Math.max(density, 0.18 + grove * 0.74);
         density = Math.min(1, density * DENSITY_MULTIPLIER);
         if (unit(gx, gz, 5) > density) return null;
         var cell = terrain.cellAt(x, z);
@@ -113,11 +119,6 @@ public final class ForestTerrain {
         chunk.getOrCreateHeightmapUnprimed(Heightmap.Types.WORLD_SURFACE_WG).update(pos.getX() & 15, pos.getY(), pos.getZ() & 15, state);
         chunk.getOrCreateHeightmapUnprimed(Heightmap.Types.OCEAN_FLOOR_WG).update(pos.getX() & 15, pos.getY(), pos.getZ() & 15, state);
     }
-    private double noise(int x, int z, int scale, long salt) {
-        int gx = Math.floorDiv(x, scale), gz = Math.floorDiv(z, scale);
-        double tx = smooth(Math.floorMod(x, scale) / (double) scale), tz = smooth(Math.floorMod(z, scale) / (double) scale);
-        return lerp(tz, lerp(tx, unit(gx, gz, salt), unit(gx + 1, gz, salt)), lerp(tx, unit(gx, gz + 1, salt), unit(gx + 1, gz + 1, salt)));
-    }
     private double unit(int x, int z, long salt) {
         long bits = seed ^ (salt * 0x632BE59BD9B4E019L) ^ (x * 0x9E3779B97F4A7C15L) ^ (z * 0xC2B2AE3D27D4EB4FL);
         bits = (bits ^ (bits >>> 30)) * 0xBF58476D1CE4E5B9L;
@@ -125,6 +126,4 @@ public final class ForestTerrain {
         bits ^= bits >>> 31;
         return (bits >>> 11) * 0x1.0p-53;
     }
-    private static double smooth(double value) { return value * value * (3 - 2 * value); }
-    private static double lerp(double t, double from, double to) { return from + (to - from) * t; }
 }

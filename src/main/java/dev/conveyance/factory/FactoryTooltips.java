@@ -2,6 +2,7 @@ package dev.conveyance.factory;
 
 import dev.conveyance.Conveyance;
 import dev.conveyance.player.ResearchState;
+import dev.conveyance.pollution.PollutionRates;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
@@ -77,6 +78,8 @@ public final class FactoryTooltips {
             row(lines, "throughput_max", number(JunctionEntity.LANES * JunctionEntity.SIDES.length * 20.0 / JunctionEntity.MOVE_TICKS));
             row(lines, "buffer", JunctionEntity.CAPACITY);
         } else if (block instanceof CrateBlock crate) { row(lines, "size", 1, 1, 1); row(lines, "storage", crate.slots); }
+        double emissions = block == null ? 0 : PollutionRates.effective(block, level);
+        if (emissions > 0) row(lines, "pollution", number(emissions));
         double fuel = fuelMJ(item);
         if (fuel > 0) {
             row(lines, "fuel_energy", number(fuel));

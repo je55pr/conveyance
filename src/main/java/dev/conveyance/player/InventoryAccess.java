@@ -21,7 +21,7 @@ public final class InventoryAccess {
     }
     public static boolean deliberateThrow() { return !Boolean.FALSE.equals(THROW_CLICK.get()); }
     public static Container extra(Player player) {
-        return player.containerMenu instanceof PlayerWorkbenchMenu menu ? menu.extra() : new ExtraInventory(player);
+        return ExtraInventory.of(player);
     }
     public static List<ItemStack> snapshot(Player player, Container extra) {
         var result = new ArrayList<ItemStack>(72);

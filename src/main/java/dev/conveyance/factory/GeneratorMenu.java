@@ -2,6 +2,7 @@ package dev.conveyance.factory;
 
 import dev.conveyance.player.ResearchState;
 import dev.conveyance.player.Technology;
+import dev.conveyance.player.LinkedStorageSlot;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -40,7 +41,7 @@ public final class GeneratorMenu extends AbstractContainerMenu {
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) addSlot(new Slot(inventory, column + row * 9 + 9, 8 + column * 18, 49 + row * 18));
         }
-        for (int column = 0; column < 9; column++) addSlot(new Slot(inventory, column, 8 + column * 18, 107));
+        for (int column = 0; column < 9; column++) addSlot(new LinkedStorageSlot(inventory, column, 8 + column * 18, 107));
         research = lab && fuel instanceof MachineEntity machine ? new ContainerData() {
             @Override public int get(int index) {
                 int selected = ResearchState.selected(machine.getLevel());

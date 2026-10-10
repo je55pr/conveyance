@@ -3,6 +3,9 @@ package dev.conveyance.factory;
 import dev.conveyance.ItemPolicy;
 import dev.conveyance.player.ResearchState;
 import dev.conveyance.player.Technology;
+import dev.conveyance.player.InventoryAccess;
+import dev.conveyance.pollution.PollutionData;
+import dev.conveyance.pollution.PollutionRates;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
@@ -101,6 +104,7 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
             setChanged();
         }
         burnTicks--;
+        PollutionData.emit(level, worldPosition, PollutionRates.of(getBlockState().getBlock()));
         if (level.getGameTime() % 20 == 0) setChanged();
         return true;
     }
@@ -157,6 +161,27 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
         selectedRecipe = id;
         creativeRecipe = allowLocked;
         resetWork();
+        return true;
+    }
+    public boolean selectRecipe(Player player, ResourceLocation id) {
+        if (kind() != MachineKind.ASSEMBLER || level == null || player.isSpectator() || !stillValid(player)) return false;
+        CraftingRecipe recipe = AssemblyRecipes.all(level).stream().filter(candidate -> candidate.getId().equals(id)).findFirst().orElse(null);
+        if (recipe == null || !player.isCreative() && !ResearchState.recipeUnlocked(id, ResearchState.mask(level))) return false;
+        var requirements = AssemblyRecipes.requirements(recipe);
+        var extra = InventoryAccess.extra(player);
+        var inventory = InventoryAccess.snapshot(player, extra);
+        var returned = new java.util.ArrayList<Integer>();
+        for (int slot = 0; slot < items.size(); slot++) {
+            ItemStack stored = items.get(slot);
+            boolean compatible = slot == outputSlot() ? ItemStack.isSameItemSameTags(stored, recipe.getResultItem(level.registryAccess()))
+                    : slot < requirements.size() && requirements.get(slot).ingredient().test(stored);
+            if (stored.isEmpty() || compatible) continue;
+            if (!InventoryAccess.insert(inventory, stored)) { player.displayClientMessage(Component.translatable("message.conveyance.inventory_full"), true); return false; }
+            returned.add(slot);
+        }
+        if (!selectRecipe(id, player.isCreative())) return false;
+        returned.forEach(slot -> items.set(slot, ItemStack.EMPTY));
+        if (!returned.isEmpty()) { InventoryAccess.commit(player, extra, inventory); setChanged(); }
         return true;
     }
     @Override protected boolean hasWork() {

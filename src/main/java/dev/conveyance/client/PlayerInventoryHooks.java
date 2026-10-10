@@ -26,7 +26,7 @@ public final class PlayerInventoryHooks {
             var game = Minecraft.getInstance();
             if (game.player != null && game.level != null) {
                 event.setCanceled(true);
-                InventoryNetwork.requestOpen();
+                WorkbenchNavigation.open(0);
             }
         }
     }

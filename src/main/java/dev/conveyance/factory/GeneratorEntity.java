@@ -2,6 +2,8 @@ package dev.conveyance.factory;
 
 import net.minecraft.core.BlockPos;
 import dev.conveyance.player.ResearchState;
+import dev.conveyance.pollution.PollutionData;
+import dev.conveyance.pollution.PollutionRates;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -36,6 +38,7 @@ public final class GeneratorEntity extends BlockEntity implements Container, Men
         }
         double used = Math.min(generator.fuelReserve, load);
         boolean burning = used > 0;
+        PollutionData.emit(level, pos, PollutionRates.GENERATOR * used);
         generator.producingKW = (int) Math.round(used * OUTPUT_KW);
         generator.fuelReserve = Math.max(0, generator.fuelReserve - used);
         if (generator.fuelReserve < 0.000000001) generator.fuelReserve = 0;

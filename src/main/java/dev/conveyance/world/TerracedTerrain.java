@@ -1,5 +1,6 @@
 package dev.conveyance.world;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -13,13 +14,11 @@ public final class TerracedTerrain {
     public static final int START_HEIGHT = BASE_GROUND_Y + 1;
     public static final int MAX_MOUNTAIN_SECTIONS = 6;
     public static final int SEA_LEVEL = 0;
-    private static final int RIVER_SPACING = 64;
     private final long seed;
     private static final int REGION_WIDTH = 48;
     private final ConcurrentHashMap<Long, List<Wall>> regions = new ConcurrentHashMap<>();
-    private final List<Wall> startingWalls;
-    private final ConcurrentHashMap<Long, List<Channel>> rivers = new ConcurrentHashMap<>();
-    private final Channel startingRiver;
+    private final Basin startingLake;
+    private final Basin startingGrove;
     private static final int ORE_REGION_WIDTH = 128;
     private final ConcurrentHashMap<Long, List<OrePatch>> oreRegions = new ConcurrentHashMap<>();
     private final List<OrePatch> startingOres;
@@ -34,17 +33,13 @@ public final class TerracedTerrain {
     }
     private record WaterArea(Feature feature, int depth) {}
 
-    private record Channel(double halfWidth, double[] x, double[] z) {
-        double bankDistance(double px, double pz) {
-            double nearest = Double.POSITIVE_INFINITY;
-            for (int i = 0; i < x.length - 1; i++) {
-                double dx = x[i + 1] - x[i], dz = z[i + 1] - z[i];
-                double along = clamp(((px - x[i]) * dx + (pz - z[i]) * dz) / (dx * dx + dz * dz));
-                double ox = px - lerp(along, x[i], x[i + 1]);
-                double oz = pz - lerp(along, z[i], z[i + 1]);
-                nearest = Math.min(nearest, ox * ox + oz * oz);
-            }
-            return halfWidth - Math.sqrt(nearest);
+    private record Basin(double x, double z, double radiusX, double radiusZ, double angle) {
+        double radius(double px, double pz) {
+            double dx = px - x, dz = pz - z;
+            double cos = Math.cos(angle), sin = Math.sin(angle);
+            double rx = (dx * cos + dz * sin) / radiusX;
+            double rz = (-dx * sin + dz * cos) / radiusZ;
+            return Math.sqrt(rx * rx + rz * rz);
         }
     }
 
@@ -68,27 +63,22 @@ public final class TerracedTerrain {
 
     public TerracedTerrain(long seed) {
         this.seed = seed;
-        // Nearby examples make this iteration quick to try. The seed rotates
-        // their layout; the rest of the world uses the same kinds of paths.
-        int rotation = (int) Math.floor(unit(0, 0, 0x3C6EF372L) * 4);
-        startingWalls = List.of(
-                rotate(new Wall(Feature.LOW_RIDGE, 1.8,
-                        new double[] {-18, -12, -6, 0, 6, 12, 18},
-                        new double[] {-8, -7, -10, -9, -7, -8, -10},
-                        new int[] {0, 2, 3, 0, 2, 3, 0}), rotation),
-                rotate(new Wall(Feature.ROCK_WALL, 1.4,
-                        new double[] {9, 10, 13, 12, 15, 12},
-                        new double[] {6, 10, 14, 18, 22, 26},
-                        new int[] {0, 4, 6, 0, 5, 0}), rotation));
-        double[] left = riverNode(-1, 0), right = riverNode(0, 0);
-        startingRiver = new Channel(3.5,
-                new double[] {left[0], -20, -10, 0, 10, 20, right[0]},
-                new double[] {left[1], 12, 8, 8, 10, 14, right[1]});
-        startingOres = List.of(
-                new OrePatch(Ore.IRON, -8, -8, 5.5, 4.5, 0.3, 0x428A2F98L),
-                new OrePatch(Ore.COPPER, 8, -8, 5.0, 5.5, -0.4, 0x71374491L),
-                new OrePatch(Ore.COAL, -8, 8, 5.5, 4.0, 0.6, 0xB5C0FBCFL),
-                new OrePatch(Ore.STONE, 8, 8, 5.5, 5.0, -0.2, 0x3956C25BL));
+        // A roomy initial factory area, with separated deposits around it and
+        // water outside it. The seed rotates the whole layout by any angle.
+        double angle = unit(0, 0, 0x3C6EF372L) * Math.PI * 2;
+        startingLake = new Basin(Math.cos(angle) * 36, Math.sin(angle) * 36,
+                8 + unit(0, 0, 0x510E527EL) * 2, 5 + unit(0, 0, 0x510E527DL) * 2, angle + 0.6);
+        startingGrove = new Basin(Math.cos(angle + 2.2) * 28, Math.sin(angle + 2.2) * 28, 7, 6, angle);
+        var ores = new ArrayList<OrePatch>();
+        for (Ore ore : List.of(Ore.IRON, Ore.COPPER, Ore.COAL, Ore.STONE)) {
+            long salt = 0x428A2F98L + ore.ordinal() * 97L;
+            double direction = angle + (ore.ordinal() - 1) * Math.PI / 2
+                    + (unit(0, 0, salt) - 0.5) * 0.3;
+            double distance = 45 + unit(0, 0, salt + 1) * 20;
+            ores.add(new OrePatch(ore, Math.cos(direction) * distance, Math.sin(direction) * distance,
+                    5.5 + unit(0, 0, salt + 2), 4.5 + unit(0, 0, salt + 3), direction + 0.4, salt));
+        }
+        startingOres = List.copyOf(ores);
     }
 
     /** First block above solid ground or seabed; water may occupy this position. */
@@ -119,7 +109,7 @@ public final class TerracedTerrain {
             // Base feet Y=1 -> dry shore feet Y=0 -> shallow-water feet Y=-1.
             return new Cell(SEA_LEVEL, Feature.SHORE, false);
         }
-        if (Math.max(Math.abs(px), Math.abs(pz)) < 4) {
+        if (Math.hypot(px, pz) < 22 || openArea(px, pz) > 0.6) {
             return new Cell(START_HEIGHT, Feature.PLAIN, dry);
         }
         if (oceanField(cellX, cellZ) > 0.08 || riverBankDistance(px, pz) > -2) {
@@ -140,19 +130,14 @@ public final class TerracedTerrain {
                 }
             }
         }
-        for (Wall wall : startingWalls) {
-            int candidate = wall.sectionsAt(px, pz);
-            if (candidate > sections || (candidate == sections && candidate > 0
-                    && wall.feature() == Feature.ROCK_WALL)) {
-                sections = candidate;
-                feature = wall.feature();
-            }
-        }
         return new Cell(START_HEIGHT + Math.min(MAX_MOUNTAIN_SECTIONS, sections) * LAYER_HEIGHT, feature, dry);
     }
 
     private WaterArea waterArea(int x, int z) {
-        if (Math.max(Math.abs(x + 0.5), Math.abs(z + 0.5)) < 4) return null;
+        double px = x + 0.5, pz = z + 0.5;
+        if (Math.hypot(px, pz) < 22) return null;
+        double lake = 1 - startingLake.radius(px, pz) + 0.1 * noise(px, pz, 5, 0x510E527CL);
+        if (lake > 0) return new WaterArea(Feature.SEA, 1 + Math.min(3, (int) (lake * 4)) * LAYER_HEIGHT);
         double sea = oceanField(x, z);
         if (sea > 0.2) {
             int sections = Math.min(6, (int) ((sea - 0.2) / 0.2));
@@ -167,56 +152,59 @@ public final class TerracedTerrain {
     }
 
     private double oceanField(int x, int z) {
-        double distance = Math.max(Math.abs(x + 0.5), Math.abs(z + 0.5));
-        double startingLand = 1 - smooth(clamp((distance - 8) / 32));
-        return noise(x, z, 160, 0x510E527FL) + 0.2 * noise(x, z, 48, 0x9B05688CL)
-                - 1.4 * startingLand;
+        double px = x + 0.5, pz = z + 0.5;
+        double startingLand = 1 - smooth(clamp((Math.hypot(px, pz) - 22) / 20));
+        double wx = warpedX(px, pz), wz = warpedZ(px, pz);
+        return noise(wx, wz, 150, 0x510E527FL) + 0.25 * noise(wx, wz, 48, 0x9B05688CL)
+                + 0.08 * noise(wx, wz, 16, 0x9B05688DL) - 0.1 * openArea(px, pz) - 1.4 * startingLand;
     }
 
     private double riverBankDistance(double x, double z) {
-        double distance = startingRiver.bankDistance(x, z);
-        int rx = (int) Math.floor(x / RIVER_SPACING), rz = (int) Math.floor(z / RIVER_SPACING);
-        for (int ix = rx - 1; ix <= rx + 1; ix++) {
-            for (int iz = rz - 1; iz <= rz + 1; iz++) {
-                long key = ((long) ix << 32) ^ (iz & 0xffffffffL);
-                int regionX = ix, regionZ = iz;
-                var channels = rivers.computeIfAbsent(key, ignored -> List.of(
-                        makeChannel(regionX, regionZ, true), makeChannel(regionX, regionZ, false)));
-                for (Channel channel : channels) distance = Math.max(distance, channel.bankDistance(x, z));
-            }
-        }
-        return distance;
+        double startingLand = smooth(clamp((Math.hypot(x, z) - 22) / 20));
+        double wx = warpedX(x, z), wz = warpedZ(x, z);
+        // Sparse contours rather than a channel on every region edge. The
+        // independent flow mask tapers their ends and leaves large land spans.
+        double flow = smooth(clamp((noise(wx, wz, 190, 0xA54FF53AL) - 0.05) / 0.35));
+        if (flow == 0 || startingLand == 0) return -100;
+        double valley = Math.abs(noise(wx, wz, 94, 0x3C6EF373L)
+                + 0.22 * noise(wx, wz, 36, 0x3C6EF374L));
+        double width = (0.035 + 0.02 * unitNoise(wx, wz, 70, 0x3C6EF375L)) * flow * startingLand;
+        return (width - valley) * 80;
     }
 
-    private double[] riverNode(int x, int z) {
-        return new double[] {
-                (x + 0.5) * RIVER_SPACING + (unit(x, z, 0x1F83D9ABL) - 0.5) * 20,
-                (z + 0.5) * RIVER_SPACING + (unit(x, z, 0x5BE0CD19L) - 0.5) * 20};
+    private double warpedX(double x, double z) {
+        return x + 24 * noise(x, z, 96, 0x1F83D9ABL) + 6 * noise(x, z, 32, 0x1F83D9ACL);
+    }
+    private double warpedZ(double x, double z) {
+        return z + 24 * noise(x, z, 96, 0x5BE0CD19L) + 6 * noise(x, z, 32, 0x5BE0CD1AL);
     }
 
-    private Channel makeChannel(int rx, int rz, boolean east) {
-        double[] from = riverNode(rx, rz), to = riverNode(rx + (east ? 1 : 0), rz + (east ? 0 : 1));
-        double dx = to[0] - from[0], dz = to[1] - from[1];
-        double length = Math.sqrt(dx * dx + dz * dz);
-        long salt = east ? 0xA54FF53AL : 0x3C6EF373L;
-        double phase = unit(rx, rz, salt) * Math.PI * 2;
-        double bend = 6 + unit(rx, rz, salt + 1) * 4;
-        double[] x = new double[5], z = new double[5];
-        for (int i = 0; i < 5; i++) {
-            double t = i / 4.0;
-            double sideways = Math.sin(t * Math.PI) * Math.sin(t * Math.PI * 2 + phase) * bend;
-            x[i] = lerp(t, from[0], to[0]) - dz / length * sideways;
-            z[i] = lerp(t, from[1], to[1]) + dx / length * sideways;
-        }
-        // Shared nodes make neighboring channels join across region/chunk edges.
-        return new Channel(2.5 + unit(rx, rz, salt + 2) * 2.5, x, z);
+    /** Shared by cliffs and forests so clear plains really have building room. */
+    public double openAreaWeight(int blockX, int blockZ) {
+        return openArea(Math.floorDiv(blockX, CELL_WIDTH) + 0.5, Math.floorDiv(blockZ, CELL_WIDTH) + 0.5);
+    }
+    public double forestCover(int blockX, int blockZ) {
+        double x = blockX / (double) CELL_WIDTH, z = blockZ / (double) CELL_WIDTH;
+        return 0.8 * unitNoise(x, z, 32, 0x6A09E668L) + 0.2 * unitNoise(x, z, 12, 0x6A09E669L);
+    }
+    public double startingGroveWeight(int blockX, int blockZ) {
+        double radius = startingGrove.radius(blockX / (double) CELL_WIDTH, blockZ / (double) CELL_WIDTH);
+        return Math.max(0, 1 - radius * radius);
+    }
+    private double openArea(double x, double z) {
+        double start = 1 - smooth(clamp((Math.hypot(x, z) - 16) / 10));
+        double field = noise(x, z, 112, 0xBB67AE85L) + 0.2 * noise(x, z, 40, 0xBB67AE86L);
+        return Math.max(start, smooth(clamp((field - 0.05) / 0.42)));
     }
 
     private List<Wall> region(int x, int z) {
         long key = ((long) x << 32) ^ (z & 0xffffffffL);
-        return regions.computeIfAbsent(key, ignored -> List.of(
-                makeWall(x, z, Feature.LOW_RIDGE, 0x57AF6D12L),
-                makeWall(x, z, Feature.ROCK_WALL, 0xC2B2AE35L)));
+        return regions.computeIfAbsent(key, ignored -> {
+            var walls = new ArrayList<Wall>();
+            if (unit(x, z, 0x57AF6D11L) < 0.72) walls.add(makeWall(x, z, Feature.LOW_RIDGE, 0x57AF6D12L));
+            if (unit(x, z, 0xC2B2AE34L) < 0.55) walls.add(makeWall(x, z, Feature.ROCK_WALL, 0xC2B2AE35L));
+            return List.copyOf(walls);
+        });
     }
 
     private Wall makeWall(int rx, int rz, Feature feature, long salt) {
@@ -243,16 +231,6 @@ public final class TerracedTerrain {
         return new Wall(feature, feature == Feature.ROCK_WALL ? 1.4 : 1.8, x, z, peaks);
     }
 
-    private static Wall rotate(Wall wall, int turns) {
-        double[] x = wall.x().clone(), z = wall.z().clone();
-        for (int i = 0; i < x.length; i++) {
-            for (int turn = 0; turn < turns; turn++) {
-                double previous = x[i]; x[i] = -z[i]; z[i] = previous;
-            }
-        }
-        return new Wall(wall.feature(), wall.halfWidth(), x, z, wall.peaks());
-    }
-
     private double unit(int x, int z, long salt) {
         return (value(x, z, salt) + 1) / 2;
     }
@@ -262,6 +240,8 @@ public final class TerracedTerrain {
         for (OrePatch patch : startingOres) {
             if (insidePatch(patch, blockX, blockZ)) return patch.ore();
         }
+        // Random deposits cannot crowd the four deliberately spaced starters.
+        if (Math.hypot(blockX + 0.5, blockZ + 0.5) < 96) return Ore.NONE;
         int rx = Math.floorDiv(blockX, ORE_REGION_WIDTH), rz = Math.floorDiv(blockZ, ORE_REGION_WIDTH);
         for (int x = rx - 1; x <= rx + 1; x++) {
             for (int z = rz - 1; z <= rz + 1; z++) {
@@ -307,13 +287,37 @@ public final class TerracedTerrain {
                 64, 0x6A09E667L) < -0.15;
     }
 
-    private double noise(int x, int z, int scale, long salt) {
-        int gx = Math.floorDiv(x, scale);
-        int gz = Math.floorDiv(z, scale);
-        double tx = smooth(Math.floorMod(x, scale) / (double) scale);
-        double tz = smooth(Math.floorMod(z, scale) / (double) scale);
-        return lerp(tz, lerp(tx, value(gx, gz, salt), value(gx + 1, gz, salt)),
-                lerp(tx, value(gx, gz + 1, salt), value(gx + 1, gz + 1, salt)));
+    private double unitNoise(double x, double z, int scale, long salt) { return (noise(x, z, scale, salt) + 1) / 2; }
+
+    // Continuous simplex noise avoids the axis-aligned plateaus of interpolated
+    // square cells. Hashing lattice gradients keeps it seed-dependent everywhere.
+    private double noise(double x, double z, int scale, long salt) {
+        double px = x / scale + 19.19 + ((salt >>> 8) & 1023) * 0.031;
+        double pz = z / scale - 27.73 + ((salt >>> 20) & 1023) * 0.029;
+        double skew = (px + pz) * 0.3660254037844386;
+        int ix = (int) Math.floor(px + skew), iz = (int) Math.floor(pz + skew);
+        double unskew = (ix + iz) * 0.21132486540518713;
+        double x0 = px - (ix - unskew), z0 = pz - (iz - unskew);
+        int dx = x0 > z0 ? 1 : 0, dz = 1 - dx;
+        return 70 * (corner(ix, iz, x0, z0, salt)
+                + corner(ix + dx, iz + dz, x0 - dx + 0.21132486540518713, z0 - dz + 0.21132486540518713, salt)
+                + corner(ix + 1, iz + 1, x0 - 0.5773502691896257, z0 - 0.5773502691896257, salt));
+    }
+    private double corner(int x, int z, double dx, double dz, long salt) {
+        double falloff = 0.5 - dx * dx - dz * dz;
+        if (falloff <= 0) return 0;
+        double gradient = switch ((int) (unit(x, z, salt) * 8)) {
+            case 0 -> dx + dz;
+            case 1 -> dx - dz;
+            case 2 -> -dx + dz;
+            case 3 -> -dx - dz;
+            case 4 -> dx;
+            case 5 -> -dx;
+            case 6 -> dz;
+            default -> -dz;
+        };
+        falloff *= falloff;
+        return falloff * falloff * gradient;
     }
 
     private double value(int x, int z, long salt) {

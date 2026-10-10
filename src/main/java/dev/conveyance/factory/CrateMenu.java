@@ -1,5 +1,7 @@
 package dev.conveyance.factory;
 
+import dev.conveyance.player.LinkedStorageSlot;
+
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -21,7 +23,7 @@ public final class CrateMenu extends AbstractContainerMenu {
         for (int slot = 0; slot < crate.getContainerSize(); slot++) addSlot(new Slot(crate, slot, 16 + slot % 8 * 18, 18 + slot / 8 * 18));
         int inventoryY = rows() * 18 + 40;
         for (int row = 0; row < 3; row++) for (int column = 0; column < 9; column++) addSlot(new Slot(inventory, 9 + row * 9 + column, 8 + column * 18, inventoryY + row * 18));
-        for (int column = 0; column < 9; column++) addSlot(new Slot(inventory, column, 8 + column * 18, inventoryY + 58));
+        for (int column = 0; column < 9; column++) addSlot(new LinkedStorageSlot(inventory, column, 8 + column * 18, inventoryY + 58));
     }
     public int rows() { return crate.getContainerSize() / 8; }
     @Override public boolean stillValid(Player player) { return crate.stillValid(player); }

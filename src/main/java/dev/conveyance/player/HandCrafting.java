@@ -103,12 +103,13 @@ public final class HandCrafting {
             return 0;
         }
     }
-    public static boolean craft(ServerPlayer player, Container extra, CraftingRecipe recipe, boolean bulk) {
+    public static boolean craft(ServerPlayer player, Container extra, CraftingRecipe recipe, int requested) {
         List<ItemStack> original = InventoryAccess.snapshot(player, extra);
         ItemStack output = recipe.getResultItem(player.level().registryAccess());
-        if (player.isCreative()) return InventoryAccess.give(player, output.copyWithCount(bulk ? output.getMaxStackSize() : output.getCount()));
+        if (player.isCreative()) return InventoryAccess.give(player, output.copyWithCount(requested == 0 ? output.getMaxStackSize() : output.getCount() * requested));
         var planner = new Planner(player.level(), ResearchState.mask(player.level()));
-        int batches = bulk ? planner.craftable(original, recipe) : 1;
+        int batches = requested == 0 ? planner.craftable(original, recipe) : requested == 1 ? 1 : Math.min(requested, planner.craftable(original, recipe));
+        if (batches == 0) return false;
         var candidate = planner.plan(original, recipe, batches);
         if (candidate == null) return false;
         InventoryAccess.commit(player, extra, candidate);

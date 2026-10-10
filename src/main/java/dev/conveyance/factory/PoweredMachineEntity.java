@@ -2,6 +2,8 @@ package dev.conveyance.factory;
 
 import net.minecraft.core.BlockPos;
 import dev.conveyance.player.ResearchState;
+import dev.conveyance.pollution.PollutionData;
+import dev.conveyance.pollution.PollutionRates;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -25,6 +27,7 @@ abstract class PoweredMachineEntity extends BlockEntity {
     protected boolean advanceWork() {
         double supplied = PowerNetwork.fraction(level, worldPosition);
         if (supplied <= 0) return false;
+        PollutionData.emit(level, worldPosition, PollutionRates.effective(getBlockState().getBlock(), level) * supplied);
         double speed = this instanceof MinerEntity ? ResearchState.miningSpeed(level)
                 : this instanceof InserterEntity ? ResearchState.inserterSpeed(level)
                 : this instanceof MachineEntity machine && machine.kind() == MachineKind.LAB ? ResearchState.researchSpeed(level)

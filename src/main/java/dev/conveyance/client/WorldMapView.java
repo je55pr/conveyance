@@ -2,11 +2,13 @@ package dev.conveyance.client;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import dev.conveyance.factory.RadarEntity;
+import dev.conveyance.factory.FactoryTooltips;
 import dev.conveyance.map.MapNetwork;
 import dev.conveyance.map.MapPalette;
 import dev.conveyance.map.WorldMapData;
+import dev.conveyance.pollution.PollutionData;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.texture.DynamicTexture;
@@ -19,14 +21,19 @@ import net.minecraft.world.level.ChunkPos;
 public final class WorldMapView {
     private int canvasHeight = 154, bodyHeight = 208, viewportWidth = 396;
     private record Page(int x, int z, int step) {}
-    private record Texture(ResourceLocation id, long revision) {}
+    private record Texture(ResourceLocation id, long revision, long pollutionRevision, boolean pollution) {}
     private final Minecraft game = Minecraft.getInstance();
     private final LinkedHashMap<Page, Texture> textures = new LinkedHashMap<>(32, 0.75F, true);
     private double centerX, centerZ, zoom = 1;
     private boolean opened, dragging;
+    private boolean pollution = WorkbenchPreferences.pollution();
     private long requestedAt = Long.MIN_VALUE;
     public void resize(int height) { bodyHeight = height; canvasHeight = Math.max(80, height - 54); requestedAt = Long.MIN_VALUE; }
     public void open() { if (!opened) { opened = true; center(); } }
+    public Component pollutionLabel() { return Component.translatable(pollution ? "map.conveyance.pollution_on" : "map.conveyance.pollution_off"); }
+    public void togglePollution() {
+        pollution = !pollution; WorkbenchPreferences.pollution(pollution); requestedAt = Long.MIN_VALUE;
+    }
     public void center() {
         if (game.player != null) { centerX = game.player.getX(); centerZ = game.player.getZ(); }
         requestedAt = Long.MIN_VALUE;
@@ -53,22 +60,32 @@ public final class WorldMapView {
         long now = game.level.getGameTime();
         if (requestedAt != Long.MIN_VALUE && now - requestedAt < 20) return;
         requestedAt = now;
-        MapNetwork.request(minX(width), minZ(), maxX(width), maxZ(), step());
+        MapNetwork.request(minX(width), minZ(), maxX(width), maxZ(), step(), pollution);
     }
     private ResourceLocation texture(WorldMapData.ViewTile tile) {
         Page key = new Page(tile.x(), tile.z(), tile.step());
         Texture cached = textures.get(key);
-        if (cached != null && cached.revision == tile.revision()) return cached.id;
+        if (cached != null && cached.revision == tile.revision() && cached.pollution == pollution
+                && (!pollution || cached.pollutionRevision == tile.pollutionRevision())) return cached.id;
         if (cached != null) game.getTextureManager().release(cached.id);
         var image = new NativeImage(16, 16, false);
         for (int z = 0; z < 16; z++) for (int x = 0; x < 16; x++) {
             int rgb = MapPalette.color(tile.pixels()[z * 16 + x] & 255);
+            if (pollution && tile.pixels()[z * 16 + x] != MapPalette.UNKNOWN) rgb = pollutionColor(rgb, tile.pollution()[z * 16 + x] & 255);
             image.setPixelRGBA(x, z, 0xFF000000 | (rgb & 255) << 16 | rgb & 0xFF00 | rgb >> 16 & 255);
         }
         var id = ResourceLocation.fromNamespaceAndPath("conveyance", "map/" + tile.step() + "/" + Long.toHexString(ChunkPos.asLong(tile.x(), tile.z())));
         game.getTextureManager().register(id, new DynamicTexture(image));
-        textures.put(key, new Texture(id, tile.revision()));
+        textures.put(key, new Texture(id, tile.revision(), tile.pollutionRevision(), pollution));
         return id;
+    }
+    private static int pollutionColor(int rgb, int intensity) {
+        if (intensity == 0) return rgb;
+        double alpha = 0.16 + intensity / 255.0 * 0.62;
+        int red = (int) ((rgb >> 16 & 255) * (1 - alpha) + 235 * alpha);
+        int green = (int) ((rgb >> 8 & 255) * (1 - alpha) + 66 * alpha);
+        int blue = (int) ((rgb & 255) * (1 - alpha) + 40 * alpha);
+        return red << 16 | green << 8 | blue;
     }
     public void render(GuiGraphics graphics, int left, int top, int width, int mouseX, int mouseY) {
         int x = canvasX(left), y = canvasY(top), canvasWidth = width - 8;
@@ -117,6 +134,17 @@ public final class WorldMapView {
             graphics.drawString(game.font, label, legendX + 7, top + bodyHeight - 27, 0xFFBCCAD6, false);
             legendX += 12 + game.font.width(label);
         }
+        if (pollution) {
+            Component low = Component.translatable("map.conveyance.pollution_low"), high = Component.translatable("map.conveyance.pollution_high");
+            int total = game.font.width(low) + game.font.width(high) + 50;
+            if (left + width - total - 8 > legendX) {
+                int lx = left + width - total - 8, ly = top + bodyHeight - 27;
+                graphics.drawString(game.font, low, lx, ly, 0xFFBCCAD6, false);
+                lx += game.font.width(low) + 5;
+                for (int i = 0; i < 32; i++) graphics.fill(lx + i, ly + 1, lx + i + 1, ly + 7, 0xFF000000 | pollutionColor(0x202A35, 1 + i * 254 / 31));
+                graphics.drawString(game.font, high, lx + 37, ly, 0xFFBCCAD6, false);
+            }
+        }
         graphics.drawString(game.font, Component.translatable("map.conveyance.controls"), left + 8, top + bodyHeight - 13, 0xFF9CABB8, false);
         if (inside(mouseX, mouseY, left, top, width)) {
             int wx = (int) Math.floor(centerX + (mouseX - x - canvasWidth / 2.0) / zoom);
@@ -124,8 +152,11 @@ public final class WorldMapView {
             var tile = WorldMapData.clientTile(Math.floorDiv(wx, pageBlocks), Math.floorDiv(wz, pageBlocks), step);
             int pixel = Math.floorMod(wz, pageBlocks) / step * 16 + Math.floorMod(wx, pageBlocks) / step;
             int value = tile == null ? MapPalette.UNKNOWN : tile.pixels()[pixel] & 255;
-            if (MapPalette.isResource(value)) graphics.renderComponentTooltip(game.font,
-                    List.of(Component.translatable("map.conveyance." + MapPalette.name(value))), mouseX, mouseY);
+            var tooltip = new ArrayList<Component>();
+            if (MapPalette.isResource(value)) tooltip.add(Component.translatable("map.conveyance." + MapPalette.name(value)));
+            int encoded = pollution && tile != null ? tile.pollution()[pixel] & 255 : 0;
+            if (encoded > 0) tooltip.add(Component.translatable("map.conveyance.pollution_value", encoded == 255 ? "≥100" : "~" + FactoryTooltips.number(PollutionData.decode(encoded))));
+            if (!tooltip.isEmpty()) graphics.renderComponentTooltip(game.font, tooltip, mouseX, mouseY);
         }
         while (textures.size() > 2048) {
             var first = textures.entrySet().iterator().next();

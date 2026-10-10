@@ -1,6 +1,8 @@
 package dev.conveyance.world;
 
 import dev.conveyance.factory.FactoryContent;
+import dev.conveyance.pollution.PollutionData;
+import net.minecraft.server.level.ServerLevel;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
@@ -60,6 +62,10 @@ public final class ForestLogBlock extends Block {
             if (leaf.is(FactoryContent.TREE_LEAVES.get()) && ForestLeavesBlock.root(pos, leaf).equals(root)) {
                 level.setBlock(pos, replacementLeaves(pos, neighbours), 3);
             }
+        }
+        if (level instanceof ServerLevel server && level.dimension() == Level.OVERWORLD) {
+            var chunk = server.getChunkSource().getChunkNow(Math.floorDiv(root.getX(), 16), Math.floorDiv(root.getZ(), 16));
+            if (chunk != null) PollutionData.get(server).observe(chunk, server.getGameTime());
         }
     }
     // A leaf shared by two canopies is reassigned to a standing neighbour when

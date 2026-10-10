@@ -9,6 +9,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.item.ItemStack;
 
 public final class PlayerWorkbenchMenu extends AbstractContainerMenu {
@@ -16,18 +18,36 @@ public final class PlayerWorkbenchMenu extends AbstractContainerMenu {
     private final Player owner;
     private final Container extra;
     private boolean storageVisible = true;
+    private int openingTab;
+    private final ContainerData opening;
     public PlayerWorkbenchMenu(int id, Inventory inventory) {
+        this(id, inventory, 0);
+    }
+    public PlayerWorkbenchMenu(int id, Inventory inventory, int tab) {
         super(FactoryContent.PLAYER_WORKBENCH_MENU.get(), id);
         owner = inventory.player;
-        extra = owner instanceof ServerPlayer ? new ExtraInventory(owner) : new SimpleContainer(36);
-        for (int index = 0; index < 63; index++) {
-            int x = 8 + index % 9 * 18, y = CONTENT_Y + 28 + index / 9 * 18;
-            storageSlot(index < 27 ? inventory : extra, index < 27 ? index + 9 : index - 27, x, y);
+        openingTab = tab;
+        opening = owner instanceof ServerPlayer ? new ContainerData() {
+            @Override public int get(int index) { return openingTab + 1; }
+            @Override public void set(int index, int value) {}
+            @Override public int getCount() { return 1; }
+        } : new SimpleContainerData(1);
+        addDataSlots(opening);
+        extra = ExtraInventory.of(owner);
+        for (int index = 0; index < 72; index++) {
+            int x = 8 + index % 9 * 18, y = CONTENT_Y + 26 + index / 9 * 18;
+            storageSlot(index < 27 || index >= 63 ? inventory : extra, index < 27 ? index + 9 : index >= 63 ? index - 63 : index - 27, x, y);
         }
-        for (int slot = 0; slot < 9; slot++) storageSlot(inventory, slot, 8 + slot * 18, CONTENT_Y + 166);
     }
     public Container extra() { return extra; }
+    public int openingTab() { return opening.get(0) - 1; }
+    public void openTab(int tab) { openingTab = tab; broadcastChanges(); }
     @Override public void clicked(int slot, int button, ClickType type, Player player) {
+        if (type == ClickType.SWAP && slot >= 0 && slot < slots.size() && button >= 0 && button < 9) {
+            ItemStack item = slots.get(slot).getItem();
+            if (!item.isEmpty()) LinkedHotbar.set(player, button, item.getItem());
+            return;
+        }
         InventoryAccess.click(slot, type, () -> super.clicked(slot, button, type, player));
     }
     private void storageSlot(Container container, int index, int x, int y) {
@@ -44,16 +64,14 @@ public final class PlayerWorkbenchMenu extends AbstractContainerMenu {
     @Override public ItemStack quickMoveStack(Player player, int index) {
         Slot slot = slots.get(index);
         if (!slot.hasItem()) return ItemStack.EMPTY;
-        ItemStack stack = slot.getItem(), original = stack.copy();
-        if (index >= 63) {
-            if (!moveItemStackTo(stack, 0, 63, false)) return ItemStack.EMPTY;
-        } else if (!moveItemStackTo(stack, 63, 72, false)) {
-            if (index < 27) { if (!moveItemStackTo(stack, 27, 63, false)) return ItemStack.EMPTY; }
-            else if (!moveItemStackTo(stack, 0, 27, false)) return ItemStack.EMPTY;
+        ItemStack stack = slot.getItem();
+        int target = player.getInventory().selected;
+        for (int link = 0; link < 9; link++) {
+            if (LinkedHotbar.link(player, link).is(stack.getItem())) { target = link; break; }
+            if (LinkedHotbar.link(player, link).isEmpty()) { target = link; break; }
         }
-        if (stack.isEmpty()) slot.set(ItemStack.EMPTY); else slot.setChanged();
-        slot.onTake(player, stack);
-        return original;
+        LinkedHotbar.set(player, target, stack.getItem());
+        return ItemStack.EMPTY;
     }
     @Override public void removed(Player player) {
         if (player instanceof ServerPlayer && player.isAlive() && !getCarried().isEmpty() && InventoryAccess.give(player, getCarried().copy())) setCarried(ItemStack.EMPTY);

@@ -19,6 +19,7 @@ import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import dev.conveyance.factory.FactoryPickups;
+import dev.conveyance.factory.FactoryActions;
 
 public final class PlayerInventoryEvents {
     private static final String PLAYER_THROW = "ConveyancePlayerThrow";
@@ -36,6 +37,8 @@ public final class PlayerInventoryEvents {
         if (event.phase == TickEvent.Phase.END && event.player instanceof ServerPlayer player && player.isAlive()) {
             if (player.level().getGameTime() % 20 == 0) FactoryPickups.normalizeInventory(player);
             InventoryAccess.flushReturns(player);
+            InventorySorting.sort(player);
+            LinkedHotbar.sync(player, false);
         }
     }
     @SubscribeEvent public static void openContainer(PlayerContainerEvent.Open event) {
@@ -50,14 +53,17 @@ public final class PlayerInventoryEvents {
             level.getGameRules().getRule(GameRules.RULE_KEEPINVENTORY).set(true, level.getServer());
     }
     @SubscribeEvent public static void login(PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) InventoryNetwork.sync(player);
+        if (event.getEntity() instanceof ServerPlayer player) { InventoryNetwork.sync(player); LinkedHotbar.sync(player, true); }
     }
     @SubscribeEvent public static void respawn(PlayerEvent.PlayerRespawnEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) InventoryNetwork.sync(player);
+        if (event.getEntity() instanceof ServerPlayer player) { InventoryNetwork.sync(player); LinkedHotbar.sync(player, true); }
     }
     @SubscribeEvent public static void clonePlayer(PlayerEvent.Clone event) {
         if (event.getEntity() instanceof ServerPlayer) {
             event.getEntity().getPersistentData().put(ExtraInventory.DATA_KEY, event.getOriginal().getPersistentData().getCompound(ExtraInventory.DATA_KEY).copy());
+            if (LinkedHotbar.enabled(event.getOriginal())) event.getEntity().getPersistentData().put(LinkedHotbar.DATA_KEY,
+                    event.getOriginal().getPersistentData().getList(LinkedHotbar.DATA_KEY, net.minecraft.nbt.Tag.TAG_STRING).copy());
+            event.getEntity().getPersistentData().putString(FactoryActions.CLIPBOARD_KEY, event.getOriginal().getPersistentData().getString(FactoryActions.CLIPBOARD_KEY));
             event.getEntity().getPersistentData().put(InventoryAccess.RETURNS_KEY,
                     event.getOriginal().getPersistentData().getList(InventoryAccess.RETURNS_KEY, net.minecraft.nbt.Tag.TAG_COMPOUND).copy());
         }

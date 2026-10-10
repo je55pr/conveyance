@@ -2,6 +2,8 @@ package dev.conveyance.factory;
 
 import net.minecraft.core.BlockPos;
 import dev.conveyance.player.ResearchState;
+import dev.conveyance.pollution.PollutionData;
+import dev.conveyance.pollution.PollutionRates;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Container;
@@ -54,6 +56,7 @@ public final class BurnerInserterEntity extends BlockEntity implements Container
             arm.setChanged();
         }
         arm.burnTicks--;
+        PollutionData.emit(level, pos, PollutionRates.of(state.getBlock()));
         if (level.getGameTime() % 20 == 0) arm.setChanged();
         arm.work += ResearchState.inserterSpeed(level);
         if (arm.work + 0.000001 < CYCLE_TICKS) return;

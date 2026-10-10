@@ -10,6 +10,7 @@ import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.inventory.ClickType;
 import dev.conveyance.player.InventoryAccess;
+import dev.conveyance.player.LinkedStorageSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.resources.ResourceLocation;
@@ -36,7 +37,7 @@ public final class ProcessingMenu extends AbstractContainerMenu {
         }
         int inventoryY = kind == MachineKind.ASSEMBLER ? 93 : 84;
         for (int row = 0; row < 3; row++) for (int column = 0; column < 9; column++) addSlot(new Slot(inventory, column + row * 9 + 9, 8 + column * 18, inventoryY + row * 18));
-        for (int column = 0; column < 9; column++) addSlot(new Slot(inventory, column, 8 + column * 18, inventoryY + 58));
+        for (int column = 0; column < 9; column++) addSlot(new LinkedStorageSlot(inventory, column, 8 + column * 18, inventoryY + 58));
         data = machine == null ? new SimpleContainerData(3) : new ContainerData() {
             @Override public int get(int index) { return index == 0 ? machine.fuelRemaining() : index == 1 ? machine.progressPixels() : kind == MachineKind.ASSEMBLER ? machine.selectedRecipeIndex() : -1; }
             @Override public void set(int index, int value) {}
@@ -70,7 +71,7 @@ public final class ProcessingMenu extends AbstractContainerMenu {
     @Override public void removed(Player player) { super.removed(player); container.stopOpen(player); }
     public boolean selectRecipe(Player player, ResourceLocation id) {
         if (machine == null || !assembler() || !stillValid(player) || player.isSpectator()) return false;
-        if (!machine.selectRecipe(id, player.isCreative())) return false;
+        if (!machine.selectRecipe(player, id)) return false;
         broadcastChanges();
         return true;
     }

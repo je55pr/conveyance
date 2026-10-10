@@ -3,6 +3,135 @@
 A standalone industrial overhaul for Minecraft Java Edition **1.20.1**, using
 **Forge 47.4.26** and **Java 17**. No other mods are required.
 
+## Version 0.29.1: research HUD
+
+A compact panel at the top right shows the selected technology's icon and name,
+completed research units, percentage and progress bar. It updates from the same
+shared research state as the labs and technology screen. When no research is
+selected, it shows **Press T to select research**, using the configured technology
+key if rebound. It hides with F1 and returns to the selection prompt on completion.
+
+## Version 0.29.0: pollution simulation, map overlay and smog
+
+The map has a **Pollution: On/Off** button. Red tint shows pollution over explored
+terrain, with stronger areas darker and hovered values shown approximately.
+The setting is remembered; it only hides or shows the layer. Pollution keeps
+simulating and affecting the atmosphere regardless of the map setting.
+
+Pollution is persistent world data, measured per 16x16 Minecraft chunk. Working
+factories add pollution, and once per second each cell sends 2% of its remaining
+pollution to each of its four neighbours. Trees and water consume pollution;
+felling trees immediately reduces their absorption. Loaded environments are
+sampled periodically and saved before unloading, so cleared forests stay cleared
+for the simulation. Unvisited terrain uses our deterministic generator to predict
+natural absorbers without loading or generating Minecraft chunks. Tiny residual
+values are discarded to keep the field sparse. There are no pollution blocks,
+entities, dropped items or particles.
+
+Full-activity rates are 12/min for burner miners, 10/min for electric miners,
+4/min for assemblers and 2/min for stone furnaces, based on the
+[Factorio pollution reference](https://wiki.factorio.com/Pollution).
+Our custom generator emits 30/min at full output, proportional to actual demand,
+and burner inserters emit 1/min. Idle, blocked and unpowered machines do not emit.
+Power-efficiency research also reduces electric miner and assembler emissions.
+Machine item tooltips show the rate from these same definitions. Solar panels,
+electric inserters, labs, radars and belts have no direct emissions.
+
+Prototype absorption is 0.18 units/min per standing tree and 0.006 units/min per
+water column. Increasing local pollution gradually turns the sky and fog greener
+and brings fog closer, with smooth transitions as you move. Night brightness and
+underwater/lava fog remain intact. Visual smog starts above 5 local units and
+reaches full strength at 80; spread and absorption continue in unloaded areas.
+The server exposes queries and consumption for future enemy attack budgets.
+
+Existing worlds start with zero pollution. **No new world is needed.** To preview
+heavy smog immediately in a Creative world with commands enabled, use
+`/conveyance pollution add 400`. `/conveyance pollution get` shows the current
+chunk's level and absorption rate; `/conveyance pollution clear` removes the
+world's pollution. These commands require operator permission. Map protocol 4
+requires matching client/server versions.
+
+## Version 0.28.0: organic terrain and factory clearings
+
+Seas and rivers now follow continuous, warped noise rather than connecting every
+region east/west and north/south. Coastlines are irregular, waterways vary in
+direction and width, and river coverage is sparse enough to leave broad land
+spans. This removes the repeated grid of roughly square islands.
+
+Large clearings suppress both forests and raised walls. Spawn has flat, dry land
+within an 88-block radius and a tree-free core within 64 blocks, with a nearby
+wood grove and small lake outside the initial factory space. Dense forests,
+granite ridges and rocky barriers still occur beyond the clearings.
+
+Starter iron, copper, coal and stone patches sit roughly 45–65 blocks from spawn,
+in separate directions with seed-dependent rotation and spacing. Random deposits
+are excluded from the surrounding 96-block radius so they do not crowd these
+four starters. The four-block terrain cells, three-block elevation steps and
+one-block shallows remain.
+
+Use a **new world** to try the complete layout. Existing generated chunks retain
+their terrain; newly generated chunks use these rules.
+
+## Version 0.27.2: dedicated inventory, map and technology keys
+
+**E** opens Inventory/Crafting, **M** opens the Map and **T** opens Technology.
+Each key chooses its own page instead of restoring the last main tab. The UI tabs
+still switch between pages, and the crafting category is remembered. Pressing a
+page's key again closes it; pressing another page's key switches directly there.
+Shortcuts also work from factory menus, while focused search boxes accept normal
+typing. Cursor items are returned safely before changing pages.
+
+Minecraft chat moves from T to **Enter** when both chat and Technology use their
+default T binding. Custom chat bindings are retained. Map and Technology bindings
+are configurable under Conveyance in Controls. Inventory protocol 8 requires
+matching client and server versions.
+
+## Version 0.27.1: automatic inventory sorting
+
+The player's 72 storage slots automatically merge matching partial stacks and
+sort into resources, intermediates, logistics, production, power, science, tools
+and other items. Families such as conveyors, inserters, crates and miners stay
+together, with full stacks before partial stacks and empty slots at the end.
+Different item tags or tool damage remain separate.
+
+Sorting follows the visual grid in E and runs after inventory changes, including
+crafting, placement, pickups and factory transfers. Holding an item on the cursor
+pauses sorting until it is placed or returned, so drag operations stay stable.
+Hotbar links retain their assignments and total counts; the held item is resolved
+again after reordering.
+
+## Version 0.27.0: linked hotbar and factory shortcuts
+
+The hotbar contains item links. Each icon shows the total stock across the full
+72-slot inventory, and using it automatically draws from the next stack when one
+runs out. Real items stay in storage; assigning or clearing a link does not move
+or discard stock. Links persist across world reloads and respawns. Creative links
+can place items without stock. Normal Q/Ctrl+Q throwing still removes real items.
+
+E shows all 72 storage slots and a separate row of nine links. Drag/click an item
+onto a link, press 1–9 while hovering a stack, or Shift-click a stack to assign it.
+Middle-click a crafting recipe or a placed block to link that item to the selected
+hotbar position. Right-click a link to clear it. Factory menus use the same links
+and total counts in their bottom row.
+
+Crafting recipe left-click makes one batch; right-click makes up to five batches,
+limited by available materials and space. Shift-left-click keeps the existing
+bulk-crafting behaviour. Recursive crafting and Creative free crafting apply to
+all three actions.
+
+In the world, **C** copies an assembler recipe and **V** pastes it. Hold V and sweep
+over a row to paste once per assembler, including when aiming at casing blocks.
+Changing recipes returns incompatible inputs and old output to the inventory;
+if those items cannot fit, the change is declined.
+
+Right-click a furnace, generator, burner miner or burner inserter while fuel is
+selected to fill its fuel slot, drawing from all matching inventory stacks.
+Hold right-click and sweep to fill each machine once. **Ctrl+right-click** collects
+finished furnace/assembler products or crate contents, with the same sweep
+behaviour. Collections leave machine inputs and fuel in place, and any products
+that do not fit remain in the machine. Inventory protocol 7 requires matching
+client/server versions.
+
 ## Version 0.26.0: Factorio building footprints
 
 Electric miners now occupy **3×3** ground blocks rather than 4×4. Their three-block
@@ -674,10 +803,10 @@ structures, or creature generation.
 - The world is 64 blocks high: buildable blocks run from Y=-32 through Y=31.
 - Iron, copper, coal and stone form irregular per-block patches on the Y=0 plains.
   They replace the surface blocks without changing elevation, leaving a level
-  platform for future miners. Patches of all three resources are near spawn;
+  platform for miners. Patches of all four resources are near spawn;
   additional patches are seeded across the world and clipped to dry, flat land.
-- Broad seas are selected by a seeded regional mask. Winding river channels
-  join shared nodes and merge into those seas; a connected river is near spawn.
+- Broad seas use warped, continuous noise. Sparse winding river contours vary
+  in direction and width rather than forming a grid; a small lake is near spawn.
 - Water reaches Y=-1, with its surface at Y=0. A low sandy shore makes the walk
   from base ground into the shallows occur in one-block steps.
 - Shoreline water is one block deep, with its highest seabed block at Y=-2.
@@ -691,13 +820,13 @@ structures, or creature generation.
   (18 blocks). Their crests vary, with tapered ends and gaps through the barriers.
 - All raised terrain uses rock on its sides and top. There are no dirt or grass
   caps on the raised features; dirt/grass remain on the base plains.
-- Spawn has a 32x32 level area, with both kinds of wall nearby for quick feedback.
-  The seed rotates those examples and places more winding walls across the world.
+- Spawn has an 88-block-radius flat, dry area with a 64-block-radius tree-free
+  core. Large clearings across the world also suppress cliffs and forests.
   Players stand at Y=1 on the plain's Y=0 ground.
 - Ground is solid to a three-block bedrock layer at Y=-32. The base contains
   33 blocks / 11 three-block layers of ground. Mountains leave at least 13 blocks
   of building space above them. Horizontal generation remains effectively infinite.
-- The temporary palette is stone, granite, andesite, dirt, coarse dirt, sand and grass tinted by a dry
+- The temporary palette is stone, granite, andesite, dirt, sand and grass tinted by a dry
   **Alien Savannah** biome. These are placeholders for testing geometry.
 - World seeds still vary the terrain. Saving/reloading retains the generator.
 
@@ -757,7 +886,7 @@ Close the previously launched development game, then from PowerShell in this fol
 powershell -ExecutionPolicy Bypass -File .\dev.ps1 runClient
 ```
 
-Open **Mods** to find **Conveyance 0.20.0**, then use an existing ore world or create a
+Open **Mods** to find **Conveyance 0.29.1**, then use an existing ore world or create a
 **new Creative world**.
 The only world type should be **Conveyance**; normal and hidden alternate preset
 lists contain only that preset. Seed entry and game mode remain available.
@@ -766,7 +895,7 @@ world generation Experimental; proceed with the standard confirmation for this
 new test world if shown.
 
 Look around near spawn for iron, copper and coal patches, and granite/rock walls, then follow their routes and
-gaps and the nearby river. F3 identifies the feature, ground height and water
+gaps and nearby water. F3 identifies the feature, ground height and water
 depth. Try walking from dry ground through the sandy shore into shallow water,
 then look for the three-block drop to the next shelf. Try building a large
 foundation and climbing across terrace boundaries. Dig down to check the solid
@@ -784,7 +913,7 @@ and a supplied magical item should disappear on the next player tick.
 powershell -ExecutionPolicy Bypass -File .\dev.ps1 assemble
 ```
 
-The resulting file is `build/libs/conveyance-1.20.1-0.20.0.jar`. Put it in the
+The resulting file is `build/libs/conveyance-1.20.1-0.29.1.jar`. Put it in the
 `mods` folder of a Minecraft 1.20.1 instance with Forge 47.4.26 installed. Replace
 the previous Conveyance jar; do not install both versions together.
 

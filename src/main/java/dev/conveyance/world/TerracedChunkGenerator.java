@@ -62,6 +62,15 @@ public final class TerracedChunkGenerator extends ChunkGenerator {
     }
     private TerracedTerrain terrain(RandomState state) { return context(state).terrain(); }
 
+    public record Environment(int waterColumns, int trees) {}
+    public Environment environment(RandomState state, int chunkX, int chunkZ) {
+        TerrainContext context = context(state);
+        int minX = chunkX * 16, minZ = chunkZ * 16, water = 0;
+        for (int x = 0; x < 16; x += 4) for (int z = 0; z < 16; z += 4)
+            if (context.terrain().cellAt(minX + x, minZ + z).water()) water += 16;
+        return new Environment(water, context.forest().treeCount(minX, minZ));
+    }
+
     public byte[] mapTile(RandomState state, int chunkX, int chunkZ) {
         TerrainContext context = context(state);
         int minX = chunkX * 16, minZ = chunkZ * 16;

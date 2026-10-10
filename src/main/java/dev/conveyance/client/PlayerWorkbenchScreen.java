@@ -5,6 +5,9 @@ import dev.conveyance.player.HandCrafting;
 import dev.conveyance.player.RecipeCosts;
 import dev.conveyance.player.InventoryAccess;
 import dev.conveyance.player.InventoryNetwork;
+import dev.conveyance.player.LinkedHotbar;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.Items;
 import dev.conveyance.player.PlayerWorkbenchMenu;
 import dev.conveyance.player.ResearchState;
 import dev.conveyance.player.Technology;
@@ -29,6 +32,7 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
     private static final List<String> CATEGORIES = RecipePresentation.CATEGORIES;
     private final List<Button> recipeButtons = new ArrayList<>();
     private final List<Button> categoryButtons = new ArrayList<>();
+    private final List<Button> hotbarLinks = new ArrayList<>();
     private final Map<ResourceLocation, Integer> amounts = new HashMap<>();
     private final Map<ResourceLocation, List<ItemStack>> rawCosts = new HashMap<>();
     private List<CraftingRecipe> availableRecipes = List.of();
@@ -37,30 +41,47 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
     private boolean cachedCreative;
     private String category;
     private EditBox search;
-    private Button inventoryTab, researchTab, mapTab, startResearch, fitGraph;
+    private Button inventoryTab, researchTab, mapTab, startResearch, fitGraph, pollutionToggle;
     private final ResearchGraphView graph = new ResearchGraphView();
     private final WorldMapView map = new WorldMapView();
     private boolean researchView, mapView;
     private int scroll, columns, rows;
+    private boolean linkPressed;
+    private int appliedOpeningTab = -1;
     public PlayerWorkbenchScreen(PlayerWorkbenchMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
         category = CATEGORIES.contains(WorkbenchPreferences.category()) ? WorkbenchPreferences.category() : "production";
-        researchView = WorkbenchPreferences.tab() == 1;
-        mapView = WorkbenchPreferences.tab() == 2;
+        int openingTab = WorkbenchNavigation.takeOpeningTab();
+        researchView = openingTab == 1;
+        mapView = openingTab == 2;
         imageWidth = 396; imageHeight = 232;
     }
     @Override protected void init() {
         imageWidth = Math.max(304, width - 24);
-        imageHeight = Math.max(232, height - 24);
+        imageHeight = Math.max(240, height - 24);
         super.init();
         recipeButtons.clear();
         categoryButtons.clear();
+        hotbarLinks.clear();
+        for (int slot = 0; slot < 9; slot++) {
+            final int link = slot;
+            hotbarLinks.add(addRenderableWidget(Button.builder(Component.empty(), button -> {
+                linkPressed = true;
+                var carried = menu.getCarried();
+                if (!carried.isEmpty()) InventoryNetwork.requestLink(menu.containerId, link, BuiltInRegistries.ITEM.getKey(carried.getItem()));
+                else minecraft.player.getInventory().selected = link;
+            }).bounds(leftPos + 8 + slot * 18, topPos + CONTENT + 184, 18, 18).build()));
+        }
         int panelWidth = imageWidth - RIGHT;
         inventoryTab = addRenderableWidget(Button.builder(Component.translatable("menu.conveyance.inventory_tab"), button -> tab(0)).bounds(leftPos, topPos, 134, 20).build());
         researchTab = addRenderableWidget(Button.builder(Component.translatable("menu.conveyance.research_tab"), button -> tab(1)).bounds(leftPos + 138, topPos, 74, 20).build());
         mapTab = addRenderableWidget(Button.builder(Component.translatable("menu.conveyance.map_tab"), button -> tab(2)).bounds(leftPos + 216, topPos, 44, 20).build());
         fitGraph = addRenderableWidget(Button.builder(Component.translatable("menu.conveyance.tree_fit"), button -> { if (mapView) map.center(); else graph.fit(imageWidth); }).bounds(leftPos + imageWidth - 40, topPos, 40, 20).build());
         graph.resize(imageWidth, bodyHeight());
+        pollutionToggle = addRenderableWidget(Button.builder(map.pollutionLabel(), button -> {
+            map.togglePollution(); button.setMessage(map.pollutionLabel());
+        }).bounds(leftPos + 48, topPos + CONTENT + 3, 88, 16).build());
+        pollutionToggle.setTooltip(Tooltip.create(Component.translatable("map.conveyance.pollution_toggle")));
         int categoryWidth = (panelWidth - 16) / CATEGORIES.size();
         for (int index = 0; index < CATEGORIES.size(); index++) {
             String selected = CATEGORIES.get(index);
@@ -89,7 +110,9 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
         refresh();
     }
     private int bodyHeight() { return imageHeight - CONTENT; }
-    private void remember() { WorkbenchPreferences.remember(mapView ? 2 : researchView ? 1 : 0, category); }
+    private void remember() { WorkbenchPreferences.remember(category); }
+    public int selectedTab() { return mapView ? 2 : researchView ? 1 : 0; }
+    public void openTab(int selected) { tab(selected); }
     private void tab(int selected) {
         if (!menu.getCarried().isEmpty()) return;
         researchView = selected == 1;
@@ -149,11 +172,13 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
         researchTab.active = !researchView && menu.getCarried().isEmpty();
         mapTab.active = !mapView && menu.getCarried().isEmpty();
         search.setVisible(inventoryView);
+        hotbarLinks.forEach(button -> button.visible = inventoryView);
         for (int i = 0; i < categoryButtons.size(); i++) {
             categoryButtons.get(i).visible = inventoryView;
             categoryButtons.get(i).active = !CATEGORIES.get(i).equals(category);
         }
         fitGraph.visible = researchView || mapView;
+        pollutionToggle.visible = mapView;
         fitGraph.setMessage(Component.translatable(mapView ? "map.conveyance.center" : "menu.conveyance.tree_fit"));
         startResearch.visible = researchView;
         Technology tech = Technology.byId(graph.inspected());
@@ -170,7 +195,15 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
         }
     }
     private int maxScroll(int count) { return Math.max(0, count - rows); }
-    @Override protected void containerTick() { super.containerTick(); search.tick(); refresh(); if (mapView) map.tick(imageWidth); }
+    @Override protected void containerTick() {
+        super.containerTick(); search.tick();
+        int openingTab = menu.openingTab();
+        if (openingTab >= 0 && openingTab != appliedOpeningTab && menu.getCarried().isEmpty()) {
+            appliedOpeningTab = openingTab;
+            if (openingTab != selectedTab()) tab(openingTab);
+        }
+        refresh(); if (mapView) map.tick(imageWidth);
+    }
     @Override public void removed() { map.close(); super.removed(); }
     @Override protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + 21, 0xFF202A35);
@@ -194,8 +227,7 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
         if (researchView || mapView) return;
         graphics.drawString(font, Component.translatable("menu.conveyance.inventory"), 8, CONTENT + 7, 0xFFE7EEF6, false);
         graphics.drawString(font, Component.translatable("menu.conveyance.handcrafting"), RIGHT + 8, CONTENT + 7, 0xFFE7EEF6, false);
-        graphics.drawString(font, Component.translatable("menu.conveyance.hotbar"), 8, CONTENT + 155, 0xFF9CABB8, false);
-        graphics.drawString(font, Component.translatable("menu.conveyance.storage_size"), 8, CONTENT + 193, 0xFF9CABB8, false);
+        graphics.drawString(font, Component.translatable("menu.conveyance.hotbar_links"), 8, CONTENT + 171, 0xFF9CABB8, false);
     }
     @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         refresh();
@@ -238,7 +270,12 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
             graphics.drawString(font, amount, -font.width(amount), 0, button.active ? 0xFF8AD8A0 : 0xFF94A0AD, true);
             graphics.pose().popPose();
         }
+        for (int slot = 0; slot < hotbarLinks.size(); slot++) {
+            Button button = hotbarLinks.get(slot);
+            HotbarLinksView.cell(graphics, slot, button.getX(), button.getY(), 18);
+        }
         renderTooltip(graphics, mouseX, mouseY);
+        if (menu.getCarried().isEmpty()) for (int slot = 0; slot < hotbarLinks.size(); slot++) if (over(hotbarLinks.get(slot), mouseX, mouseY)) HotbarLinksView.tooltip(graphics, slot, mouseX, mouseY);
         for (int cell = 0; cell < recipeButtons.size(); cell++) {
             if (over(recipeButtons.get(cell), mouseX, mouseY)) {
                 CraftingRecipe recipe = recipeAt(cell, groups);
@@ -255,6 +292,28 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
     }
     private static boolean over(Button button, double x, double y) { return button.visible && x >= button.getX() && x < button.getX() + button.getWidth() && y >= button.getY() && y < button.getY() + button.getHeight(); }
     @Override public boolean mouseClicked(double x, double y, int button) {
+        linkPressed = false;
+        if (!mapView && !researchView && button == 1) {
+            for (int slot = 0; slot < hotbarLinks.size(); slot++) if (over(hotbarLinks.get(slot), x, y)) {
+                InventoryNetwork.requestLink(menu.containerId, slot, BuiltInRegistries.ITEM.getKey(Items.AIR));
+                return true;
+            }
+            var groups = grouped();
+            for (int cell = 0; cell < recipeButtons.size(); cell++) if (over(recipeButtons.get(cell), x, y)) {
+                CraftingRecipe recipe = recipeAt(cell, groups);
+                if (recipe != null && recipeButtons.get(cell).active) InventoryNetwork.requestFive(recipe.getId());
+                return true;
+            }
+        }
+        if (!mapView && !researchView && button == 2) {
+            var groups = grouped();
+            for (int cell = 0; cell < recipeButtons.size(); cell++) if (over(recipeButtons.get(cell), x, y)) {
+                CraftingRecipe recipe = recipeAt(cell, groups);
+                if (recipe != null) InventoryNetwork.requestLink(menu.containerId, minecraft.player.getInventory().selected,
+                        BuiltInRegistries.ITEM.getKey(recipe.getResultItem(minecraft.level.registryAccess()).getItem()));
+                return true;
+            }
+        }
         if (mapView && map.click(x, y, button, leftPos, topPos + CONTENT, imageWidth)) return true;
         if (researchView && graph.click(x, y, button, leftPos, topPos + CONTENT, imageWidth)) { refresh(); return true; }
         return super.mouseClicked(x, y, button);
@@ -263,6 +322,14 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
         return mapView && map.drag(deltaX, deltaY) || researchView && graph.drag(deltaX, deltaY) || super.mouseDragged(x, y, button, deltaX, deltaY);
     }
     @Override public boolean mouseReleased(double x, double y, int button) {
+        if (!mapView && !researchView && button == 0 && !linkPressed && !menu.getCarried().isEmpty()) {
+            for (int slot = 0; slot < hotbarLinks.size(); slot++) if (over(hotbarLinks.get(slot), x, y)) {
+                InventoryNetwork.requestLink(menu.containerId, slot, BuiltInRegistries.ITEM.getKey(menu.getCarried().getItem()));
+                super.mouseReleased(x, y, button);
+                return true;
+            }
+        }
+        linkPressed = false;
         return mapView && map.release() || researchView && graph.release() || super.mouseReleased(x, y, button);
     }
     @Override public boolean mouseScrolled(double x, double y, double amount) {

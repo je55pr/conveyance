@@ -20,7 +20,9 @@ import net.minecraft.world.level.saveddata.SavedData;
 /** One shared, persistent explored map. Sampling distant terrain never loads chunks. */
 public final class WorldMapData extends SavedData {
     public record Tile(int x, int z, long revision, byte[] pixels) {}
-    public record ViewTile(int x, int z, int step, long revision, byte[] pixels) {}
+    public record ViewTile(int x, int z, int step, long revision, byte[] pixels, long pollutionRevision, byte[] pollution) {
+        public ViewTile(int x, int z, int step, long revision, byte[] pixels) { this(x, z, step, revision, pixels, 0, new byte[256]); }
+    }
     private final Map<Long, Tile> tiles = new HashMap<>();
     private final Set<Long> radars = new HashSet<>();
     private long revision;

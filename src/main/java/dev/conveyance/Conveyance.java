@@ -15,6 +15,7 @@ import dev.conveyance.player.TerrainHarvest;
 import dev.conveyance.player.ResearchState;
 import dev.conveyance.map.MapExploration;
 import dev.conveyance.map.MapNetwork;
+import dev.conveyance.pollution.PollutionEvents;
 
 @Mod(Conveyance.MOD_ID)
 public final class Conveyance {
@@ -30,6 +31,7 @@ public final class Conveyance {
         InventoryNetwork.register();
         MapNetwork.register();
         MinecraftForge.EVENT_BUS.register(MapExploration.class);
+        MinecraftForge.EVENT_BUS.register(PollutionEvents.class);
         MinecraftForge.EVENT_BUS.addListener(ResearchState::registerCommands);
         MinecraftForge.EVENT_BUS.register(PlayerInventoryEvents.class);
         MinecraftForge.EVENT_BUS.register(StarterSupplies.class);
