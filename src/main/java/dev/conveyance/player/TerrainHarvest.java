@@ -39,7 +39,8 @@ public final class TerrainHarvest {
     }
     public static void harvest(ServerPlayer player, BlockPos pos) {
         if (!player.isAlive() || player.isSpectator() || !player.getAbilities().mayBuild
-                || !player.level().hasChunkAt(pos) || pos.distToCenterSqr(player.getEyePosition()) > 36) return;
+                || !player.level().hasChunkAt(pos) || !player.level().mayInteract(player, pos)
+                || !dev.conveyance.factory.RemoteBuilding.canReach(player, pos) && pos.distToCenterSqr(player.getEyePosition()) > 36) return;
         long now = player.level().getGameTime();
         long previous = player.getPersistentData().getLong("ConveyanceHarvestTime");
         if (now - previous < 18) return;

@@ -4,6 +4,7 @@ import dev.conveyance.Conveyance;
 import dev.conveyance.player.InventoryNetwork;
 import dev.conveyance.player.ResearchState;
 import dev.conveyance.player.TerrainHarvest;
+import dev.conveyance.player.HandCraftingQueue;
 import dev.conveyance.map.WorldMapData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
@@ -30,7 +31,7 @@ public final class PlayerInventoryHooks {
             }
         }
     }
-    @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) { ResearchState.updateClient(0); WorldMapData.resetClient(); target = null; work = 0; }
+    @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) { ResearchState.updateClient(0); WorldMapData.resetClient(); HandCraftingQueue.resetClient(); target = null; work = 0; }
     @SubscribeEvent public static void harvest(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         var game = Minecraft.getInstance();

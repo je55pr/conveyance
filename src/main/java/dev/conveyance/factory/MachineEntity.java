@@ -10,6 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
@@ -23,6 +24,7 @@ import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 
 public final class MachineEntity extends PoweredMachineEntity implements Container, MenuProvider, PowerProducer {
     public static final int SOLAR_PEAK_KW = 60;
@@ -36,6 +38,8 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
     private boolean creativeRecipe;
     private int burnTicks, cookingTime = 64, cursor, labResearch;
     private double coalWork;
+    private final DrillMotion drill = new DrillMotion(this);
+    public DrillMotion drillMotion() { return drill; }
 
     public MachineEntity(BlockPos pos, BlockState state) {
         super(FactoryContent.MACHINE_ENTITY.get(), pos, state,
@@ -94,7 +98,17 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
         boolean lit = machine.kind() == MachineKind.SOLAR_PANEL ? machine.outputPower() > 0 : machine.kind() == MachineKind.LAB
                 ? machine.hasScience(Technology.byId(ResearchState.selected(level))) && PowerNetwork.fraction(level, pos) > 0
                 : machine.kind() != MachineKind.ASSEMBLER && machine.burnTicks > 0;
-        if (state.getValue(MachineBlock.LIT) != lit) level.setBlockAndUpdate(pos, state.setValue(MachineBlock.LIT, lit));
+        if (state.getValue(MachineBlock.LIT) != lit || level.getGameTime() % 20 == 0) {
+            var facing = state.getValue(MachineBlock.FACING);
+            for (int part = 0; part < machine.kind().parts(); part++) {
+                BlockPos target = MachineBlock.partPosition(pos, facing, machine.kind(), part);
+                if (!level.hasChunkAt(target)) continue;
+                BlockState current = level.getBlockState(target);
+                if (MachineBlock.kind(current) == machine.kind() && current.getValue(MachineBlock.PART) == part
+                        && current.getValue(MachineBlock.FACING) == facing && current.getValue(MachineBlock.LIT) != lit)
+                    level.setBlockAndUpdate(target, current.setValue(MachineBlock.LIT, lit));
+            }
+        }
     }
     private boolean burn(int slot) {
         if (burnTicks == 0) {
@@ -111,7 +125,8 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
     private void mine() {
         var facing = getBlockState().getValue(MachineBlock.FACING);
         var resource = MiningResources.find(level, 4, cursor, part -> MachineBlock.partPosition(worldPosition, facing, kind(), part).below());
-        if (resource.stack().isEmpty() || !ItemTransfer.canOutput(level, worldPosition.relative(facing), facing.getOpposite(), resource.stack(), true) || !burn(0)) return;
+        if (resource.stack().isEmpty() || !ItemTransfer.canOutput(level, worldPosition.relative(facing), facing.getOpposite(), resource.stack(), true) || !burn(0)) { drill.capture(0); return; }
+        drill.capture(12 * ResearchState.miningSpeed(level));
         coalWork += ResearchState.miningSpeed(level);
         if (coalWork + 0.000001 < kind().cycleTicks) return;
         if (ItemTransfer.output(level, worldPosition.relative(facing), facing.getOpposite(), resource.stack(), true)) {
@@ -136,12 +151,7 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
         setChanged();
     }
     public CraftingRecipe selectedRecipe() {
-        if (selectedRecipe == null) {
-            var recipes = AssemblyRecipes.available(level);
-            if (recipes.isEmpty()) return null;
-            selectedRecipe = recipes.stream().filter(recipe -> recipe.getId().getPath().equals("conveyor")).findFirst().orElse(recipes.get(0)).getId();
-            setChanged();
-        }
+        if (selectedRecipe == null) return null;
         if (!creativeRecipe && !ResearchState.recipeUnlocked(selectedRecipe, ResearchState.mask(level))) return null;
         var recipe = level.getRecipeManager().byKey(selectedRecipe).orElse(null);
         return recipe instanceof CraftingRecipe crafting ? crafting : null;
@@ -273,7 +283,7 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
     @Override public ItemStack removeItemNoUpdate(int slot) { return ContainerHelper.takeItem(items, slot); }
     @Override public void setItem(int slot, ItemStack stack) { items.set(slot, stack); setChanged(); }
     @Override public void clearContent() { items.clear(); setChanged(); }
-    @Override public boolean stillValid(Player player) { return !isRemoved() && player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) < 100; }
+    @Override public boolean stillValid(Player player) { return !isRemoved() && (RemoteBuilding.canReach(player, worldPosition) || player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) < 100); }
     @Override public Component getDisplayName() { return Component.translatable("block.conveyance." + kind().id); }
     @Override public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         if (kind() == MachineKind.SOLAR_PANEL) return null;
@@ -301,5 +311,13 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
         selectedRecipe = tag.contains("SelectedRecipe") ? ResourceLocation.tryParse(tag.getString("SelectedRecipe")) : null;
         creativeRecipe = tag.getBoolean("CreativeRecipe");
         smeltingRecipe = tag.contains("SmeltingRecipe") ? ResourceLocation.tryParse(tag.getString("SmeltingRecipe")) : null;
+        drill.read(tag);
+    }
+    @Override public CompoundTag getUpdateTag() { var tag = saveWithoutMetadata(); drill.write(tag); return tag; }
+    @Override public ClientboundBlockEntityDataPacket getUpdatePacket() { return ClientboundBlockEntityDataPacket.create(this); }
+    @Override public AABB getRenderBoundingBox() {
+        BlockPos far = MachineBlock.partPosition(worldPosition, getBlockState().getValue(MachineBlock.FACING), kind(), kind().parts() - 1);
+        return new AABB(Math.min(worldPosition.getX(), far.getX()), worldPosition.getY(), Math.min(worldPosition.getZ(), far.getZ()),
+                Math.max(worldPosition.getX(), far.getX()) + 1, worldPosition.getY() + kind().height, Math.max(worldPosition.getZ(), far.getZ()) + 1);
     }
 }

@@ -1,6 +1,7 @@
 {
   "type": "conveyance:factory_crafting",
   "tab": "power",
+  "crafting_time": 10,
   "ingredients": [
     {
       "item": "conveyance:steel_ingot",

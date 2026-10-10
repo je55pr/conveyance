@@ -1,6 +1,7 @@
 {
   "type": "conveyance:factory_crafting",
   "tab": "production",
+  "crafting_time": 1,
   "ingredients": [
     {
       "item": "minecraft:iron_ingot",

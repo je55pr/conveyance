@@ -37,6 +37,7 @@ public final class PlayerInventoryEvents {
         if (event.phase == TickEvent.Phase.END && event.player instanceof ServerPlayer player && player.isAlive()) {
             if (player.level().getGameTime() % 20 == 0) FactoryPickups.normalizeInventory(player);
             InventoryAccess.flushReturns(player);
+            HandCraftingQueue.tick(player);
             InventorySorting.sort(player);
             LinkedHotbar.sync(player, false);
         }
@@ -53,13 +54,14 @@ public final class PlayerInventoryEvents {
             level.getGameRules().getRule(GameRules.RULE_KEEPINVENTORY).set(true, level.getServer());
     }
     @SubscribeEvent public static void login(PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) { InventoryNetwork.sync(player); LinkedHotbar.sync(player, true); }
+        if (event.getEntity() instanceof ServerPlayer player) { LinkedHotbar.select(player, 0); InventoryNetwork.sync(player); LinkedHotbar.sync(player, true); HandCraftingQueue.sync(player); }
     }
     @SubscribeEvent public static void respawn(PlayerEvent.PlayerRespawnEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) { InventoryNetwork.sync(player); LinkedHotbar.sync(player, true); }
+        if (event.getEntity() instanceof ServerPlayer player) { LinkedHotbar.select(player, 0); InventoryNetwork.sync(player); LinkedHotbar.sync(player, true); HandCraftingQueue.sync(player); }
     }
     @SubscribeEvent public static void clonePlayer(PlayerEvent.Clone event) {
         if (event.getEntity() instanceof ServerPlayer) {
+            HandCraftingQueue.clonePlayer(event.getOriginal(), event.getEntity());
             event.getEntity().getPersistentData().put(ExtraInventory.DATA_KEY, event.getOriginal().getPersistentData().getCompound(ExtraInventory.DATA_KEY).copy());
             if (LinkedHotbar.enabled(event.getOriginal())) event.getEntity().getPersistentData().put(LinkedHotbar.DATA_KEY,
                     event.getOriginal().getPersistentData().getList(LinkedHotbar.DATA_KEY, net.minecraft.nbt.Tag.TAG_STRING).copy());

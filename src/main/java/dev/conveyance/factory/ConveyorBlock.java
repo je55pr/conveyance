@@ -73,6 +73,7 @@ public class ConveyorBlock extends FactoryBlock {
         return shapes;
     }
     private static boolean incoming(Level level, BlockPos pos, Direction side) {
+        if (!level.hasChunkAt(pos.relative(side))) return false;
         ConveyorEntity belt = ConveyorEntity.outletAt(level, pos.relative(side));
         if (belt != null && belt.configured() && belt.outputPosition().equals(pos)) return true;
         BlockState state = level.getBlockState(pos.relative(side));

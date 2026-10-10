@@ -57,6 +57,7 @@ public final class ConveyorItem extends BlockItem {
         return null;
     }
     @Override public BlockPlaceContext updatePlacementContext(BlockPlaceContext context) {
+        if (context instanceof RemotePlacementContext) return context;
         if (context.getPlayer() == null) return context;
         boolean ramp = getBlock() instanceof SlopeConveyorBlock;
         BlockPos clicked = context.replacingClickedOnBlock() ? context.getClickedPos() : context.getClickedPos().relative(context.getClickedFace().getOpposite());

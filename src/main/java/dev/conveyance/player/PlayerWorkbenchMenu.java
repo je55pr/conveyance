@@ -14,7 +14,7 @@ import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.item.ItemStack;
 
 public final class PlayerWorkbenchMenu extends AbstractContainerMenu {
-    public static final int CONTENT_Y = 24;
+    public static final int CONTENT_Y = PlayerStorageLayout.CONTENT_Y;
     private final Player owner;
     private final Container extra;
     private boolean storageVisible = true;
@@ -34,10 +34,7 @@ public final class PlayerWorkbenchMenu extends AbstractContainerMenu {
         } : new SimpleContainerData(1);
         addDataSlots(opening);
         extra = ExtraInventory.of(owner);
-        for (int index = 0; index < 72; index++) {
-            int x = 8 + index % 9 * 18, y = CONTENT_Y + 26 + index / 9 * 18;
-            storageSlot(index < 27 || index >= 63 ? inventory : extra, index < 27 ? index + 9 : index >= 63 ? index - 63 : index - 27, x, y);
-        }
+        PlayerStorageLayout.addSlots(inventory, extra, this::addSlot, () -> storageVisible);
     }
     public Container extra() { return extra; }
     public int openingTab() { return opening.get(0) - 1; }
@@ -45,13 +42,10 @@ public final class PlayerWorkbenchMenu extends AbstractContainerMenu {
     @Override public void clicked(int slot, int button, ClickType type, Player player) {
         if (type == ClickType.SWAP && slot >= 0 && slot < slots.size() && button >= 0 && button < 9) {
             ItemStack item = slots.get(slot).getItem();
-            if (!item.isEmpty()) LinkedHotbar.set(player, button, item.getItem());
+            if (!item.isEmpty()) LinkedHotbar.set(player, button + 1, item.getItem());
             return;
         }
         InventoryAccess.click(slot, type, () -> super.clicked(slot, button, type, player));
-    }
-    private void storageSlot(Container container, int index, int x, int y) {
-        addSlot(new Slot(container, index, x, y) { @Override public boolean isActive() { return storageVisible; } });
     }
     public void showStorage(boolean visible) { storageVisible = visible; }
     public int researchMask() { return ResearchState.mask(owner.level()); }
@@ -65,8 +59,8 @@ public final class PlayerWorkbenchMenu extends AbstractContainerMenu {
         Slot slot = slots.get(index);
         if (!slot.hasItem()) return ItemStack.EMPTY;
         ItemStack stack = slot.getItem();
-        int target = player.getInventory().selected;
-        for (int link = 0; link < 9; link++) {
+        int target = LinkedHotbar.bindingSlot(player);
+        for (int link = 1; link < LinkedHotbar.SIZE; link++) {
             if (LinkedHotbar.link(player, link).is(stack.getItem())) { target = link; break; }
             if (LinkedHotbar.link(player, link).isEmpty()) { target = link; break; }
         }

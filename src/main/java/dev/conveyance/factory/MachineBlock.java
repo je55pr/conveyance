@@ -44,7 +44,7 @@ public final class MachineBlock extends FactoryBlock {
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(PART, FACING, LIT); }
     @Override public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
     @Override public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return kind == MachineKind.SOLAR_PANEL ? Block.box(0, 0, 0, 16, 4, 16) : super.getShape(state, level, pos, context);
+        return FactoryGeometry.shape(kind.id, state.getValue(PART), state.getValue(FACING));
     }
     @Override public BlockEntity newBlockEntity(BlockPos pos, BlockState state) { return state.getValue(PART) == 0 ? new MachineEntity(pos, state) : null; }
     @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {

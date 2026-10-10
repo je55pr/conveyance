@@ -4,26 +4,21 @@ import dev.conveyance.Conveyance;
 import dev.conveyance.factory.FactoryContent;
 import dev.conveyance.factory.GeneratorMenu;
 import dev.conveyance.factory.MachineEntity;
-import dev.conveyance.player.ResearchState;
 import dev.conveyance.player.Technology;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.MenuScreens;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 
 @Mod.EventBusSubscriber(modid = Conveyance.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-public final class GeneratorScreen extends AbstractContainerScreen<GeneratorMenu> {
-    private static final ResourceLocation TEXTURE = new ResourceLocation("minecraft", "textures/gui/container/generic_54.png");
+public final class GeneratorScreen extends FactoryWindowScreen<GeneratorMenu> {
     public GeneratorScreen(GeneratorMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
-        imageHeight = 131;
-        inventoryLabelY = 37;
     }
     @SubscribeEvent public static void setup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
@@ -36,45 +31,38 @@ public final class GeneratorScreen extends AbstractContainerScreen<GeneratorMenu
             MenuScreens.register(FactoryContent.IRON_CRATE_MENU.get(), CrateScreen::new);
         });
     }
-    @Override protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-        graphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, 35);
-        graphics.fill(leftPos + 7, topPos + 17, leftPos + 169, topPos + 35, 0xFFC6C6C6);
+    @Override protected int compactMachineWidth() { return FactoryWindowStyle.FUEL_PANEL_WIDTH; }
+    @Override protected Component machinePanelTitle() {
+        return Component.translatable(menu.lab() ? "menu.conveyance.science" : "menu.conveyance.fuel");
+    }
+    @Override protected void renderMachine(GuiGraphics graphics, float partialTick) {
         if (menu.lab()) {
-            graphics.blit(TEXTURE, leftPos + 61, topPos + 17, 7, 17, 18, 18);
-            graphics.blit(TEXTURE, leftPos + 97, topPos + 17, 7, 17, 18, 18);
-            if (!menu.getSlot(0).hasItem()) graphics.drawString(font, "R", leftPos + 67, topPos + 22, 0xFFAA4444, false);
-            if (!menu.getSlot(1).hasItem()) graphics.drawString(font, "G", leftPos + 103, topPos + 22, 0xFF448844, false);
-        } else graphics.blit(TEXTURE, leftPos + 79, topPos + 17, 7, 17, 18, 18);
-        graphics.blit(TEXTURE, leftPos, topPos + 35, 0, 126, imageWidth, 96);
-    }
-    @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
-        super.render(graphics, mouseX, mouseY, partialTick);
-        renderTooltip(graphics, mouseX, mouseY);
-        var status = menu.minerStatus();
-        if (status != null && mouseX >= leftPos + 104 && mouseX < leftPos + 170 && mouseY >= topPos + 17 && mouseY < topPos + 35)
-            graphics.renderTooltip(font, font.split(status.description(), 220), mouseX, mouseY);
-    }
-    @Override protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        super.renderLabels(graphics, mouseX, mouseY);
-        if (!menu.lab()) {
-            graphics.drawString(font, Component.translatable("menu.conveyance.fuel_seconds", (menu.fuelRemaining() + 19) / 20), 8, 20, 0x404040, false);
+            hint(graphics, 0, new ItemStack(FactoryContent.RED_SCIENCE_ITEM.get()));
+            hint(graphics, 1, new ItemStack(FactoryContent.GREEN_SCIENCE_ITEM.get()));
+            Technology tech = Technology.byId(menu.researchTarget());
+            text(graphics, tech == null ? Component.translatable("research.conveyance.idle") : tech.shortName(), RIGHT + 8, 102, FactoryWindowStyle.TEXT);
+            text(graphics, Component.literal(menu.scienceDone() + " / " + menu.scienceRequired()), RIGHT + 8, 130, FactoryWindowStyle.MUTED);
+            FactoryWindowStyle.progress(graphics, leftPos + RIGHT + 8, topPos + 148, machineWidth() - 16, 6,
+                    menu.scienceProgress() / 24F, FactoryWindowStyle.ACCENT);
+        } else {
+            hint(graphics, 0, new ItemStack(net.minecraft.world.item.Items.COAL));
+            text(graphics, Component.translatable("menu.conveyance.fuel_seconds", (menu.fuelRemaining() + 19) / 20), RIGHT + 32, 74, FactoryWindowStyle.MUTED);
             var status = menu.minerStatus();
             if (status != null) {
-                graphics.drawString(font, status.label(), 108, 20, status == MachineEntity.MiningStatus.MINING ? 0x226633 : 0x995522, false);
-                graphics.fill(108, 31, 166, 34, 0xFF777777);
-                graphics.fill(108, 31, 108 + 58 * menu.miningProgress() / 24, 34, 0xFF338844);
+                text(graphics, status.label(), RIGHT + 8, 112, status == MachineEntity.MiningStatus.MINING ? FactoryWindowStyle.ACCENT : FactoryWindowStyle.WARNING);
+                FactoryWindowStyle.progress(graphics, leftPos + RIGHT + 8, topPos + 140, machineWidth() - 16, 6,
+                        menu.miningProgress() / 24F, FactoryWindowStyle.ACCENT);
             } else if (menu.generator()) {
-                graphics.drawString(font, menu.generatorOutput() == 0 ? Component.translatable("menu.conveyance.generator_idle")
-                        : Component.translatable("menu.conveyance.generator_output", menu.generatorOutput()), 108, 20,
-                        menu.generatorOutput() == 0 ? 0x995522 : 0x226633, false);
+                text(graphics, menu.generatorOutput() == 0 ? Component.translatable("menu.conveyance.generator_idle")
+                        : Component.translatable("menu.conveyance.generator_output", menu.generatorOutput()), RIGHT + 8, 112,
+                        menu.generatorOutput() == 0 ? FactoryWindowStyle.MUTED : FactoryWindowStyle.ACCENT);
             }
-            return;
         }
-        Technology tech = Technology.byId(menu.researchTarget());
-        graphics.drawString(font, tech == null ? Component.translatable("research.conveyance.idle") : tech.shortName(), 8, 20, 0x404040, false);
-        graphics.drawString(font, menu.scienceDone() + "/" + menu.scienceRequired(), 124, 20, 0x404040, false);
-        graphics.fill(8, 31, 57, 34, 0xFF666666);
-        graphics.fill(8, 31, 8 + 49 * menu.scienceProgress() / 24, 34, tech != null && tech.green ? 0xFF448844 : 0xFFBB4444);
+    }
+    @Override protected void renderMachineTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+        var status = menu.minerStatus();
+        if (status != null && mouseX >= leftPos + RIGHT + 8 && mouseX < leftPos + imageWidth - 8
+                && mouseY >= topPos + 108 && mouseY < topPos + 148)
+            graphics.renderTooltip(font, font.split(status.description(), 220), mouseX, mouseY);
     }
 }

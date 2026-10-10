@@ -1,10 +1,12 @@
 {
   "variants": {
     "lit=false": {
-      "model": "conveyance:block/generator"
+      "model": "conveyance:block/machines/generator/part_0",
+      "y": 0
     },
     "lit=true": {
-      "model": "conveyance:block/generator_on"
+      "model": "conveyance:block/machines/generator/part_0_on",
+      "y": 0
     }
   }
 }

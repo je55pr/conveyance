@@ -13,6 +13,7 @@ import net.minecraft.world.inventory.ClickType;
 
 public final class InventoryAccess {
     public static final String RETURNS_KEY = "ConveyanceInventoryReturns";
+    public static final int SIZE = PlayerStorageLayout.SIZE;
     private static final ThreadLocal<Boolean> THROW_CLICK = new ThreadLocal<>();
     public static void click(int slot, ClickType type, Runnable action) {
         Boolean previous = THROW_CLICK.get();
@@ -24,9 +25,9 @@ public final class InventoryAccess {
         return ExtraInventory.of(player);
     }
     public static List<ItemStack> snapshot(Player player, Container extra) {
-        var result = new ArrayList<ItemStack>(72);
+        var result = new ArrayList<ItemStack>(SIZE);
         for (int slot = 0; slot < 36; slot++) result.add(player.getInventory().getItem(slot).copy());
-        for (int slot = 0; slot < 36; slot++) result.add(extra.getItem(slot).copy());
+        for (int slot = 0; slot < ExtraInventory.SIZE; slot++) result.add(extra.getItem(slot).copy());
         return result;
     }
     public static boolean insert(List<ItemStack> items, ItemStack offered) {
@@ -50,8 +51,8 @@ public final class InventoryAccess {
     public static void commit(Player player, Container extra, List<ItemStack> items) {
         for (int slot = 0; slot < 36; slot++) player.getInventory().setItem(slot, items.get(slot));
         player.getInventory().setChanged();
-        if (extra instanceof ExtraInventory stored) stored.replace(items.subList(36, 72));
-        else for (int slot = 0; slot < 36; slot++) extra.setItem(slot, items.get(slot + 36));
+        if (extra instanceof ExtraInventory stored) stored.replace(items.subList(36, SIZE));
+        else for (int slot = 0; slot < ExtraInventory.SIZE; slot++) extra.setItem(slot, items.get(slot + 36));
     }
     public static boolean give(Player player, ItemStack stack) {
         Container extra = extra(player);

@@ -8,7 +8,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.entity.ItemRenderer;
-import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -26,8 +25,7 @@ public final class JunctionRenderer implements BlockEntityRenderer<JunctionEntit
             if (junction.item(slot).isEmpty()) continue;
             pose.pushPose();
             pose.translate(junction.renderX(slot, partialTick), 0.54, junction.renderZ(slot, partialTick));
-            pose.scale(0.38F, 0.38F, 0.38F);
-            items.renderStatic(junction.item(slot), ItemDisplayContext.GROUND, light, overlay, pose, buffers, junction.getLevel(), slot);
+            BeltItemRenderer.render(items, junction.item(slot), junction.getLevel(), slot, pose, buffers, light, overlay);
             pose.popPose();
         }
     }

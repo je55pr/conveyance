@@ -13,8 +13,8 @@ import net.minecraft.world.item.ItemStack;
 
 public final class ExtraInventory extends SimpleContainer {
     public static final String DATA_KEY = "ConveyanceStorage";
-    public static final int SIZE = 36;
-    private static final Map<Player, ExtraInventory> STORES = new WeakHashMap<>();
+    public static final int SIZE = PlayerStorageLayout.SIZE - 36;
+    private static final Map<Player, ExtraInventory> CLIENT_STORES = new WeakHashMap<>(), SERVER_STORES = new WeakHashMap<>();
     private final WeakReference<Player> owner;
     private boolean loading = true;
     public ExtraInventory(Player owner) {
@@ -35,7 +35,7 @@ public final class ExtraInventory extends SimpleContainer {
         ContainerHelper.saveAllItems(tag, items);
         player.getPersistentData().put(DATA_KEY, tag);
     }
-    public static ExtraInventory of(Player player) { return STORES.computeIfAbsent(player, ExtraInventory::new); }
+    public static ExtraInventory of(Player player) { return (player.level().isClientSide ? CLIENT_STORES : SERVER_STORES).computeIfAbsent(player, ExtraInventory::new); }
     public void replace(List<ItemStack> items) {
         loading = true;
         for (int slot = 0; slot < SIZE; slot++) super.setItem(slot, items.get(slot));

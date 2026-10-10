@@ -29,7 +29,7 @@ public final class CrateEntity extends BlockEntity implements Container, MenuPro
     @Override public ItemStack removeItemNoUpdate(int slot) { return ContainerHelper.takeItem(items, slot); }
     @Override public void setItem(int slot, ItemStack stack) { items.set(slot, stack); setChanged(); }
     @Override public void clearContent() { items.clear(); setChanged(); }
-    @Override public boolean stillValid(Player player) { return !isRemoved() && player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) < 64; }
+    @Override public boolean stillValid(Player player) { return !isRemoved() && (RemoteBuilding.canReach(player, worldPosition) || player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) < 64); }
     @Override public Component getDisplayName() { return getBlockState().getBlock().getName(); }
     @Override public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) { return new CrateMenu(id, inventory, this); }
     @Override protected void saveAdditional(CompoundTag tag) { super.saveAdditional(tag); ContainerHelper.saveAllItems(tag, items); }

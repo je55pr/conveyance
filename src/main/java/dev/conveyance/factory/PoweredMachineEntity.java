@@ -22,6 +22,15 @@ abstract class PoweredMachineEntity extends BlockEntity {
     protected boolean hasWork() { return true; }
     protected double currentWork() { return work; }
     protected void resetWork() { work = 0; setChanged(); }
+    protected void setWork(double value) { work = Math.max(0, Math.min(cycleTicks, value)); setChanged(); }
+    /** Inserters stop at the drop position before completing the empty return. */
+    protected double advanceInserterWork() {
+        double rate = PowerNetwork.fraction(level, worldPosition) * ResearchState.inserterSpeed(level);
+        if (rate <= 0) return 0;
+        work += rate;
+        if (level.getGameTime() % 20 == 0) setChanged();
+        return rate;
+    }
     public double powerDistanceSquared(BlockPos pole) { return worldPosition.distSqr(pole); }
 
     protected boolean advanceWork() {

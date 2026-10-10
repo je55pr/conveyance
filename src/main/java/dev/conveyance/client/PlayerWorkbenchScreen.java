@@ -2,6 +2,8 @@ package dev.conveyance.client;
 
 import dev.conveyance.factory.FactoryCraftingRecipe;
 import dev.conveyance.player.HandCrafting;
+import dev.conveyance.player.HandCraftingQueue;
+import dev.conveyance.factory.FactoryTooltips;
 import dev.conveyance.player.RecipeCosts;
 import dev.conveyance.player.InventoryAccess;
 import dev.conveyance.player.InventoryNetwork;
@@ -9,6 +11,7 @@ import dev.conveyance.player.LinkedHotbar;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.Items;
 import dev.conveyance.player.PlayerWorkbenchMenu;
+import dev.conveyance.player.PlayerStorageLayout;
 import dev.conveyance.player.ResearchState;
 import dev.conveyance.player.Technology;
 import java.util.ArrayList;
@@ -28,12 +31,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 
 public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerWorkbenchMenu> {
-    private static final int RIGHT = 184, CELL = 26, ROW_HEIGHT = 42, GRID_Y = 73, CONTENT = PlayerWorkbenchMenu.CONTENT_Y;
+    private static final int RIGHT = PlayerStorageLayout.MACHINE_X, CELL = 26, ROW_HEIGHT = 42, GRID_Y = 73, CONTENT = PlayerWorkbenchMenu.CONTENT_Y;
     private static final List<String> CATEGORIES = RecipePresentation.CATEGORIES;
     private final List<Button> recipeButtons = new ArrayList<>();
     private final List<Button> categoryButtons = new ArrayList<>();
     private final List<Button> hotbarLinks = new ArrayList<>();
     private final Map<ResourceLocation, Integer> amounts = new HashMap<>();
+    private final Map<ResourceLocation, Integer> craftingTimes = new HashMap<>();
     private final Map<ResourceLocation, List<ItemStack>> rawCosts = new HashMap<>();
     private List<CraftingRecipe> availableRecipes = List.of();
     private List<ItemStack> cachedItems = List.of();
@@ -46,7 +50,8 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
     private final WorldMapView map = new WorldMapView();
     private boolean researchView, mapView;
     private int scroll, columns, rows;
-    private boolean linkPressed;
+    private int queueScroll;
+    private boolean linkPressed, resizePending;
     private int appliedOpeningTab = -1;
     public PlayerWorkbenchScreen(PlayerWorkbenchMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -54,30 +59,30 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
         int openingTab = WorkbenchNavigation.takeOpeningTab();
         researchView = openingTab == 1;
         mapView = openingTab == 2;
-        imageWidth = 396; imageHeight = 232;
+        imageWidth = PlayerStorageLayout.MIN_WIDTH; imageHeight = PlayerStorageLayout.MIN_HEIGHT;
     }
     @Override protected void init() {
-        imageWidth = Math.max(304, width - 24);
-        imageHeight = Math.max(240, height - 24);
+        imageWidth = researchView || mapView ? Math.max(FactoryWindowStyle.COMPACT_WIDTH, width - 24) : FactoryWindowStyle.COMPACT_WIDTH;
+        imageHeight = researchView || mapView ? Math.max(FactoryWindowStyle.COMPACT_HEIGHT, height - 24) : FactoryWindowStyle.COMPACT_HEIGHT;
         super.init();
         recipeButtons.clear();
         categoryButtons.clear();
         hotbarLinks.clear();
-        for (int slot = 0; slot < 9; slot++) {
+        for (int slot = 0; slot < LinkedHotbar.SIZE; slot++) {
             final int link = slot;
             hotbarLinks.add(addRenderableWidget(Button.builder(Component.empty(), button -> {
                 linkPressed = true;
                 var carried = menu.getCarried();
-                if (!carried.isEmpty()) InventoryNetwork.requestLink(menu.containerId, link, BuiltInRegistries.ITEM.getKey(carried.getItem()));
-                else minecraft.player.getInventory().selected = link;
-            }).bounds(leftPos + 8 + slot * 18, topPos + CONTENT + 184, 18, 18).build()));
+                if (link > 0 && !carried.isEmpty()) InventoryNetwork.requestLink(menu.containerId, link, BuiltInRegistries.ITEM.getKey(carried.getItem()));
+                else HotbarControls.select(link);
+            }).bounds(leftPos + PlayerStorageLayout.GRID_X + slot * PlayerStorageLayout.CELL, topPos + PlayerStorageLayout.HOTBAR_Y, PlayerStorageLayout.CELL, PlayerStorageLayout.CELL).build()));
         }
         int panelWidth = imageWidth - RIGHT;
         inventoryTab = addRenderableWidget(Button.builder(Component.translatable("menu.conveyance.inventory_tab"), button -> tab(0)).bounds(leftPos, topPos, 134, 20).build());
         researchTab = addRenderableWidget(Button.builder(Component.translatable("menu.conveyance.research_tab"), button -> tab(1)).bounds(leftPos + 138, topPos, 74, 20).build());
         mapTab = addRenderableWidget(Button.builder(Component.translatable("menu.conveyance.map_tab"), button -> tab(2)).bounds(leftPos + 216, topPos, 44, 20).build());
         fitGraph = addRenderableWidget(Button.builder(Component.translatable("menu.conveyance.tree_fit"), button -> { if (mapView) map.center(); else graph.fit(imageWidth); }).bounds(leftPos + imageWidth - 40, topPos, 40, 20).build());
-        graph.resize(imageWidth, bodyHeight());
+        if (researchView) graph.resize(imageWidth, bodyHeight());
         pollutionToggle = addRenderableWidget(Button.builder(map.pollutionLabel(), button -> {
             map.togglePollution(); button.setMessage(map.pollutionLabel());
         }).bounds(leftPos + 48, topPos + CONTENT + 3, 88, 16).build());
@@ -90,8 +95,10 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
             button.setTooltip(Tooltip.create(Component.translatable("menu.conveyance.category." + selected)));
             categoryButtons.add(button);
         }
+        String query = search == null ? "" : search.getValue();
         search = new EditBox(font, leftPos + RIGHT + 8, topPos + CONTENT + 49, panelWidth - 16, 16, Component.translatable("menu.conveyance.search"));
         search.setHint(Component.translatable("menu.conveyance.search"));
+        search.setValue(query);
         search.setResponder(value -> scroll = 0);
         addRenderableWidget(search);
         columns = Math.max(1, (panelWidth - 16) / CELL);
@@ -115,13 +122,15 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
     public void openTab(int selected) { tab(selected); }
     private void tab(int selected) {
         if (!menu.getCarried().isEmpty()) return;
+        boolean wasLarge = researchView || mapView;
         researchView = selected == 1;
         mapView = selected == 2;
         remember();
         search.setFocused(false);
         graph.release();
         map.release();
-        if (researchView) graph.open();
+        if (wasLarge != (researchView || mapView)) { rebuildWidgets(); return; }
+        if (researchView) { graph.resize(imageWidth, bodyHeight()); graph.open(); }
         if (mapView) { map.resize(bodyHeight()); map.open(); map.tick(imageWidth); }
         refresh();
     }
@@ -161,10 +170,14 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
         }
         amounts.clear();
         var planner = new HandCrafting.Planner(minecraft.level, mask);
-        for (CraftingRecipe recipe : availableRecipes) amounts.put(recipe.getId(), planner.craftable(current, recipe));
+        craftingTimes.clear();
+        for (CraftingRecipe recipe : availableRecipes) {
+            amounts.put(recipe.getId(), planner.craftable(current, recipe));
+            craftingTimes.put(recipe.getId(), planner.craftingTime(current, recipe));
+        }
     }
     private void refresh() {
-        if (!menu.getCarried().isEmpty() && (researchView || mapView)) { researchView = false; mapView = false; }
+        if (!menu.getCarried().isEmpty() && (researchView || mapView)) { researchView = false; mapView = false; resizePending = true; }
         boolean inventoryView = !researchView && !mapView;
         if (inventoryView) updateAmounts();
         menu.showStorage(inventoryView);
@@ -197,6 +210,7 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
     private int maxScroll(int count) { return Math.max(0, count - rows); }
     @Override protected void containerTick() {
         super.containerTick(); search.tick();
+        if (resizePending) { resizePending = false; rebuildWidgets(); }
         int openingTab = menu.openingTab();
         if (openingTab >= 0 && openingTab != appliedOpeningTab && menu.getCarried().isEmpty()) {
             appliedOpeningTab = openingTab;
@@ -206,28 +220,25 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
     }
     @Override public void removed() { map.close(); super.removed(); }
     @Override protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-        graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + 21, 0xFF202A35);
+        graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + 21, FactoryWindowStyle.BACKGROUND);
         int tabX = mapView ? 216 : researchView ? 138 : 0, tabWidth = mapView ? 44 : researchView ? 74 : 134;
         graphics.fill(leftPos + tabX, topPos + 19, leftPos + tabX + tabWidth, topPos + 22, 0xFF88B9A2);
         if (researchView || mapView) { panel(graphics, leftPos, topPos + CONTENT, imageWidth, bodyHeight()); return; }
-        panel(graphics, leftPos, topPos + CONTENT, 176, bodyHeight());
+        panel(graphics, leftPos, topPos + CONTENT, PlayerStorageLayout.PANEL_WIDTH, bodyHeight());
         panel(graphics, leftPos + RIGHT, topPos + CONTENT, imageWidth - RIGHT, bodyHeight());
         for (var slot : menu.slots) {
             int x = leftPos + slot.x, y = topPos + slot.y;
-            graphics.fill(x - 1, y - 1, x + 17, y + 17, 0xFF596674);
-            graphics.fill(x, y, x + 16, y + 16, 0xFF111820);
+            FactoryWindowStyle.slot(graphics, x, y);
         }
     }
     private static void panel(GuiGraphics graphics, int x, int y, int width, int height) {
-        graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, 0xFF607080);
-        graphics.fill(x, y, x + width, y + height, 0xFF202A35);
-        graphics.fill(x + 1, y + 1, x + width - 1, y + 20, 0xFF303D4A);
+        FactoryWindowStyle.panel(graphics, x, y, width, height);
     }
     @Override protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
         if (researchView || mapView) return;
-        graphics.drawString(font, Component.translatable("menu.conveyance.inventory"), 8, CONTENT + 7, 0xFFE7EEF6, false);
-        graphics.drawString(font, Component.translatable("menu.conveyance.handcrafting"), RIGHT + 8, CONTENT + 7, 0xFFE7EEF6, false);
-        graphics.drawString(font, Component.translatable("menu.conveyance.hotbar_links"), 8, CONTENT + 171, 0xFF9CABB8, false);
+        graphics.drawString(font, Component.translatable("menu.conveyance.inventory"), 8, CONTENT + 7, FactoryWindowStyle.TEXT, false);
+        graphics.drawString(font, Component.translatable("menu.conveyance.handcrafting"), RIGHT + 8, CONTENT + 7, FactoryWindowStyle.TEXT, false);
+        graphics.drawString(font, Component.translatable("menu.conveyance.hotbar_links"), 8, PlayerStorageLayout.HOTBAR_LABEL_Y, 0xFF9CABB8, false);
     }
     @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         refresh();
@@ -242,7 +253,7 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
         var groups = grouped();
         for (int row = 0; row < rows && scroll + row < groups.size(); row++)
             graphics.drawString(font, Component.translatable("menu.conveyance.group." + groups.get(scroll + row).family()),
-                    leftPos + RIGHT + 8, topPos + CONTENT + GRID_Y + row * ROW_HEIGHT, 0xFFB5C5D2, false);
+                    leftPos + RIGHT + 8, topPos + CONTENT + GRID_Y + row * ROW_HEIGHT, FactoryWindowStyle.MUTED, false);
         for (int i = 0; i < categoryButtons.size(); i++) {
             Button button = categoryButtons.get(i);
             boolean selected = CATEGORIES.get(i).equals(category);
@@ -267,13 +278,14 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
             graphics.pose().pushPose();
             graphics.pose().translate(x + 22, y + 17, 300);
             graphics.pose().scale(0.65F, 0.65F, 1);
-            graphics.drawString(font, amount, -font.width(amount), 0, button.active ? 0xFF8AD8A0 : 0xFF94A0AD, true);
+            graphics.drawString(font, amount, -font.width(amount), 0, button.active ? FactoryWindowStyle.ACCENT : 0xFF94A0AD, true);
             graphics.pose().popPose();
         }
         for (int slot = 0; slot < hotbarLinks.size(); slot++) {
             Button button = hotbarLinks.get(slot);
-            HotbarLinksView.cell(graphics, slot, button.getX(), button.getY(), 18);
+            HotbarLinksView.cell(graphics, slot, button.getX(), button.getY(), PlayerStorageLayout.CELL);
         }
+        renderCraftingQueue(graphics, mouseX, mouseY, partialTick);
         renderTooltip(graphics, mouseX, mouseY);
         if (menu.getCarried().isEmpty()) for (int slot = 0; slot < hotbarLinks.size(); slot++) if (over(hotbarLinks.get(slot), mouseX, mouseY)) HotbarLinksView.tooltip(graphics, slot, mouseX, mouseY);
         for (int cell = 0; cell < recipeButtons.size(); cell++) {
@@ -285,17 +297,48 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
     }
     private void ingredientTooltip(GuiGraphics graphics, CraftingRecipe recipe, int mouseX, int mouseY) {
         boolean possible = minecraft.player.isCreative() || amounts.getOrDefault(recipe.getId(), 0) > 0;
+        int baseTime = HandCrafting.craftingTicks(recipe), totalTime = craftingTimes.getOrDefault(recipe.getId(), baseTime);
+        var timing = new ArrayList<Component>();
+        timing.add(Component.translatable("menu.conveyance.crafting_time", FactoryTooltips.number(baseTime / 20.0)));
+        if (totalTime > baseTime) timing.add(Component.translatable("menu.conveyance.crafting_time_recursive", FactoryTooltips.number(totalTime / 20.0)));
+        if (minecraft.player.isCreative()) timing.add(Component.translatable("menu.conveyance.crafting_creative"));
         RecipePresentation.tooltip(graphics, recipe, rawCosts.getOrDefault(recipe.getId(), List.of()),
                 requirement -> HandCrafting.count(cachedItems, requirement.ingredient()) >= requirement.count()
-                        ? 0xFF8AD8A0 : possible ? 0xFFE1BC76 : 0xFFEB8585,
-                width, height, mouseX, mouseY);
+                        ? FactoryWindowStyle.ACCENT : possible ? 0xFFE1BC76 : 0xFFEB8585,
+                width, height, mouseX, mouseY, timing);
+    }
+    private int queueX() { return leftPos + (imageHeight >= 278 ? 8 : 64); }
+    private int queueY() { return topPos + (imageHeight >= 278 ? CONTENT + 225 : CONTENT + 1); }
+    private int queueCells() { return imageHeight >= 278 ? 8 : 5; }
+    private int queueCell(double x, double y) {
+        if (mapView || researchView || y < queueY() || y >= queueY() + 20 || x < queueX() || x >= queueX() + queueCells() * 20 - 2) return -1;
+        int index = queueScroll + (int) (x - queueX()) / 20;
+        return index < HandCraftingQueue.client().orders().size() ? index : -1;
+    }
+    private void renderCraftingQueue(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        var queue = HandCraftingQueue.client();
+        queueScroll = Math.min(queueScroll, Math.max(0, queue.orders().size() - queueCells()));
+        if (queue.orders().isEmpty()) return;
+        if (imageHeight >= 278) {
+            graphics.drawString(font, Component.translatable("menu.conveyance.crafting_queue"), leftPos + 8, topPos + CONTENT + 211, FactoryWindowStyle.MUTED, false);
+            if (imageHeight >= 314) graphics.drawString(font, CraftingHud.eta(partialTick), leftPos + 8, queueY() + 25, 0xFF9CABB8, false);
+        }
+        CraftingHud.cells(graphics, queueX(), queueY(), queueCells(), queueScroll, partialTick);
+        int hovered = queueCell(mouseX, mouseY);
+        if (hovered >= 0 && menu.getCarried().isEmpty()) CraftingHud.tooltip(graphics, queue.orders().get(hovered), mouseX, mouseY);
     }
     private static boolean over(Button button, double x, double y) { return button.visible && x >= button.getX() && x < button.getX() + button.getWidth() && y >= button.getY() && y < button.getY() + button.getHeight(); }
     @Override public boolean mouseClicked(double x, double y, int button) {
         linkPressed = false;
+        int queued = queueCell(x, y);
+        if (queued >= 0) {
+            if (button == 1) InventoryNetwork.requestCancelCraft(HandCraftingQueue.client().orders().get(queued).id());
+            return true;
+        }
         if (!mapView && !researchView && button == 1) {
             for (int slot = 0; slot < hotbarLinks.size(); slot++) if (over(hotbarLinks.get(slot), x, y)) {
-                InventoryNetwork.requestLink(menu.containerId, slot, BuiltInRegistries.ITEM.getKey(Items.AIR));
+                if (slot == 0) HotbarControls.select(0);
+                else InventoryNetwork.requestLink(menu.containerId, slot, BuiltInRegistries.ITEM.getKey(Items.AIR));
                 return true;
             }
             var groups = grouped();
@@ -309,7 +352,7 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
             var groups = grouped();
             for (int cell = 0; cell < recipeButtons.size(); cell++) if (over(recipeButtons.get(cell), x, y)) {
                 CraftingRecipe recipe = recipeAt(cell, groups);
-                if (recipe != null) InventoryNetwork.requestLink(menu.containerId, minecraft.player.getInventory().selected,
+                if (recipe != null) InventoryNetwork.requestLink(menu.containerId, LinkedHotbar.bindingSlot(minecraft.player),
                         BuiltInRegistries.ITEM.getKey(recipe.getResultItem(minecraft.level.registryAccess()).getItem()));
                 return true;
             }
@@ -324,7 +367,7 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
     @Override public boolean mouseReleased(double x, double y, int button) {
         if (!mapView && !researchView && button == 0 && !linkPressed && !menu.getCarried().isEmpty()) {
             for (int slot = 0; slot < hotbarLinks.size(); slot++) if (over(hotbarLinks.get(slot), x, y)) {
-                InventoryNetwork.requestLink(menu.containerId, slot, BuiltInRegistries.ITEM.getKey(menu.getCarried().getItem()));
+                if (slot > 0) InventoryNetwork.requestLink(menu.containerId, slot, BuiltInRegistries.ITEM.getKey(menu.getCarried().getItem()));
                 super.mouseReleased(x, y, button);
                 return true;
             }
@@ -333,6 +376,10 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
         return mapView && map.release() || researchView && graph.release() || super.mouseReleased(x, y, button);
     }
     @Override public boolean mouseScrolled(double x, double y, double amount) {
+        if (queueCell(x, y) >= 0) {
+            queueScroll = Math.max(0, Math.min(Math.max(0, HandCraftingQueue.client().orders().size() - queueCells()), queueScroll - (int) Math.signum(amount)));
+            return true;
+        }
         if (mapView) return map.scroll(x, y, amount, leftPos, topPos + CONTENT, imageWidth);
         if (researchView) return graph.scroll(x, y, amount, leftPos, topPos + CONTENT, imageWidth);
         if (x >= leftPos + RIGHT && y >= topPos + CONTENT + GRID_Y && y < topPos + CONTENT + GRID_Y + rows * ROW_HEIGHT) {

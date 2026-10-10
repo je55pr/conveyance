@@ -60,6 +60,11 @@ final class RecipePresentation {
     static void tooltip(GuiGraphics graphics, CraftingRecipe recipe, List<ItemStack> raw,
                         ToIntFunction<AssemblyRecipes.Requirement> ingredientColour,
                         int width, int height, int mouseX, int mouseY) {
+        tooltip(graphics, recipe, raw, ingredientColour, width, height, mouseX, mouseY, List.of());
+    }
+    static void tooltip(GuiGraphics graphics, CraftingRecipe recipe, List<ItemStack> raw,
+                        ToIntFunction<AssemblyRecipes.Requirement> ingredientColour,
+                        int width, int height, int mouseX, int mouseY, List<Component> additionalInfo) {
         var minecraft = Minecraft.getInstance();
         var font = minecraft.font;
         var requirements = AssemblyRecipes.requirements(recipe);
@@ -70,6 +75,7 @@ final class RecipePresentation {
         var info = Screen.getTooltipFromItem(minecraft, output);
         var infoLines = new ArrayList<FormattedCharSequence>();
         for (int line = 1; line < info.size(); line++) infoLines.addAll(font.split(info.get(line), boxWidth - 16));
+        for (var line : additionalInfo) infoLines.addAll(font.split(line, boxWidth - 16));
         int infoHeight = infoLines.size() * 10;
         int iconColumns = Math.max(1, (boxWidth - 16) / 30);
         int rawTitleY = 35 + infoHeight + 24 * Math.max(1, (requirements.size() + iconColumns - 1) / iconColumns) + 6;

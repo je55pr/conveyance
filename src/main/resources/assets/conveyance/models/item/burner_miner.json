@@ -1,3 +1,3 @@
 {
-  "parent": "conveyance:block/burner_miner"
+  "parent": "conveyance:block/machines/burner_miner/item"
 }

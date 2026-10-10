@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Inventory.class)
 abstract class LinkedInventoryMixin {
@@ -21,5 +22,9 @@ abstract class LinkedInventoryMixin {
     @Inject(method = "removeFromSelected", at = @At("HEAD"), cancellable = true)
     private void conveyance$remove(boolean all, CallbackInfoReturnable<ItemStack> result) {
         if (LinkedHotbar.enabled(player)) result.setReturnValue(LinkedHotbar.removeSelected(player, all));
+    }
+    @Inject(method = "swapPaint", at = @At("HEAD"), cancellable = true)
+    private void conveyance$scroll(double amount, CallbackInfo callback) {
+        if (LinkedHotbar.enabled(player) && !player.isSpectator()) { LinkedHotbar.scroll(player, amount); callback.cancel(); }
     }
 }

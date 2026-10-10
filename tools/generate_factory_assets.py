@@ -180,6 +180,26 @@ write("assets/conveyance/models/block/long_inserter.json", {
     "elements": [box([3, 0, 3], [13, 4, 13], "body"), box([6, 4, 6], [10, 10, 10], "arm"),
                  box([6, 10, -8], [10, 12, 24], "arm"), box([4, 10, -9], [12, 12, -6], "body")]})
 
+# Placed arms rotate through their block-entity renderer; item icons keep the
+# complete static models above. One unit-length boom also serves the long arm.
+for name, body, arm in (("inserter", "iron_block", "yellow_concrete"),
+                        ("burner_inserter", "copper_block", "black_concrete"),
+                        ("long_inserter", "iron_block", "red_concrete")):
+    textures = {"body": f"minecraft:block/{body}", "arm": f"minecraft:block/{arm}",
+                "particle": f"minecraft:block/{body}"}
+    base = [box([3, 0, 3], [13, 4, 13], "body"), box([6, 4, 6], [10, 8, 10], "arm"),
+            box([7, 4.05, 3.5], [9, 4.2, 5], "arm"), box([6, 4.05, 5], [10, 4.2, 6], "arm")]
+    boom = [box([5, 7, 5], [11, 11, 11], "body"),
+            box([6.5, 9.5, -8], [9.5, 11.5, 8], "arm"),
+            box([4.5, 8, -10], [11.5, 10, -6], "body"),
+            box([4.5, 5.5, -10], [6, 8, -6], "body"),
+            box([10, 5.5, -10], [11.5, 8, -6], "body")]
+    for element in boom:
+        for face in element["faces"].values():
+            face["uv"] = [0, 0, 16, 16]
+    write(f"assets/conveyance/models/block/{name}_base.json", {"textures": textures, "elements": base})
+    write(f"assets/conveyance/models/block/{name}_arm.json", {"textures": textures, "elements": boom})
+
 write("assets/conveyance/models/block/junction.json", {
     "textures": {"body": "minecraft:block/gray_concrete", "hub": "minecraft:block/light_gray_concrete",
                  "particle": "minecraft:block/gray_concrete"},
@@ -202,7 +222,7 @@ write("assets/conveyance/models/item/junction.json", {"parent": "conveyance:bloc
 write("data/conveyance/loot_tables/blocks/junction.json", {"type": "minecraft:block", "pools": []})
 for name in ("inserter", "burner_inserter", "long_inserter"):
     write(f"assets/conveyance/blockstates/{name}.json", {"variants": {
-        f"facing={facing}": {"model": f"conveyance:block/{name}", "y": rotation}
+        f"facing={facing}": {"model": f"conveyance:block/{name}_base", "y": rotation}
         for facing, rotation in (("north", 0), ("east", 90), ("south", 180), ("west", 270))}})
     write(f"assets/conveyance/models/item/{name}.json", {"parent": f"conveyance:block/{name}"})
 
@@ -395,9 +415,12 @@ recipes = {
     "research_lab": ("science", {"iron_ingot": 4, "conveyance:electronic_circuit": 2, "conveyance:gear": 3}, 1),
     "radar": ("production", {"iron_ingot": 6, "conveyance:electronic_circuit": 2, "conveyance:gear": 1}, 1)
 }
+crafting_times = {"miner": 2, "burner_miner": 2, "research_lab": 2, "radar": 2,
+                  "generator": 3, "junction": 1, "iron_pickaxe": 1,
+                  "red_science_pack": 5, "green_science_pack": 6, "solar_panel": 10}
 for name, (tab, ingredients, count) in recipes.items():
     write(f"data/conveyance/recipes/{name}.json", {
-        "type": "conveyance:factory_crafting", "tab": tab,
+        "type": "conveyance:factory_crafting", "tab": tab, "crafting_time": crafting_times.get(name, 0.5),
         "ingredients": [{"item": item if ":" in item else "minecraft:" + item, "count": amount} for item, amount in ingredients.items()],
         "result": {"item": "minecraft:iron_pickaxe" if name == "iron_pickaxe" else "conveyance:" + name, "count": count}})
 for removed in ("iron_block", "copper_block"):
@@ -487,6 +510,14 @@ for language in ("en_us", "en_gb"):
                  "menu.conveyance.generator_output": "%s kW",
                  "menu.conveyance.inventory": "Inventory",
                  "menu.conveyance.handcrafting": "Crafting",
+                 "menu.conveyance.crafting_time": "Hand crafting: %s s per batch",
+                 "menu.conveyance.crafting_time_recursive": "Including missing intermediates: %s s",
+                 "menu.conveyance.crafting_creative": "Creative crafting is instant",
+                 "menu.conveyance.crafting_queue": "Crafting queue",
+                 "menu.conveyance.queued_items": "Queued: %s items",
+                 "menu.conveyance.crafting_cancel": "Right-click to cancel and return materials",
+                 "hud.conveyance.crafting_eta": "%s s queued",
+                 "hud.conveyance.crafting_blocked": "Waiting for inventory space",
                  "menu.conveyance.inventory_tab": "Inventory / Crafting",
                  "menu.conveyance.research_tab": "Research",
                  "menu.conveyance.tree_fit": "Fit",
@@ -512,7 +543,7 @@ for language in ("en_us", "en_gb"):
                  "menu.conveyance.have_need": "%s / %s  %s",
                  "menu.conveyance.ingredients": "Ingredients",
                  "menu.conveyance.total_raw": "Total raw resources",
-                 "message.conveyance.craft_failed": "Missing ingredients or inventory space.",
+                 "message.conveyance.craft_failed": "Missing ingredients, no inventory space, or crafting queue full.",
                  "message.conveyance.excavation_locked": "Terrain removal requires Excavation research.",
                  "message.conveyance.inventory_full": "Inventory full.",
                  "research.conveyance.automation": "Research: Automation",
@@ -681,6 +712,10 @@ for language in ("en_us", "en_gb"):
                          "radars": "Radars", "labs": "Labs", "science": "Science packs", "tools": "Tools", "components": "Components"}.items():
         data[f"menu.conveyance.group.{group}"] = label
     write(file, data)
+
+# Static machine casings and downward drill assemblies replace the cube mocks.
+from generate_machine_models import generate_all
+generate_all(ROOT)
 
 # User-supplied item sprites take precedence over prototype voxel icons. Keep
 # this last so regenerating assets never replaces imported art with a block model.

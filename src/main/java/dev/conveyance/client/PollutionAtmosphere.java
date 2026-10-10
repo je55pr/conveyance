@@ -39,10 +39,11 @@ public final class PollutionAtmosphere {
     }
     @SubscribeEvent public static void fog(ViewportEvent.RenderFog event) {
         if (strength < 0.001F || event.getType() != FogType.NONE) return;
-        float original = event.getFarPlaneDistance(), target = Math.min(original, 40);
+        float overhead = (float) (OverheadView.overheadFraction() * OverheadView.distance);
+        float original = event.getFarPlaneDistance(), target = Math.min(original, 40 + overhead);
         float far = original + (target - original) * strength;
         event.setFarPlaneDistance(far);
-        event.setNearPlaneDistance(Math.min(event.getNearPlaneDistance(), far * (0.75F - 0.6F * strength)));
+        event.setNearPlaneDistance(Math.max(overhead * 0.9F, Math.min(event.getNearPlaneDistance(), far * (0.75F - 0.6F * strength))));
         event.setFogShape(FogShape.SPHERE);
         event.setCanceled(true);
     }

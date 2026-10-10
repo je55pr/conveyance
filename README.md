@@ -3,6 +3,226 @@
 A standalone industrial overhaul for Minecraft Java Edition **1.20.1**, using
 **Forge 47.4.26** and **Java 17**. No other mods are required.
 
+## Version 0.38.0: overhead camera transitions
+
+B starts eight wheel steps closer than the old distance of 48: about 17.3 blocks.
+Entering and exiting use a quick 0.3-second eased camera flight, blending position,
+yaw, pitch and field of view between normal POV and the overhead camera. Exiting
+lands on the live normal camera position, so movement during the return is smooth.
+Pressing B again during a transition reverses from the current rendered camera.
+
+Camera bob and held-item rendering stay suppressed during the flight; the player
+model appears once the camera is clear of the body. Remote placement waits until
+the entry finishes. Pollution fog adjusts with the transition as well.
+
+## Version 0.37.1: closer overhead zoom and faster panning
+
+B mode can now zoom to a camera distance of 4 blocks, down from 18, so belt icons
+can appear about 4.5 times larger at maximum zoom. WASD panning is about 2.2 times
+faster at normal and distant zoom levels, with a minimum of 12 blocks per second
+when zoomed close. Movement retains its smooth frame interpolation. Camera
+tuning constants are grouped in `client/OverheadView.java`.
+
+## Version 0.37.0: camera-facing belt cargo and Q toggle
+
+Items on belts, slopes and junctions now use their inventory-icon presentation
+and rotate to face the live camera. This works in first person and the overhead
+view; cargo keeps its existing lane positions and transport timing.
+
+Q clears the hovered building type when it is already selected. Repeated Q
+presses on the same owned building therefore toggle it on and off. From the Q
+cell, pointing at another owned type switches to it; air and unavailable types
+still clear the hand. The existing first Q from a numbered shortcut clears it.
+
+## Version 0.36.0: separate recipe picking and processing
+
+Assemblers show either their recipe picker or their processing view. New
+assemblers start without a recipe and open the picker automatically. Once a
+selection is confirmed by the server, the picker closes and inputs, output and
+progress appear. A gear icon in the production header (**Change recipe**) reopens
+the picker; its back arrow returns to the existing recipe without changing it.
+
+The picker uses its full compact right panel, with categories, search and grouped
+recipe icons. Machine slots and processing displays are hidden during selection;
+the 80-slot inventory and linked hotbar remain available. Selecting the current
+recipe also returns to processing. A rejected selection keeps the picker open.
+Stone furnaces retain automatic input-based smelting.
+
+Existing saved assembler recipes remain selected. Fresh assemblers no longer
+silently default to conveyors. Recipe-selection acknowledgement uses inventory
+protocol 12, so both sides need the updated mod.
+
+## Version 0.35.1: compact centered windows
+
+Inventory/crafting and factory windows are sized to their contents and centred,
+instead of expanding to fill the screen. Fuel/research machines use a 342 × 240
+window; crates and Stone furnaces use 360 × 240; inventory/crafting and assemblers
+use 396 × 240 (GUI pixels). All still show the full 10 × 8 inventory and hotbar.
+Recipe lists scroll within their compact panels.
+
+Only map and technology expand to the available screen area. Switching between
+those tabs and inventory resizes and recentres the window, preserving search
+text and the map/research view. Compact sizing is shared in FactoryWindowStyle.
+
+## Version 0.35.0: shared factory windows
+
+**E closes any machine or crate screen**, including the assembler recipe picker.
+In overhead mode it returns to the building view. M and T still open map and
+technology. Machine windows share a responsive two-panel shell: the full
+**10 × 8 player inventory** and **ten linked hotbar cells** on the left, with
+machine inputs, outputs, status and recipe selection on the right.
+
+The sweep covers Stone furnaces, assemblers, labs, solid-fuel generators, burner
+miners, burner inserters, and wooden/iron crates. Machine storage capacities stay
+appropriate to each machine (one fuel slot, two science slots, etc.). Shift-click
+outputs can use all 80 player slots, and inputs can be loaded from any of them.
+Closing safely returns any carried stack to inventory or the existing return queue.
+
+Shared implementation lives in:
+- `client/FactoryWindowStyle.java`: panel, slot, progress and text colors.
+- `client/FactoryWindowScreen.java`: sizing, shell, hotbar and common interactions.
+- `player/PlayerStorageLayout.java`: columns, rows, spacing and storage mapping.
+- `factory/FactoryMenu.java`: inventory slots, transfers, number-key links and cursor returns.
+
+The E screen also uses the shared storage geometry and window drawing style.
+Inventory protocol is now 11; both client and server need the updated mod.
+
+## Version 0.34.2: Q refreshes its temporary selection
+
+While the Q cell is selected, Q always picks the hovered building type, replacing
+any existing temporary selection. Aiming into air or at a building with no owned
+items clears it. Q from one of the 1–9 shortcuts still returns to empty hand first.
+
+## Version 0.34.1: Q requires an owned building item
+
+Q only picks a building when at least one matching item exists in the player's
+80 inventory slots, including in Creative. Otherwise it stays in empty hand.
+Using the last owned item clears the temporary selection automatically.
+
+## Version 0.34.0: empty hand and temporary building selection
+
+The E inventory is now **10 columns × 8 rows (80 storage slots)**. The linked
+hotbar has ten cells: a permanent **empty-hand / Q** cell followed by nine item
+shortcuts on **1–9**. The empty cell cannot be rebound and is selected on joining
+or respawning. Scroll selection includes it.
+
+**Q** switches from any item shortcut to empty hand. While empty, pointing at a
+factory building and pressing **Q** temporarily selects that building type.
+Pressing **Q** again picks the current target, or clears it if unavailable. This works in first person and the overhead view;
+it requires an existing inventory stack, does not remove
+the pointed-at building, and leaves permanent shortcuts untouched. The Q cell
+shows the temporary item and its available count while one is selected.
+
+Q replaces its default drop-item binding. A separately customized drop binding
+is retained; explicit inventory throwing remains available. Inventory sorting,
+recursive crafting, refunds and pickups use all 80 slots. Inventory network
+protocol is 10, and remote-building protocol is 2.
+
+## Version 0.33.1: smooth overhead panning
+
+The overhead camera is aligned with north at the top (zero rotation offset).
+WASD movement retains fractional coordinates and is interpolated each render
+frame, so it moves smoothly between blocks. Opening a menu freezes the pan at
+its current destination rather than repeating the last movement.
+
+## Version 0.33.0: overhead building view
+
+Press **B** to toggle a live, angled overhead camera. The character stays in the
+world while **WASD** pans the camera and the mouse wheel zooms. Remote interaction
+covers the 5 × 5 Minecraft chunks centred on the character's current chunk (80 ×
+80 blocks). Unloaded chunks are unavailable; the camera does not generate terrain.
+
+The default machine base is **Y=1**, just above the normal ground at Y=0. The height
+buttons or **Page Up / Page Down** change that plane one block at a time; **Base
+layer** resets it. Placement uses the selected plane, including when roofs or
+foliage are under the cursor. Existing support and whole-footprint checks still
+apply. A blue rectangle marks the permitted area; placement ghosts turn red when
+blocked or beyond its boundary.
+
+**1–9** or the clickable linked hotbar selects an item. Hold **left-click** to
+place, **R** rotates the preview, and **Shift + left-click** picks up a machine or
+chops a tree (0.5 seconds for factory blocks). With an empty hand, left-click also
+harvests terrain in place. **Right-click** opens machines and crates or loads held
+fuel; **Ctrl + right-click** collects products, with sweep transfers supported.
+**C / V** copies and pastes assembler recipes; **Shift + R** turns an existing
+single-block conveyor or inserter. Middle-click links the pointed-at building.
+
+**E / M / T** still open inventory, map and technology. Closing one of those or a
+machine menu returns to the overhead view. **B** or **Escape** from the building
+screen returns to normal POV. The remote session only extends interaction within
+its area; normal first-person reach is unchanged.
+
+## Version 0.32.0: timed hand crafting
+
+Survival hand crafting runs through a persistent queue. Left-click queues one
+batch, right-click queues up to five, and Shift-click queues the available bulk
+amount. Ingredients are reserved on queueing, so other requests cannot spend
+them again. Missing intermediates are crafted as timed steps before their parent
+recipe, and finished products arrive one batch at a time. You can close E and
+keep building or gathering while the queue runs.
+
+Recipes show their time per batch and the time including currently missing
+intermediates. Most components, crates, inserters and belts take 0.5 seconds;
+miners, labs and radars take 2 seconds; the custom generator takes 3 seconds.
+Red science takes 5 seconds, green science 6 seconds, and solar panels 10 seconds.
+The science and solar defaults follow the
+[red science](https://wiki.factorio.com/Automation_science_pack),
+[green science](https://wiki.factorio.com/Logistic_science_pack) and
+[solar panel](https://wiki.factorio.com/Solar_panel) recipes. Each factory crafting
+JSON has a `crafting_time` value in seconds. Assembler timing is unchanged.
+
+The bottom-left HUD shows the current step, progress, queued items and remaining
+time. E shows queue icons beneath the hotbar links, or in the inventory header
+on short screens. Scroll over the icons to view more orders; right-click an icon
+to cancel that order and return its unused materials and completed intermediates.
+Already-delivered products remain in storage. If storage fills, a completed
+product waits in the queue until space becomes available. No ground items are
+created. Queues and reserved materials survive reloads and respawns.
+
+Creative crafting remains free and instant for testing. Inventory protocol 9
+requires matching client/server versions because recipe times and queue updates
+are now synchronized. Existing saves work without a new world.
+
+## Version 0.31.0: distinct machine models
+
+Machines now have custom silhouettes inside their existing reserved footprints:
+electric and burner miners use open steel frames around downward-facing augers;
+stone furnaces taper into tall chimneys; research labs use faceted blue domes with
+metal triangle framing. Assemblers have recessed casings and vented tops, burner
+generators have compact engines and exhausts, and solar panels sit on angled frames.
+
+Casings and bases stop short of their footprint edges, leaving visible seams
+between adjacent machines. Collision and selection shapes follow the bodies and
+tapered tops, rather than invisible full cubes. All multiblock reservation sizes,
+placement items, pickup behaviour and miner output locations are retained.
+
+Static geometry is split across the footprint's structural blocks and rendered
+in the normal chunk mesh. Only the miners' drill assemblies render dynamically.
+They spin while extraction advances, pause without fuel/power or with blocked
+output, and follow research speed and partial power. Placement ghosts and item
+models show the complete machines. Existing placed machines use the new visuals.
+
+Models, clipping and collision geometry come from
+`tools/generate_machine_models.py`, called by the normal asset generator.
+The meshes use Minecraft textures; imported item sprites still take precedence.
+
+## Version 0.30.0: animated inserters
+
+Electric, long and burner inserters now pick up an item, swing their arm to the
+destination carrying it, deposit it, and return empty to the input. Arms lift
+slightly during the swing; long arms span their two-block reach. Placement ghosts
+show the complete arm, and an arrow on the base marks the output direction.
+
+Motion follows actual server transfer progress. Blocked destinations leave the
+arm holding its item at the output, and losing electricity or fuel pauses the
+stroke. Held cargo and the return phase survive saving/reloading. Burner arms
+retain automatic refuelling from their input or a held fuel item.
+
+Full cycles retain the existing rates: 2 items/s for electric inserters and
+1 item/s for long/burner inserters before research. Speed research and partial
+power scale the motion; fractional progress carries across cycles. Items remain
+inside the transfer system and are rendered at the gripper.
+
 ## Version 0.29.1: research HUD
 
 A compact panel at the top right shows the selected technology's icon and name,
@@ -886,7 +1106,7 @@ Close the previously launched development game, then from PowerShell in this fol
 powershell -ExecutionPolicy Bypass -File .\dev.ps1 runClient
 ```
 
-Open **Mods** to find **Conveyance 0.29.1**, then use an existing ore world or create a
+Open **Mods** to find **Conveyance 0.38.0**, then use an existing ore world or create a
 **new Creative world**.
 The only world type should be **Conveyance**; normal and hidden alternate preset
 lists contain only that preset. Seed entry and game mode remain available.
@@ -913,7 +1133,7 @@ and a supplied magical item should disappear on the next player tick.
 powershell -ExecutionPolicy Bypass -File .\dev.ps1 assemble
 ```
 
-The resulting file is `build/libs/conveyance-1.20.1-0.29.1.jar`. Put it in the
+The resulting file is `build/libs/conveyance-1.20.1-0.38.0.jar`. Put it in the
 `mods` folder of a Minecraft 1.20.1 instance with Forge 47.4.26 installed. Replace
 the previous Conveyance jar; do not install both versions together.
 

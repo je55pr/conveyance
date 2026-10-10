@@ -24,7 +24,7 @@ public final class MachinePartBlock extends FactoryPartBlock {
     }
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(MachineBlock.PART, MachineBlock.FACING, MachineBlock.LIT); }
     @Override public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return kind == MachineKind.SOLAR_PANEL ? Block.box(0, 0, 0, 16, 4, 16) : super.getShape(state, level, pos, context);
+        return FactoryGeometry.shape(kind.id, state.getValue(MachineBlock.PART), state.getValue(MachineBlock.FACING));
     }
     @Override public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) { return new ItemStack(kind.item()); }
     @Override public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) { return MachineBlock.interact(level, pos, player, hand); }

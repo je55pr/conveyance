@@ -41,7 +41,7 @@ public final class FactoryControls {
     private static int rightAction(Minecraft game, BlockPos pos) {
         if (Screen.hasControlDown()) return FactoryActions.COLLECT;
         ItemStack held = game.player.getMainHandItem();
-        if (held.isEmpty() && transferMode == FactoryActions.FUEL && LinkedHotbar.enabled(game.player)) held = LinkedHotbar.link(game.player, game.player.getInventory().selected);
+        if (held.isEmpty() && transferMode == FactoryActions.FUEL && LinkedHotbar.enabled(game.player)) held = LinkedHotbar.handReference(game.player);
         return FactoryActions.fuelTarget(game.level, pos, held) ? FactoryActions.FUEL : -1;
     }
     private static void transfer(Minecraft game, BlockPos pos, int action) {
@@ -62,7 +62,7 @@ public final class FactoryControls {
         if (pos == null) return;
         if (event.isPickBlock() && LinkedHotbar.enabled(game.player)) {
             ItemStack clone = game.level.getBlockState(pos).getCloneItemStack(targetHit(game), game.level, pos, game.player);
-            if (!clone.isEmpty()) InventoryNetwork.requestLink(game.player.containerMenu.containerId, game.player.getInventory().selected, BuiltInRegistries.ITEM.getKey(clone.getItem()));
+            if (!clone.isEmpty()) InventoryNetwork.requestLink(game.player.containerMenu.containerId, LinkedHotbar.bindingSlot(game.player), BuiltInRegistries.ITEM.getKey(clone.getItem()));
             event.setCanceled(true); event.setSwingHand(false);
         } else if (event.isUseItem()) {
             int action = rightAction(game, pos);

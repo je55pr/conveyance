@@ -21,7 +21,13 @@ public final class FactoryActions {
     }
     public static BlockPos root(Level level, BlockPos pos) {
         MachineEntity machine = MachineBlock.controller(level, pos);
-        return machine == null ? pos : machine.getBlockPos();
+        if (machine != null) return machine.getBlockPos();
+        var miner = MinerBlock.controller(level, pos);
+        if (miner != null) return miner.getBlockPos();
+        var radar = RadarBlock.controller(level, pos);
+        if (radar != null) return radar.getBlockPos();
+        var state = level.getBlockState(pos);
+        return state.getBlock() instanceof PowerPoleBlock || state.getBlock() instanceof PowerPolePartBlock ? PowerPoleBlock.origin(pos, state) : pos;
     }
     public static boolean assembler(Level level, BlockPos pos) {
         MachineEntity machine = MachineBlock.controller(level, pos);
@@ -41,7 +47,8 @@ public final class FactoryActions {
         Level level = player.level();
         double reach = player.getAttributeValue(ForgeMod.BLOCK_REACH.get()) + 1;
         if (!player.isAlive() || player.isSpectator() || !player.getAbilities().mayBuild || !level.hasChunkAt(pos)
-                || pos.distToCenterSqr(player.getEyePosition()) > reach * reach || player.containerMenu != player.inventoryMenu) return;
+                || !RemoteBuilding.canReach(player, pos) && pos.distToCenterSqr(player.getEyePosition()) > reach * reach
+                || player.containerMenu != player.inventoryMenu) return;
         MachineEntity machine = MachineBlock.controller(level, pos);
         if (action == COPY) {
             if (machine == null || machine.kind() != MachineKind.ASSEMBLER || machine.selectedRecipe() == null) return;

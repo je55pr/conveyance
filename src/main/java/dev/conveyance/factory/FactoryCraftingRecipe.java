@@ -23,13 +23,19 @@ public final class FactoryCraftingRecipe implements CraftingRecipe {
     private final String tab;
     private final List<AssemblyRecipes.Requirement> requirements;
     private final ItemStack result;
+    private final int craftingTicks;
 
     public FactoryCraftingRecipe(ResourceLocation id, String tab, List<AssemblyRecipes.Requirement> requirements, ItemStack result) {
+        this(id, tab, requirements, result, 10);
+    }
+    public FactoryCraftingRecipe(ResourceLocation id, String tab, List<AssemblyRecipes.Requirement> requirements, ItemStack result, int craftingTicks) {
         if (requirements.isEmpty() || requirements.stream().anyMatch(r -> r.count() < 1 || r.count() > 100 || r.ingredient().isEmpty()))
             throw new IllegalArgumentException("Invalid factory ingredients: " + id);
-        this.id = id; this.tab = tab; this.requirements = List.copyOf(requirements); this.result = result;
+        if (craftingTicks < 1 || craftingTicks > 12000) throw new IllegalArgumentException("Invalid crafting time: " + id);
+        this.id = id; this.tab = tab; this.requirements = List.copyOf(requirements); this.result = result; this.craftingTicks = craftingTicks;
     }
     public String tab() { return tab; }
+    public int craftingTicks() { return craftingTicks; }
     public List<AssemblyRecipes.Requirement> requirements() { return requirements; }
     @Override public ResourceLocation getId() { return id; }
     @Override public boolean matches(CraftingContainer container, Level level) { return false; }
@@ -52,8 +58,10 @@ public final class FactoryCraftingRecipe implements CraftingRecipe {
                 JsonObject ingredient = entry.getAsJsonObject();
                 requirements.add(new AssemblyRecipes.Requirement(Ingredient.fromJson(ingredient), GsonHelper.getAsInt(ingredient, "count", 1)));
             }
+            float seconds = GsonHelper.getAsFloat(json, "crafting_time", 0.5F);
+            if (!Float.isFinite(seconds) || seconds <= 0 || seconds > 600) throw new IllegalArgumentException("Invalid crafting time: " + id);
             return new FactoryCraftingRecipe(id, GsonHelper.getAsString(json, "tab", "production"), requirements,
-                    ShapedRecipe.itemStackFromJson(GsonHelper.getAsJsonObject(json, "result")));
+                    ShapedRecipe.itemStackFromJson(GsonHelper.getAsJsonObject(json, "result")), Math.max(1, Math.round(seconds * 20)));
         }
         @Override public FactoryCraftingRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             String tab = buffer.readUtf();
@@ -61,12 +69,14 @@ public final class FactoryCraftingRecipe implements CraftingRecipe {
             if (size < 1 || size > 32) throw new IllegalArgumentException("Invalid factory ingredient count");
             var requirements = new ArrayList<AssemblyRecipes.Requirement>();
             for (int i = 0; i < size; i++) requirements.add(new AssemblyRecipes.Requirement(Ingredient.fromNetwork(buffer), buffer.readVarInt()));
-            return new FactoryCraftingRecipe(id, tab, requirements, buffer.readItem());
+            ItemStack result = buffer.readItem();
+            return new FactoryCraftingRecipe(id, tab, requirements, result, buffer.readVarInt());
         }
         @Override public void toNetwork(FriendlyByteBuf buffer, FactoryCraftingRecipe recipe) {
             buffer.writeUtf(recipe.tab); buffer.writeVarInt(recipe.requirements.size());
             recipe.requirements.forEach(r -> { r.ingredient().toNetwork(buffer); buffer.writeVarInt(r.count()); });
             buffer.writeItem(recipe.result);
+            buffer.writeVarInt(recipe.craftingTicks);
         }
     }
 }

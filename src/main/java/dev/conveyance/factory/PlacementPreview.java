@@ -22,6 +22,11 @@ public final class PlacementPreview {
         ItemStack item = player.getItemInHand(hand);
         if (!(item.getItem() instanceof BlockItem blockItem)) return null;
         BlockPlaceContext context = new BlockPlaceContext(level, player, hand, item, hit);
+        return resolve(context);
+    }
+    public static Plan resolve(BlockPlaceContext context) {
+        Level level = context.getLevel(); Player player = context.getPlayer();
+        if (player == null || !(context.getItemInHand().getItem() instanceof BlockItem blockItem)) return null;
         context = blockItem.updatePlacementContext(context);
         if (context == null) return null;
         BlockPos root = context.getClickedPos();
@@ -57,7 +62,8 @@ public final class PlacementPreview {
             Part part = parts.get(index);
             if (level.isOutsideBuildHeight(part.pos) || !level.hasChunkAt(part.pos) || !level.getBlockState(part.pos).canBeReplaced()
                     || !part.state.canSurvive(level, part.pos) || !level.isUnobstructed(part.state, part.pos, CollisionContext.of(player))) valid = false;
-            if (index < foundation && !level.getBlockState(part.pos.below()).isFaceSturdy(level, part.pos.below(), Direction.UP)) valid = false;
+            if (index < foundation && (!level.hasChunkAt(part.pos.below())
+                    || !level.getBlockState(part.pos.below()).isFaceSturdy(level, part.pos.below(), Direction.UP))) valid = false;
         }
         return new Plan(List.copyOf(parts), valid);
     }

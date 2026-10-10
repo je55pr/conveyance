@@ -2,21 +2,17 @@ package dev.conveyance.factory;
 
 import dev.conveyance.player.ResearchState;
 import dev.conveyance.player.Technology;
-import dev.conveyance.player.LinkedStorageSlot;
+import dev.conveyance.player.PlayerStorageLayout;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
-public final class GeneratorMenu extends AbstractContainerMenu {
-    @Override public void clicked(int slot, int button, net.minecraft.world.inventory.ClickType type, Player player) {
-        dev.conveyance.player.InventoryAccess.click(slot, type, () -> super.clicked(slot, button, type, player));
-    }
+public final class GeneratorMenu extends FactoryMenu {
     private final Container fuel;
     private final boolean lab;
     private final ContainerData research;
@@ -34,14 +30,11 @@ public final class GeneratorMenu extends AbstractContainerMenu {
         fuel.startOpen(inventory.player);
         for (int slot = 0; slot < size; slot++) {
             final int input = slot;
-            addSlot(new Slot(fuel, input, lab ? 62 + input * 36 : 80, 18) {
+            addSlot(new Slot(fuel, input, PlayerStorageLayout.MACHINE_X + 8 + (lab ? input * 36 : 0), 70) {
                 @Override public boolean mayPlace(ItemStack stack) { return accepts(input, stack); }
             });
         }
-        for (int row = 0; row < 3; row++) {
-            for (int column = 0; column < 9; column++) addSlot(new Slot(inventory, column + row * 9 + 9, 8 + column * 18, 49 + row * 18));
-        }
-        for (int column = 0; column < 9; column++) addSlot(new LinkedStorageSlot(inventory, column, 8 + column * 18, 107));
+        addPlayerInventory(inventory);
         research = lab && fuel instanceof MachineEntity machine ? new ContainerData() {
             @Override public int get(int index) {
                 int selected = ResearchState.selected(machine.getLevel());
@@ -82,20 +75,7 @@ public final class GeneratorMenu extends AbstractContainerMenu {
     public int scienceProgress() { return Math.max(0, Math.min(24, research.get(3))); }
     @Override public boolean stillValid(Player player) { return fuel.stillValid(player); }
     @Override public void removed(Player player) { super.removed(player); fuel.stopOpen(player); }
-    @Override public ItemStack quickMoveStack(Player player, int index) {
-        Slot slot = slots.get(index);
-        if (!slot.hasItem()) return ItemStack.EMPTY;
-        ItemStack stack = slot.getItem(), original = stack.copy();
-        int size = lab ? 2 : 1, hotbar = size + 27, end = size + 36;
-        if (index < size) {
-            if (!moveItemStackTo(stack, size, end, true)) return ItemStack.EMPTY;
-        } else if (accepts(0, stack) || lab && accepts(1, stack)) {
-            if (!moveItemStackTo(stack, 0, size, false)) return ItemStack.EMPTY;
-        } else if (index < hotbar) {
-            if (!moveItemStackTo(stack, hotbar, end, false)) return ItemStack.EMPTY;
-        } else if (!moveItemStackTo(stack, size, hotbar, false)) return ItemStack.EMPTY;
-        if (stack.isEmpty()) slot.set(ItemStack.EMPTY); else slot.setChanged();
-        slot.onTake(player, stack);
-        return original;
+    @Override protected boolean moveToMachine(ItemStack stack) {
+        return moveItemStackTo(stack, 0, lab ? 2 : 1, false);
     }
 }

@@ -1,19 +1,19 @@
 {
   "variants": {
     "facing=north": {
-      "model": "conveyance:block/long_inserter",
+      "model": "conveyance:block/long_inserter_base",
       "y": 0
     },
     "facing=east": {
-      "model": "conveyance:block/long_inserter",
+      "model": "conveyance:block/long_inserter_base",
       "y": 90
     },
     "facing=south": {
-      "model": "conveyance:block/long_inserter",
+      "model": "conveyance:block/long_inserter_base",
       "y": 180
     },
     "facing=west": {
-      "model": "conveyance:block/long_inserter",
+      "model": "conveyance:block/long_inserter_base",
       "y": 270
     }
   }

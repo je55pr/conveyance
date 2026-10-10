@@ -1,6 +1,7 @@
 {
   "type": "conveyance:factory_crafting",
   "tab": "intermediates",
+  "crafting_time": 0.5,
   "ingredients": [
     {
       "item": "minecraft:copper_ingot",

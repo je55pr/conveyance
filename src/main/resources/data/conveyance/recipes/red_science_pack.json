@@ -1,6 +1,7 @@
 {
   "type": "conveyance:factory_crafting",
   "tab": "science",
+  "crafting_time": 5,
   "ingredients": [
     {
       "item": "conveyance:gear",

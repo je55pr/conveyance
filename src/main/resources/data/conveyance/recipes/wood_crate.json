@@ -1,6 +1,7 @@
 {
   "type": "conveyance:factory_crafting",
   "tab": "logistics",
+  "crafting_time": 0.5,
   "ingredients": [
     {
       "item": "conveyance:wood",

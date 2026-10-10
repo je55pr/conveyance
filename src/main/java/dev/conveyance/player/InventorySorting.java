@@ -65,7 +65,7 @@ public final class InventorySorting {
         for (int slot = 0; slot < original.size(); slot++) sorted.add(ItemStack.EMPTY);
         for (int cell = 0; cell < packed.size(); cell++) {
             // E shows main slots 9–35, extra storage, then former physical hotbar slots 0–8.
-            int storage = cell < 27 ? cell + 9 : cell < 63 ? cell + 9 : cell - 63;
+            int storage = PlayerStorageLayout.storageIndex(cell);
             sorted.set(storage, packed.get(cell));
         }
         boolean changed = false;

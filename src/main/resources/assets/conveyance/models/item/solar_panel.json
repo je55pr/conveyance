@@ -1,3 +1,3 @@
 {
-  "parent": "conveyance:block/solar_panel_on"
+  "parent": "conveyance:block/machines/solar_panel/item"
 }

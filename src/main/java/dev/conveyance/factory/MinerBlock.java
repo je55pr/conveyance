@@ -11,6 +11,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -24,6 +25,8 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 public final class MinerBlock extends FactoryBlock {
     public static final int WIDTH = 3, HEIGHT = 3, FOUNDATION = WIDTH * WIDTH, PART_COUNT = FOUNDATION * HEIGHT;
@@ -104,6 +107,9 @@ public final class MinerBlock extends FactoryBlock {
         return state.getValue(PART) == 0 ? new MinerEntity(pos, state) : null;
     }
     @Override public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
+    @Override public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return FactoryGeometry.shape("miner", state.getValue(PART), state.getValue(FACING));
+    }
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(PART, FACING); }
     @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return level.isClientSide || state.getValue(PART) != 0 ? null

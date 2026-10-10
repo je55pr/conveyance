@@ -8,7 +8,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.entity.ItemRenderer;
-import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -28,9 +27,7 @@ public final class ConveyorRenderer implements BlockEntityRenderer<ConveyorEntit
             if (belt.item(slot).isEmpty()) continue;
             pose.pushPose();
             pose.translate(belt.renderX(slot, partialTick), belt.renderY(slot, partialTick), belt.renderZ(slot, partialTick));
-            pose.scale(0.38F, 0.38F, 0.38F);
-            items.renderStatic(belt.item(slot), ItemDisplayContext.GROUND, light, overlay, pose, buffers,
-                    belt.getLevel(), slot);
+            BeltItemRenderer.render(items, belt.item(slot), belt.getLevel(), slot, pose, buffers, light, overlay);
             pose.popPose();
         }
     }

@@ -2,14 +2,19 @@ package dev.conveyance.factory;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import dev.conveyance.player.ResearchState;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 
 public final class MinerEntity extends PoweredMachineEntity {
     public static final int DEMAND_KW = 90, CYCLE_TICKS = 20;
     private int cursor;
     private boolean legacyFootprint;
+    private final DrillMotion drill = new DrillMotion(this);
+    public DrillMotion drillMotion() { return drill; }
     int footprintWidth() { return legacyFootprint ? 4 : MinerBlock.WIDTH; }
     public MinerEntity(BlockPos pos, BlockState state) { super(FactoryContent.MINER_ENTITY.get(), pos, state, DEMAND_KW, CYCLE_TICKS); }
     @Override protected boolean hasWork() {
@@ -31,13 +36,14 @@ public final class MinerEntity extends PoweredMachineEntity {
     public static void tick(Level level, BlockPos pos, BlockState state, MinerEntity miner) {
         var facing = state.getValue(MinerBlock.FACING);
         if (miner.legacyFootprint) {
-            if (!MinerBlock.resizeLegacy(level, pos, facing)) return;
+            if (!MinerBlock.resizeLegacy(level, pos, facing)) { miner.drill.capture(0); return; }
             miner.legacyFootprint = false;
             miner.setChanged();
             PowerNetwork.register(level, pos, PowerNetwork.Kind.MACHINE);
         }
         var resource = MiningResources.find(level, MinerBlock.FOUNDATION, miner.cursor, part -> MinerBlock.partPosition(pos, facing, part).below());
-        if (resource.stack().isEmpty() || !ItemTransfer.canOutput(level, pos.relative(facing), facing.getOpposite(), resource.stack())) return;
+        if (resource.stack().isEmpty() || !ItemTransfer.canOutput(level, pos.relative(facing), facing.getOpposite(), resource.stack())) { miner.drill.capture(0); return; }
+        miner.drill.capture(18 * PowerNetwork.fraction(level, pos) * ResearchState.miningSpeed(level));
         if (!miner.advanceWork()) return;
         if (ItemTransfer.output(level, pos.relative(facing), facing.getOpposite(), resource.stack())) {
             miner.cursor = resource.nextCursor();
@@ -50,5 +56,14 @@ public final class MinerEntity extends PoweredMachineEntity {
         super.load(tag);
         cursor = Math.floorMod(tag.getInt("Cursor"), MinerBlock.FOUNDATION);
         legacyFootprint = !tag.contains("FootprintWidth") || tag.getInt("FootprintWidth") == 4;
+        drill.read(tag);
+    }
+    @Override public CompoundTag getUpdateTag() { var tag = saveWithoutMetadata(); drill.write(tag); return tag; }
+    @Override public ClientboundBlockEntityDataPacket getUpdatePacket() { return ClientboundBlockEntityDataPacket.create(this); }
+    @Override public AABB getRenderBoundingBox() {
+        int width = footprintWidth();
+        BlockPos far = MinerBlock.partPosition(worldPosition, getBlockState().getValue(MinerBlock.FACING), width * width * MinerBlock.HEIGHT - 1, width);
+        return new AABB(Math.min(worldPosition.getX(), far.getX()), worldPosition.getY(), Math.min(worldPosition.getZ(), far.getZ()),
+                Math.max(worldPosition.getX(), far.getX()) + 1, worldPosition.getY() + MinerBlock.HEIGHT, Math.max(worldPosition.getZ(), far.getZ()) + 1);
     }
 }

@@ -56,9 +56,12 @@ public final class WorkbenchNavigation {
         while (Keys.TECHNOLOGY.consumeClick()) if (game.screen == null) open(1);
     }
     @SubscribeEvent public static void key(ScreenEvent.KeyPressed.Pre event) {
-        if (!(event.getScreen() instanceof AbstractContainerScreen<?> screen)
-                || screen.getFocused() instanceof EditBox edit && edit.isFocused()) return;
+        if (!(event.getScreen() instanceof AbstractContainerScreen<?> screen)) return;
         var game = Minecraft.getInstance();
+        if (screen instanceof FactoryWindowScreen<?> && game.options.keyInventory.matches(event.getKeyCode(), event.getScanCode())) {
+            event.setCanceled(true); screen.onClose(); return;
+        }
+        if (screen.getFocused() instanceof EditBox edit && edit.isFocused()) return;
         int tab = game.options.keyInventory.matches(event.getKeyCode(), event.getScanCode()) ? 0
                 : Keys.MAP.matches(event.getKeyCode(), event.getScanCode()) ? 2
                 : Keys.TECHNOLOGY.matches(event.getKeyCode(), event.getScanCode()) ? 1 : -1;

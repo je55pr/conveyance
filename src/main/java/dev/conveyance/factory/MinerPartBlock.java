@@ -13,6 +13,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 /** Structural blocks carry an index to the controller, with no block entities. */
 public final class MinerPartBlock extends FactoryPartBlock {
@@ -25,6 +27,9 @@ public final class MinerPartBlock extends FactoryPartBlock {
     }
     @Override public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
         return new ItemStack(FactoryContent.MINER_ITEM.get());
+    }
+    @Override public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return FactoryGeometry.shape("miner", state.getValue(MinerBlock.PART), state.getValue(MinerBlock.FACING));
     }
     @Override public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
             InteractionHand hand, BlockHitResult hit) {

@@ -3,6 +3,7 @@ package dev.conveyance.player;
 import dev.conveyance.Conveyance;
 import dev.conveyance.ItemPolicy;
 import dev.conveyance.factory.AssemblyRecipes;
+import dev.conveyance.factory.FactoryCraftingRecipe;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -31,7 +32,7 @@ public final class HandCrafting {
     public static int count(List<ItemStack> items, Ingredient ingredient) {
         return items.stream().filter(ingredient::test).mapToInt(ItemStack::getCount).sum();
     }
-    private static int consume(List<ItemStack> items, Ingredient ingredient, int count) {
+    static int consume(List<ItemStack> items, Ingredient ingredient, int count) {
         for (ItemStack stack : items) {
             if (!ingredient.test(stack)) continue;
             int taken = Math.min(count, stack.getCount());
@@ -46,13 +47,16 @@ public final class HandCrafting {
         items.forEach(stack -> result.add(stack.copy()));
         return result;
     }
+    public static int craftingTicks(CraftingRecipe recipe) { return recipe instanceof FactoryCraftingRecipe factory ? factory.craftingTicks() : 10; }
+    public record Operation(ResourceLocation recipe, List<AssemblyRecipes.Requirement> ingredients, ItemStack output, int ticks, int batches, boolean finished) {}
+    public record QueuePlan(List<ItemStack> remaining, List<ItemStack> reserved, List<Operation> operations) {}
     /** Temporary intermediates need no inventory slots; only the finished transaction does. */
     public static final class Planner {
         private final Level level;
         private final List<CraftingRecipe> recipes;
         public Planner(Level level, int unlocks) { this.level = level; recipes = recipes(level, unlocks); }
 
-        private boolean produce(List<ItemStack> items, CraftingRecipe recipe, int batches, Set<ResourceLocation> path) {
+        private boolean produce(List<ItemStack> items, CraftingRecipe recipe, int batches, Set<ResourceLocation> path, List<Operation> operations) {
             if (path.size() >= 32 || !path.add(recipe.getId())) return false;
             try {
                 var requirements = AssemblyRecipes.requirements(recipe);
@@ -65,31 +69,51 @@ public final class HandCrafting {
                         ItemStack output = producer.getResultItem(level.registryAccess());
                         if (path.contains(producer.getId()) || !requirement.ingredient().test(output)) continue;
                         var branch = copy(items);
+                        var branchOperations = operations == null ? null : new ArrayList<Operation>();
                         int needed = (missing + output.getCount() - 1) / output.getCount();
-                        if (produce(branch, producer, needed, path) && consume(branch, requirement.ingredient(), missing) == 0) {
-                            items.clear(); items.addAll(branch); supplied = true; break;
+                        if (produce(branch, producer, needed, path, branchOperations) && consume(branch, requirement.ingredient(), missing) == 0) {
+                            items.clear(); items.addAll(branch);
+                            if (operations != null) operations.addAll(branchOperations);
+                            supplied = true; break;
                         }
                     }
                     if (!supplied) return false;
                 }
                 ItemStack output = recipe.getResultItem(level.registryAccess());
                 items.add(output.copyWithCount(output.getCount() * batches));
+                if (operations != null) operations.add(new Operation(recipe.getId(), requirements, output.copy(), craftingTicks(recipe), batches, path.size() == 1));
                 return true;
             } finally { path.remove(recipe.getId()); }
         }
         private List<ItemStack> materials(List<ItemStack> original, CraftingRecipe recipe, int batches) {
             var working = copy(original);
-            return produce(working, recipe, batches, new HashSet<>()) ? working : null;
+            return produce(working, recipe, batches, new HashSet<>(), null) ? working : null;
         }
         private List<ItemStack> pack(List<ItemStack> working) {
             if (working == null) return null;
             // Keep existing slot positions. Append only completed outputs and batch leftovers.
-            var packed = copy(working.subList(0, 72));
-            for (int i = 72; i < working.size(); i++) if (!InventoryAccess.insert(packed, working.get(i))) return null;
+            var packed = copy(working.subList(0, InventoryAccess.SIZE));
+            for (int i = InventoryAccess.SIZE; i < working.size(); i++) if (!InventoryAccess.insert(packed, working.get(i))) return null;
             return packed;
         }
         public List<ItemStack> plan(List<ItemStack> original, CraftingRecipe recipe, int batches) {
             return batches < 1 || batches > 256 ? null : pack(materials(original, recipe, batches));
+        }
+        public QueuePlan queuePlan(List<ItemStack> original, CraftingRecipe recipe, int batches) {
+            if (batches < 1 || batches > 256) return null;
+            var working = copy(original); var operations = new ArrayList<Operation>();
+            if (!produce(working, recipe, batches, new HashSet<>(), operations) || pack(working) == null) return null;
+            var reserved = new ArrayList<ItemStack>();
+            for (int slot = 0; slot < InventoryAccess.SIZE; slot++) {
+                int used = original.get(slot).getCount() - working.get(slot).getCount();
+                if (used > 0) reserved.add(original.get(slot).copyWithCount(used));
+            }
+            return new QueuePlan(copy(working.subList(0, InventoryAccess.SIZE)), reserved, List.copyOf(operations));
+        }
+        public int craftingTime(List<ItemStack> original, CraftingRecipe recipe) {
+            var operations = new ArrayList<Operation>();
+            if (!produce(copy(original), recipe, 1, new HashSet<>(), operations)) return craftingTicks(recipe);
+            return operations.stream().mapToInt(operation -> operation.ticks * operation.batches).sum();
         }
         public int craftable(List<ItemStack> original, CraftingRecipe recipe) {
             if (materials(original, recipe, 1) == null) return 0;
@@ -110,10 +134,9 @@ public final class HandCrafting {
         var planner = new Planner(player.level(), ResearchState.mask(player.level()));
         int batches = requested == 0 ? planner.craftable(original, recipe) : requested == 1 ? 1 : Math.min(requested, planner.craftable(original, recipe));
         if (batches == 0) return false;
-        var candidate = planner.plan(original, recipe, batches);
+        var candidate = planner.queuePlan(original, recipe, batches);
         if (candidate == null) return false;
-        InventoryAccess.commit(player, extra, candidate);
-        return true;
+        return HandCraftingQueue.enqueue(player, extra, recipe, batches, candidate);
     }
     public static List<AssemblyRecipes.Requirement> researchCost(int research) {
         Technology tech = Technology.byId(research);
