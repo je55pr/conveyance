@@ -55,6 +55,7 @@ public final class GeneratorMenu extends AbstractContainerMenu {
                 if (index == 0) return fuel instanceof GeneratorEntity generator ? generator.fuelRemaining()
                         : fuel instanceof MachineEntity machine ? machine.fuelRemaining()
                         : fuel instanceof BurnerInserterEntity arm ? arm.fuelRemaining() : 0;
+                if (fuel instanceof GeneratorEntity generator) return index == 1 ? -1 : index == 2 ? generator.outputPower() : 0;
                 if (fuel instanceof MachineEntity machine && machine.kind() == MachineKind.BURNER_MINER)
                     return index == 1 ? machine.miningStatus().ordinal() + 1 : index == 2 ? machine.progressPixels() : 0;
                 return 0;
@@ -67,6 +68,8 @@ public final class GeneratorMenu extends AbstractContainerMenu {
     private boolean accepts(int slot, ItemStack stack) { return lab ? stack.is(slot == 0 ? FactoryContent.RED_SCIENCE_ITEM.get() : FactoryContent.GREEN_SCIENCE_ITEM.get()) : GeneratorEntity.isFuel(stack); }
     public boolean lab() { return lab; }
     public int fuelRemaining() { return lab ? 0 : research.get(0); }
+    public boolean generator() { return !lab && research.get(1) == -1; }
+    public int generatorOutput() { return Math.max(0, research.get(2)); }
     public MachineEntity.MiningStatus minerStatus() {
         int code = lab ? 0 : research.get(1);
         return code > 0 && code <= MachineEntity.MiningStatus.values().length ? MachineEntity.MiningStatus.values()[code - 1] : null;

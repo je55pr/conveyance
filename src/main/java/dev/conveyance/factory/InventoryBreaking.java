@@ -29,6 +29,7 @@ public final class InventoryBreaking {
         var state = event.getState();
         var machine = MachineBlock.controller(level, pos);
         var miner = MinerBlock.controller(level, pos);
+        var radar = RadarBlock.controller(level, pos);
         boolean pole = state.getBlock() instanceof PowerPoleBlock || state.getBlock() instanceof PowerPolePartBlock;
         boolean tree = state.getBlock() instanceof ForestLogBlock;
         BlockEntity entity = level.getBlockEntity(pos);
@@ -36,6 +37,7 @@ public final class InventoryBreaking {
         if (tree) loot = List.of(new ItemStack(FactoryContent.WOOD_ITEM.get(), ForestLogBlock.logCount(level, pos, state)));
         else if (machine != null) loot = FactoryPickups.block(machine);
         else if (miner != null) loot = FactoryPickups.block(miner);
+        else if (radar != null) loot = FactoryPickups.block(radar);
         else if (pole) loot = List.of(new ItemStack(FactoryContent.POWER_POLE_ITEM.get()));
         else if (entity != null && BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(entity.getType()).getNamespace().equals(Conveyance.MOD_ID)) loot = FactoryPickups.block(entity);
         else {
@@ -56,6 +58,7 @@ public final class InventoryBreaking {
         if (tree) ForestLogBlock.removeTree(level, pos, state);
         else if (machine != null) MachineBlock.dismantle(level, pos, state);
         else if (miner != null) MinerBlock.dismantle(level, pos, state);
+        else if (radar != null) RadarBlock.dismantle(level, pos, state);
         else if (pole) PowerPoleBlock.dismantle(level, pos, state);
         else if (!level.destroyBlock(pos, false, player)) return;
         InventoryAccess.commit(player, extra, inventory);

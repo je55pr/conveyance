@@ -17,7 +17,7 @@ public final class InserterEntity extends PoweredMachineEntity {
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, InserterEntity inserter) {
-        if (!inserter.advanceWork()) return;
+        if (!inserter.hasWork() || !inserter.advanceWork()) return;
         var facing = state.getValue(InserterBlock.FACING);
         int reach = ((InserterBlock) state.getBlock()).reach();
         BlockPos from = pos.relative(facing.getOpposite(), reach), to = pos.relative(facing, reach);
@@ -28,12 +28,20 @@ public final class InserterEntity extends PoweredMachineEntity {
             if (inserter.held.isEmpty()) return;
             inserter.setChanged();
         }
-        if (ItemTransfer.output(level, to, facing.getOpposite(), inserter.held)) {
+        if (ItemTransfer.inserterOutput(level, to, facing.getOpposite(), inserter.held)) {
             inserter.held = ItemStack.EMPTY;
             inserter.setChanged();
         }
     }
 
+    @Override protected boolean hasWork() {
+        if (level == null) return false;
+        var facing = getBlockState().getValue(InserterBlock.FACING);
+        int reach = ((InserterBlock) getBlockState().getBlock()).reach();
+        BlockPos from = worldPosition.relative(facing.getOpposite(), reach), to = worldPosition.relative(facing, reach);
+        return held.isEmpty() ? !ItemTransfer.peekForOutput(level, from, to, facing).isEmpty()
+                : ItemTransfer.canInserterOutput(level, to, facing.getOpposite(), held);
+    }
     public void dropHeld() {
         if (level != null && !level.isClientSide && !held.isEmpty()) {
             level.addFreshEntity(new ItemEntity(level, worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5, held));

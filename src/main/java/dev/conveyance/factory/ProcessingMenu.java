@@ -12,7 +12,7 @@ import net.minecraft.world.inventory.ClickType;
 import dev.conveyance.player.InventoryAccess;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingRecipe;
-import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 
 public final class ProcessingMenu extends AbstractContainerMenu {
@@ -51,7 +51,7 @@ public final class ProcessingMenu extends AbstractContainerMenu {
     public int progress() { return Math.max(0, Math.min(24, data.get(1))); }
     public boolean burning() { return data.get(0) > 0; }
     public CraftingRecipe recipe() {
-        var recipes = AssemblyRecipes.available(level);
+        var recipes = AssemblyRecipes.all(level);
         int selected = data.get(2);
         return selected < 0 || selected >= recipes.size() ? null : recipes.get(selected);
     }
@@ -68,9 +68,10 @@ public final class ProcessingMenu extends AbstractContainerMenu {
     }
     @Override public boolean stillValid(Player player) { return container.stillValid(player); }
     @Override public void removed(Player player) { super.removed(player); container.stopOpen(player); }
-    @Override public boolean clickMenuButton(Player player, int id) {
-        if (machine == null || !assembler() || !stillValid(player) || id < 0 || id > 1) return false;
-        machine.changeRecipe(id == 0 ? -1 : 1);
+    public boolean selectRecipe(Player player, ResourceLocation id) {
+        if (machine == null || !assembler() || !stillValid(player) || player.isSpectator()) return false;
+        if (!machine.selectRecipe(id, player.isCreative())) return false;
+        broadcastChanges();
         return true;
     }
     @Override public ItemStack quickMoveStack(Player player, int index) {

@@ -48,7 +48,7 @@ public final class MapPalette {
         if (cell.feature() == TerracedTerrain.Feature.ROCK_WALL) return ROCK;
         if (cell.feature() == TerracedTerrain.Feature.LOW_RIDGE) return RIDGE;
         byte resource = ore(ore);
-        return resource != UNKNOWN ? resource : forest ? FOREST : cell.dry() ? DRY : LAND;
+        return resource != UNKNOWN ? resource : forest ? FOREST : LAND;
     }
     public static byte resource(BlockState state) {
         state = TerrainBlocks.material(state);

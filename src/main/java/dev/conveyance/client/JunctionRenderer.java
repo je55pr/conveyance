@@ -26,7 +26,7 @@ public final class JunctionRenderer implements BlockEntityRenderer<JunctionEntit
             if (junction.item(slot).isEmpty()) continue;
             pose.pushPose();
             pose.translate(junction.renderX(slot, partialTick), 0.54, junction.renderZ(slot, partialTick));
-            pose.scale(0.45F, 0.45F, 0.45F);
+            pose.scale(0.38F, 0.38F, 0.38F);
             items.renderStatic(junction.item(slot), ItemDisplayContext.GROUND, light, overlay, pose, buffers, junction.getLevel(), slot);
             pose.popPose();
         }

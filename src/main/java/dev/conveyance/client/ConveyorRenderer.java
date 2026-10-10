@@ -28,7 +28,7 @@ public final class ConveyorRenderer implements BlockEntityRenderer<ConveyorEntit
             if (belt.item(slot).isEmpty()) continue;
             pose.pushPose();
             pose.translate(belt.renderX(slot, partialTick), belt.renderY(slot, partialTick), belt.renderZ(slot, partialTick));
-            pose.scale(0.45F, 0.45F, 0.45F);
+            pose.scale(0.38F, 0.38F, 0.38F);
             items.renderStatic(belt.item(slot), ItemDisplayContext.GROUND, light, overlay, pose, buffers,
                     belt.getLevel(), slot);
             pose.popPose();

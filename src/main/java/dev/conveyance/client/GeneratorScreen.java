@@ -64,6 +64,10 @@ public final class GeneratorScreen extends AbstractContainerScreen<GeneratorMenu
                 graphics.drawString(font, status.label(), 108, 20, status == MachineEntity.MiningStatus.MINING ? 0x226633 : 0x995522, false);
                 graphics.fill(108, 31, 166, 34, 0xFF777777);
                 graphics.fill(108, 31, 108 + 58 * menu.miningProgress() / 24, 34, 0xFF338844);
+            } else if (menu.generator()) {
+                graphics.drawString(font, menu.generatorOutput() == 0 ? Component.translatable("menu.conveyance.generator_idle")
+                        : Component.translatable("menu.conveyance.generator_output", menu.generatorOutput()), 108, 20,
+                        menu.generatorOutput() == 0 ? 0x995522 : 0x226633, false);
             }
             return;
         }

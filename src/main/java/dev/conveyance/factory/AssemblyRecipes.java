@@ -24,9 +24,11 @@ public final class AssemblyRecipes {
         return List.copyOf(grouped.values());
     }
     public static List<CraftingRecipe> available(Level level) {
+        return all(level).stream().filter(recipe -> ResearchState.recipeUnlocked(recipe.getId(), ResearchState.mask(level))).toList();
+    }
+    public static List<CraftingRecipe> all(Level level) {
         return level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING).stream()
                 .filter(recipe -> recipe.getId().getNamespace().equals(Conveyance.MOD_ID))
-                .filter(recipe -> ResearchState.recipeUnlocked(recipe.getId(), ResearchState.mask(level)))
                 .filter(recipe -> !recipe.getResultItem(level.registryAccess()).isEmpty() && !ItemPolicy.isDisabled(recipe.getResultItem(level.registryAccess())))
                 .filter(recipe -> !requirements(recipe).isEmpty() && requirements(recipe).size() <= 4)
                 .sorted(Comparator.comparing(recipe -> recipe.getId().toString())).toList();

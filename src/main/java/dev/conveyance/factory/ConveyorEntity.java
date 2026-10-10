@@ -14,10 +14,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 
-/** A single lane of four owned items. The server moves cargo; the client only draws it. */
+/** Two independent four-item lanes, numbered left/right in the direction of travel. */
 public final class ConveyorEntity extends BlockEntity {
-    public static final int CAPACITY = 4;
+    public static final int LEFT = 0, RIGHT = 1, LANES = 2, POSITIONS = 4, CAPACITY = LANES * POSITIONS;
     public static final int MOVE_TICKS = 5;
     private final NonNullList<ItemStack> items = NonNullList.withSize(CAPACITY, ItemStack.EMPTY);
     private final long[] moveStart = new long[CAPACITY];
@@ -37,6 +38,14 @@ public final class ConveyorEntity extends BlockEntity {
     public boolean configured() { return !slope() || getBlockState().getValue(SlopeConveyorBlock.FLOW) != SlopeConveyorBlock.Flow.UNSET; }
     private boolean down() { return slope() && getBlockState().getValue(SlopeConveyorBlock.FLOW).down(); }
     public Direction travelDirection() { return down() ? getBlockState().getValue(ConveyorBlock.FACING).getOpposite() : getBlockState().getValue(ConveyorBlock.FACING); }
+    public Direction entrySide() {
+        if (slope()) return travelDirection().getOpposite();
+        return switch (getBlockState().getValue(ConveyorBlock.TURN)) {
+            case LEFT -> travelDirection().getCounterClockWise();
+            case RIGHT -> travelDirection().getClockWise();
+            default -> travelDirection().getOpposite();
+        };
+    }
     private int inputY() { return worldPosition.getY() + (down() ? 1 : 0); }
     public int outputY() { return worldPosition.getY() + (slope() && !down() ? 1 : 0); }
     public BlockPos outputPosition() { return worldPosition.relative(travelDirection()).offset(0, outputY() - worldPosition.getY(), 0); }
@@ -63,26 +72,26 @@ public final class ConveyorEntity extends BlockEntity {
         if (belt.slope()) {
             if (level.getGameTime() % 5 == 0) SlopeConveyorBlock.update(level, pos);
             if (!belt.moving()) return;
-        }
+        } else if (level.getGameTime() % 5 == 0) ConveyorBlock.update(level, pos);
         boolean changed = false;
-        int front = CAPACITY - 1;
-        Direction facing = belt.travelDirection();
-        if (!belt.items.get(front).isEmpty() && belt.ready(front)) {
-            if (ItemTransfer.output(level, belt.outputPosition(), facing.getOpposite(), belt.items.get(front))) {
+        for (int lane = 0; lane < LANES; lane++) {
+            int first = lane * POSITIONS, front = first + POSITIONS - 1;
+            if (!belt.items.get(front).isEmpty() && belt.ready(front)
+                    && ItemTransfer.outputFromBelt(level, belt.outputPosition(), belt.travelDirection().getOpposite(), belt.items.get(front), lane)) {
                 belt.items.set(front, ItemStack.EMPTY);
                 changed = true;
             }
-        }
-        // Work from the front so each item advances at most one position in this tick.
-        for (int slot = front; slot > 0; slot--) {
-            if (belt.items.get(slot).isEmpty() && !belt.items.get(slot - 1).isEmpty() && belt.ready(slot - 1)) {
-                belt.fromX[slot] = belt.targetX(slot - 1);
-                belt.fromY[slot] = belt.targetY(slot - 1);
-                belt.fromZ[slot] = belt.targetZ(slot - 1);
-                belt.moveStart[slot] = level.getGameTime();
-                belt.items.set(slot, belt.items.get(slot - 1));
-                belt.items.set(slot - 1, ItemStack.EMPTY);
-                changed = true;
+            // Each lane advances independently, from its front backwards.
+            for (int slot = front; slot > first; slot--) {
+                if (belt.items.get(slot).isEmpty() && !belt.items.get(slot - 1).isEmpty() && belt.ready(slot - 1)) {
+                    belt.fromX[slot] = belt.targetX(slot - 1);
+                    belt.fromY[slot] = belt.targetY(slot - 1);
+                    belt.fromZ[slot] = belt.targetZ(slot - 1);
+                    belt.moveStart[slot] = level.getGameTime();
+                    belt.items.set(slot, belt.items.get(slot - 1));
+                    belt.items.set(slot - 1, ItemStack.EMPTY);
+                    changed = true;
+                }
             }
         }
         if (changed) belt.changed();
@@ -90,28 +99,74 @@ public final class ConveyorEntity extends BlockEntity {
 
     /** Accept one item at the entrance. Callers retain ownership unless this succeeds. */
     public boolean offer(ItemStack stack, Direction incomingSide) {
-        if (stack.isEmpty() || !canAccept(incomingSide)) return false;
-        items.set(0, stack.copyWithCount(1));
-        fromX[0] = 0.5F + incomingSide.getStepX() * 0.5F;
-        fromZ[0] = 0.5F + incomingSide.getStepZ() * 0.5F;
-        fromY[0] = 0.13F + inputY() - worldPosition.getY();
-        moveStart[0] = level.getGameTime();
+        return offer(stack, incomingSide, nearestLane(incomingSide));
+    }
+    public boolean offer(ItemStack stack, Direction incomingSide, int lane) {
+        if (stack.isEmpty() || !canAccept(incomingSide, lane)) return false;
+        return arrive(stack, incomingSide, streamLane(incomingSide, lane), insertionPosition(incomingSide));
+    }
+    public boolean canAccept(Direction incomingSide) {
+        return canAccept(incomingSide, nearestLane(incomingSide));
+    }
+    public boolean canAccept(Direction incomingSide, int lane) {
+        return horizontal(incomingSide) && (slope() ? incomingSide == entrySide() : incomingSide != travelDirection())
+                && free(streamLane(incomingSide, lane), insertionPosition(incomingSide));
+    }
+    private static boolean horizontal(Direction side) { return side.getAxis().isHorizontal(); }
+    private int streamLane(Direction incomingSide, int lane) { return incomingSide == entrySide() ? lane : nearestLane(incomingSide); }
+    private int insertionPosition(Direction side) {
+        return side == entrySide() ? 0 : side == travelDirection() ? POSITIONS - 1 : POSITIONS / 2;
+    }
+    public int nearestLane(Direction side) { return side == travelDirection().getClockWise() ? RIGHT : LEFT; }
+    public int inserterLane(Direction incomingSide) {
+        if (incomingSide.getAxis() != travelDirection().getAxis()) return nearestLane(incomingSide);
+        // Aligned belts use the inserter's left, even when that is the belt's right.
+        return incomingSide.getOpposite() == travelDirection() ? LEFT : RIGHT;
+    }
+    public boolean canAcceptInserter(Direction incomingSide) {
+        return horizontal(incomingSide) && free(inserterLane(incomingSide), insertionPosition(incomingSide));
+    }
+    public boolean offerInserter(ItemStack stack, Direction incomingSide) {
+        return !stack.isEmpty() && canAcceptInserter(incomingSide)
+                && arrive(stack, incomingSide, inserterLane(incomingSide), insertionPosition(incomingSide));
+    }
+    private boolean free(int lane, int position) {
+        return lane >= 0 && lane < LANES && level != null && !level.isClientSide && moving()
+                && items.get(lane * POSITIONS + position).isEmpty();
+    }
+    private boolean arrive(ItemStack stack, Direction side, int lane, int position) {
+        int slot = lane * POSITIONS + position;
+        items.set(slot, stack.copyWithCount(1));
+        Direction left = side.getOpposite().getCounterClockWise();
+        float offset = lane == LEFT ? 0.1875F : -0.1875F;
+        fromX[slot] = 0.5F + side.getStepX() * 0.5F + left.getStepX() * offset;
+        fromZ[slot] = 0.5F + side.getStepZ() * 0.5F + left.getStepZ() * offset;
+        if (side != entrySide()) {
+            fromX[slot] = side.getAxis() == Direction.Axis.X ? 0.5F + side.getStepX() * 0.5F : targetX(slot);
+            fromZ[slot] = side.getAxis() == Direction.Axis.Z ? 0.5F + side.getStepZ() * 0.5F : targetZ(slot);
+        }
+        fromY[slot] = position == 0 ? 0.13F + inputY() - worldPosition.getY() : targetY(slot);
+        moveStart[slot] = level.getGameTime();
         changed();
         return true;
     }
-
-    public boolean canAccept(Direction incomingSide) {
-        return level != null && !level.isClientSide && moving() && items.get(0).isEmpty()
-                && (slope() ? incomingSide == travelDirection().getOpposite() : incomingSide != travelDirection());
+    public int nearestLane(Vec3 hit) {
+        double best = Double.MAX_VALUE;
+        int result = LEFT;
+        for (int slot = 0; slot < CAPACITY; slot++) {
+            double dx = hit.x - worldPosition.getX() - targetX(slot), dz = hit.z - worldPosition.getZ() - targetZ(slot);
+            if (dx * dx + dz * dz < best) { best = dx * dx + dz * dz; result = slot / POSITIONS; }
+        }
+        return result;
     }
 
     /** Only the item at the finished end of the lane is available to an inserter. */
-    public ItemStack peekFront() {
-        int front = CAPACITY - 1;
+    public ItemStack peekFront(int lane) {
+        int front = lane * POSITIONS + POSITIONS - 1;
         return level != null && !level.isClientSide && moving() && ready(front) ? items.get(front).copy() : ItemStack.EMPTY;
     }
-    public ItemStack takeFront() {
-        int front = CAPACITY - 1;
+    public ItemStack takeFront(int lane) {
+        int front = lane * POSITIONS + POSITIONS - 1;
         if (level == null || level.isClientSide || !moving() || !ready(front)) return ItemStack.EMPTY;
         ItemStack result = items.get(front);
         if (!result.isEmpty()) {
@@ -125,12 +180,28 @@ public final class ConveyorEntity extends BlockEntity {
     public ItemStack item(int slot) { return items.get(slot); }
 
     private float targetX(int slot) {
-        return 0.5F + travelDirection().getStepX() * ((slot + 0.5F) / CAPACITY - 0.5F);
+        return target(slot, true);
     }
     private float targetZ(int slot) {
-        return 0.5F + travelDirection().getStepZ() * ((slot + 0.5F) / CAPACITY - 0.5F);
+        return target(slot, false);
     }
-    private float targetY(int slot) { float t = (slot + 0.5F) / CAPACITY; return 0.13F + (slope() ? down() ? 1 - t : t : 0); }
+    private float target(int slot, boolean xAxis) {
+        float t = (slot % POSITIONS + 0.5F) / POSITIONS;
+        float offset = slot / POSITIONS == LEFT ? 0.1875F : -0.1875F;
+        Direction travel = travelDirection(), left = travel.getCounterClockWise();
+        if (entrySide() == travel.getOpposite())
+            return 0.5F + (xAxis ? travel.getStepX() : travel.getStepZ()) * (t - 0.5F)
+                    + (xAxis ? left.getStepX() : left.getStepZ()) * offset;
+        // Quarter circles share a corner with the corresponding belt model.
+        boolean fromLeft = entrySide() == left;
+        float radius = 0.5F + (fromLeft ? -offset : offset);
+        float angle = (1 - t) * (float) Math.PI / 2;
+        float lateral = (fromLeft ? -0.5F : 0.5F) + (fromLeft ? 1 : -1) * radius * Mth.cos(angle);
+        float forward = 0.5F - radius * Mth.sin(angle);
+        return 0.5F + (xAxis ? left.getStepX() : left.getStepZ()) * -lateral
+                + (xAxis ? travel.getStepX() : travel.getStepZ()) * forward;
+    }
+    private float targetY(int slot) { float t = (slot % POSITIONS + 0.5F) / POSITIONS; return 0.13F + (slope() ? down() ? 1 - t : t : 0); }
     private float progress(int slot, float partialTick) {
         return level == null ? 1 : Mth.clamp((level.getGameTime() - moveStart[slot] + partialTick) / MOVE_TICKS, 0, 1);
     }
@@ -146,6 +217,7 @@ public final class ConveyorEntity extends BlockEntity {
     @Override protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         ContainerHelper.saveAllItems(tag, items);
+        tag.putInt("Lanes", LANES);
     }
 
     @Override public void load(CompoundTag tag) {

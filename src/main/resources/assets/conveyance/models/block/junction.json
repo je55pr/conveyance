@@ -1,8 +1,8 @@
 {
   "textures": {
-    "body": "minecraft:block/black_concrete",
-    "hub": "minecraft:block/iron_block",
-    "particle": "minecraft:block/black_concrete"
+    "body": "minecraft:block/gray_concrete",
+    "hub": "minecraft:block/light_gray_concrete",
+    "particle": "minecraft:block/gray_concrete"
   },
   "elements": [
     {

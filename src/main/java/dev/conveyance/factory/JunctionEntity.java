@@ -15,15 +15,15 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-/** Each port has a one-item entrance and exit. Independent cursors balance both ends. */
+/** Each port has separate left/right entrances and exits, with independent round-robin cursors. */
 public final class JunctionEntity extends BlockEntity {
     static final Direction[] SIDES = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
-    public static final int CAPACITY = 8;
+    public static final int LANES = 2, PER_LANE = 8, CAPACITY = LANES * PER_LANE;
     public static final int MOVE_TICKS = 5;
     private final NonNullList<ItemStack> items = NonNullList.withSize(CAPACITY, ItemStack.EMPTY);
     private final long[] moveStart = new long[CAPACITY];
     private final float[] fromX = new float[CAPACITY], fromZ = new float[CAPACITY];
-    private int inputCursor, outputCursor;
+    private final int[] inputCursor = new int[LANES], outputCursor = new int[LANES];
     boolean recovered;
     public JunctionEntity(BlockPos pos, BlockState state) { super(FactoryContent.JUNCTION_ENTITY.get(), pos, state); }
     public static JunctionEntity at(Level level, BlockPos pos) {
@@ -33,93 +33,102 @@ public final class JunctionEntity extends BlockEntity {
     private static int index(Direction side) {
         return switch (side) { case NORTH -> 0; case EAST -> 1; case SOUTH -> 2; case WEST -> 3; default -> -1; };
     }
+    private static int entrance(int side, int lane) { return lane * PER_LANE + side; }
+    private static int exit(int side, int lane) { return entrance(side, lane) + 4; }
+
     public static void tick(Level level, BlockPos pos, BlockState state, JunctionEntity junction) {
         state = JunctionBlock.updatePorts(level, pos);
         boolean changed = false;
-        // Empty completed exit positions into belts. Inserters collect from these positions directly.
-        for (int side = 0; side < 4; side++) {
-            int exit = side + 4;
-            if (junction.items.get(exit).isEmpty()) continue;
-            if (JunctionBlock.port(state, SIDES[side]) != JunctionBlock.Port.OUTPUT) {
-                // Retain and reroute cargo when a connected belt is removed or rotated.
-                if (junction.items.get(side).isEmpty() && junction.ready(exit)) {
-                    junction.move(exit, side);
-                    changed = true;
-                }
-            } else if (junction.ready(exit)) {
-                ConveyorEntity belt = ConveyorEntity.connection(level, pos.relative(SIDES[side]), SIDES[side].getOpposite());
-                if (belt != null && belt.offer(junction.items.get(exit), SIDES[side].getOpposite())) {
-                    junction.items.set(exit, ItemStack.EMPTY);
-                    changed = true;
+        for (int lane = 0; lane < LANES; lane++) {
+            for (int side = 0; side < 4; side++) {
+                int exit = exit(side, lane), input = entrance(side, lane);
+                if (junction.items.get(exit).isEmpty()) continue;
+                if (JunctionBlock.port(state, SIDES[side]) != JunctionBlock.Port.OUTPUT) {
+                    if (junction.items.get(input).isEmpty() && junction.ready(exit)) {
+                        junction.move(exit, input);
+                        changed = true;
+                    }
+                } else if (junction.ready(exit)) {
+                    ConveyorEntity belt = ConveyorEntity.connection(level, pos.relative(SIDES[side]), SIDES[side].getOpposite());
+                    if (belt != null && belt.offer(junction.items.get(exit), SIDES[side].getOpposite(), lane)) {
+                        junction.items.set(exit, ItemStack.EMPTY);
+                        changed = true;
+                    }
                 }
             }
-        }
-        // Route each ready input once, choosing the next available output independently.
-        for (int transfer = 0; transfer < 4; transfer++) {
-            int input = junction.nextInput(), output = junction.nextOutput(state);
-            if (input < 0 || output < 0) break;
-            junction.move(input, output + 4);
-            junction.inputCursor = (input + 1) % 4;
-            junction.outputCursor = (output + 1) % 4;
-            changed = true;
-        }
-        // Reserved entrance positions prevent a fast lane from taking another lane's space.
-        for (int side = 0; side < 4; side++) {
-            if (JunctionBlock.port(state, SIDES[side]) != JunctionBlock.Port.INPUT || !junction.items.get(side).isEmpty()) continue;
-            ConveyorEntity belt = ConveyorEntity.outletAt(level, pos.relative(SIDES[side]));
-            if (belt == null) continue;
-            ItemStack stack = belt.takeFront();
-            if (!stack.isEmpty()) {
-                junction.arrive(stack, side);
+            // Preserve the lane while fairly selecting both input and output ports.
+            for (int transfer = 0; transfer < 4; transfer++) {
+                int input = junction.nextInput(lane), output = junction.nextOutput(state, lane);
+                if (input < 0 || output < 0) break;
+                junction.move(entrance(input, lane), exit(output, lane));
+                junction.inputCursor[lane] = (input + 1) % 4;
+                junction.outputCursor[lane] = (output + 1) % 4;
                 changed = true;
+            }
+            for (int side = 0; side < 4; side++) {
+                if (JunctionBlock.port(state, SIDES[side]) != JunctionBlock.Port.INPUT || !junction.items.get(entrance(side, lane)).isEmpty()) continue;
+                ConveyorEntity belt = ConveyorEntity.outletAt(level, pos.relative(SIDES[side]));
+                if (belt == null || !belt.outputPosition().equals(pos)) continue;
+                ItemStack stack = belt.takeFront(lane);
+                if (!stack.isEmpty()) {
+                    junction.arrive(stack, side, lane);
+                    changed = true;
+                }
             }
         }
         if (changed) junction.changed();
     }
-    private int nextInput() {
+    private int nextInput(int lane) {
         for (int offset = 0; offset < 4; offset++) {
-            int side = (inputCursor + offset) % 4;
-            if (!items.get(side).isEmpty() && ready(side)) return side;
+            int side = (inputCursor[lane] + offset) % 4, slot = entrance(side, lane);
+            if (!items.get(slot).isEmpty() && ready(slot)) return side;
         }
         return -1;
     }
-    private int nextOutput(BlockState state) {
+    private int nextOutput(BlockState state, int lane) {
         for (int offset = 0; offset < 4; offset++) {
-            int side = (outputCursor + offset) % 4;
-            if (JunctionBlock.port(state, SIDES[side]) == JunctionBlock.Port.OUTPUT && items.get(side + 4).isEmpty()) return side;
+            int side = (outputCursor[lane] + offset) % 4;
+            if (JunctionBlock.port(state, SIDES[side]) == JunctionBlock.Port.OUTPUT && items.get(exit(side, lane)).isEmpty()) return side;
         }
         return -1;
     }
-    public boolean offer(ItemStack stack, Direction incomingSide) {
-        int side = index(incomingSide);
-        if (stack.isEmpty() || !canAccept(incomingSide)) return false;
-        arrive(stack, side);
+    public boolean offer(ItemStack stack, Direction incomingSide) { return offer(stack, incomingSide, ConveyorEntity.LEFT); }
+    public boolean offer(ItemStack stack, Direction incomingSide, int lane) {
+        if (stack.isEmpty() || !canAccept(incomingSide, lane)) return false;
+        arrive(stack, index(incomingSide), lane);
         changed();
         return true;
     }
-    public boolean canAccept(Direction incomingSide) {
+    public boolean canAccept(Direction incomingSide) { return canAccept(incomingSide, ConveyorEntity.LEFT); }
+    public boolean canAccept(Direction incomingSide, int lane) {
         int side = index(incomingSide);
-        return level != null && !level.isClientSide && side >= 0 && items.get(side).isEmpty()
+        return level != null && !level.isClientSide && side >= 0 && lane >= 0 && lane < LANES
+                && items.get(entrance(side, lane)).isEmpty()
                 && JunctionBlock.port(getBlockState(), incomingSide) != JunctionBlock.Port.OUTPUT;
     }
-    private void arrive(ItemStack stack, int side) {
-        items.set(side, stack.copyWithCount(1));
-        fromX[side] = 0.5F + SIDES[side].getStepX() * 0.5F;
-        fromZ[side] = 0.5F + SIDES[side].getStepZ() * 0.5F;
-        moveStart[side] = level.getGameTime();
+    private void arrive(ItemStack stack, int side, int lane) {
+        int slot = entrance(side, lane);
+        items.set(slot, stack.copyWithCount(1));
+        Direction left = SIDES[side].getOpposite().getCounterClockWise();
+        float offset = lane == ConveyorEntity.LEFT ? 0.1875F : -0.1875F;
+        fromX[slot] = 0.5F + SIDES[side].getStepX() * 0.5F + left.getStepX() * offset;
+        fromZ[slot] = 0.5F + SIDES[side].getStepZ() * 0.5F + left.getStepZ() * offset;
+        moveStart[slot] = level.getGameTime();
     }
-    public ItemStack peekOutput(Direction outputSide) {
+    public ItemStack peekOutput(Direction outputSide, int lane) {
         int side = index(outputSide);
-        return level != null && !level.isClientSide && side >= 0 && ready(side + 4)
-                && JunctionBlock.port(getBlockState(), outputSide) == JunctionBlock.Port.OUTPUT ? items.get(side + 4).copy() : ItemStack.EMPTY;
+        return level != null && !level.isClientSide && side >= 0 && ready(exit(side, lane))
+                && JunctionBlock.port(getBlockState(), outputSide) == JunctionBlock.Port.OUTPUT
+                ? items.get(exit(side, lane)).copy() : ItemStack.EMPTY;
     }
-    public ItemStack takeOutput(Direction outputSide) {
+    public ItemStack takeOutput(Direction outputSide, int lane) {
         int side = index(outputSide);
-        if (level == null || level.isClientSide || side < 0 || !ready(side + 4)
+        if (level == null || level.isClientSide || side < 0 || !ready(exit(side, lane))
                 || JunctionBlock.port(getBlockState(), outputSide) != JunctionBlock.Port.OUTPUT) return ItemStack.EMPTY;
-        ItemStack stack = items.get(side + 4);
+        int slot = exit(side, lane);
+        ItemStack stack = items.get(slot);
         if (!stack.isEmpty()) {
-            items.set(side + 4, ItemStack.EMPTY);
+            items.set(slot, ItemStack.EMPTY);
             changed();
         }
         return stack;
@@ -132,8 +141,16 @@ public final class JunctionEntity extends BlockEntity {
         items.set(source, ItemStack.EMPTY);
     }
     private boolean ready(int slot) { return level.getGameTime() - moveStart[slot] >= MOVE_TICKS; }
-    private float targetX(int slot) { return 0.5F + SIDES[slot % 4].getStepX() * (slot < 4 ? 0.2F : 0.35F); }
-    private float targetZ(int slot) { return 0.5F + SIDES[slot % 4].getStepZ() * (slot < 4 ? 0.2F : 0.35F); }
+    private float targetX(int slot) { return target(slot, true); }
+    private float targetZ(int slot) { return target(slot, false); }
+    private float target(int slot, boolean xAxis) {
+        int position = slot % PER_LANE;
+        Direction side = SIDES[position % 4], travel = position < 4 ? side.getOpposite() : side;
+        Direction left = travel.getCounterClockWise();
+        float offset = slot / PER_LANE == ConveyorEntity.LEFT ? 0.1875F : -0.1875F;
+        return 0.5F + (xAxis ? side.getStepX() : side.getStepZ()) * (position < 4 ? 0.2F : 0.35F)
+                + (xAxis ? left.getStepX() : left.getStepZ()) * offset;
+    }
     private float progress(int slot, float partialTick) {
         return level == null ? 1 : Mth.clamp((level.getGameTime() - moveStart[slot] + partialTick) / MOVE_TICKS, 0, 1);
     }
@@ -148,14 +165,18 @@ public final class JunctionEntity extends BlockEntity {
     @Override protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         ContainerHelper.saveAllItems(tag, items);
-        tag.putInt("InputCursor", inputCursor); tag.putInt("OutputCursor", outputCursor);
+        tag.putIntArray("InputCursors", inputCursor); tag.putIntArray("OutputCursors", outputCursor);
+        tag.putInt("Lanes", LANES);
     }
     @Override public void load(CompoundTag tag) {
         super.load(tag);
         items.clear();
         ContainerHelper.loadAllItems(tag, items);
-        inputCursor = Math.floorMod(tag.getInt("InputCursor"), 4);
-        outputCursor = Math.floorMod(tag.getInt("OutputCursor"), 4);
+        int[] inputs = tag.getIntArray("InputCursors"), outputs = tag.getIntArray("OutputCursors");
+        for (int lane = 0; lane < LANES; lane++) {
+            inputCursor[lane] = Math.floorMod(lane < inputs.length ? inputs[lane] : lane == 0 ? tag.getInt("InputCursor") : 0, 4);
+            outputCursor[lane] = Math.floorMod(lane < outputs.length ? outputs[lane] : lane == 0 ? tag.getInt("OutputCursor") : 0, 4);
+        }
         for (int slot = 0; slot < CAPACITY; slot++) {
             if (!items.get(slot).isEmpty()) items.get(slot).setCount(1);
             moveStart[slot] = -MOVE_TICKS;
@@ -164,8 +185,7 @@ public final class JunctionEntity extends BlockEntity {
         ListTag motion = tag.getList("Motion", Tag.TAG_COMPOUND);
         for (int slot = 0; slot < Math.min(CAPACITY, motion.size()); slot++) {
             CompoundTag entry = motion.getCompound(slot);
-            moveStart[slot] = entry.getLong("Start");
-            fromX[slot] = entry.getFloat("X"); fromZ[slot] = entry.getFloat("Z");
+            moveStart[slot] = entry.getLong("Start"); fromX[slot] = entry.getFloat("X"); fromZ[slot] = entry.getFloat("Z");
         }
     }
     @Override public CompoundTag getUpdateTag() {

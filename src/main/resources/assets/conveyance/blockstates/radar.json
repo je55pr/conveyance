@@ -1,10 +1,580 @@
 {
   "variants": {
-    "lit=false": {
-      "model": "conveyance:block/radar"
+    "part=0,facing=north,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 0
     },
-    "lit=true": {
-      "model": "conveyance:block/radar_on"
+    "part=0,facing=north,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 0
+    },
+    "part=0,facing=north,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 0
+    },
+    "part=0,facing=north,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 0
+    },
+    "part=0,facing=east,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 90
+    },
+    "part=0,facing=east,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 90
+    },
+    "part=0,facing=east,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 90
+    },
+    "part=0,facing=east,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 90
+    },
+    "part=0,facing=south,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 180
+    },
+    "part=0,facing=south,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 180
+    },
+    "part=0,facing=south,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 180
+    },
+    "part=0,facing=south,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 180
+    },
+    "part=0,facing=west,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 270
+    },
+    "part=0,facing=west,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 270
+    },
+    "part=0,facing=west,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 270
+    },
+    "part=0,facing=west,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 270
+    },
+    "part=1,facing=north,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 0
+    },
+    "part=1,facing=north,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 0
+    },
+    "part=1,facing=north,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 0
+    },
+    "part=1,facing=north,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 0
+    },
+    "part=1,facing=east,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 90
+    },
+    "part=1,facing=east,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 90
+    },
+    "part=1,facing=east,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 90
+    },
+    "part=1,facing=east,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 90
+    },
+    "part=1,facing=south,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 180
+    },
+    "part=1,facing=south,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 180
+    },
+    "part=1,facing=south,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 180
+    },
+    "part=1,facing=south,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 180
+    },
+    "part=1,facing=west,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 270
+    },
+    "part=1,facing=west,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 270
+    },
+    "part=1,facing=west,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 270
+    },
+    "part=1,facing=west,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 270
+    },
+    "part=2,facing=north,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 0
+    },
+    "part=2,facing=north,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 0
+    },
+    "part=2,facing=north,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 0
+    },
+    "part=2,facing=north,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 0
+    },
+    "part=2,facing=east,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 90
+    },
+    "part=2,facing=east,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 90
+    },
+    "part=2,facing=east,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 90
+    },
+    "part=2,facing=east,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 90
+    },
+    "part=2,facing=south,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 180
+    },
+    "part=2,facing=south,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 180
+    },
+    "part=2,facing=south,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 180
+    },
+    "part=2,facing=south,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 180
+    },
+    "part=2,facing=west,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 270
+    },
+    "part=2,facing=west,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 270
+    },
+    "part=2,facing=west,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 270
+    },
+    "part=2,facing=west,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 270
+    },
+    "part=3,facing=north,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 0
+    },
+    "part=3,facing=north,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 0
+    },
+    "part=3,facing=north,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 0
+    },
+    "part=3,facing=north,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 0
+    },
+    "part=3,facing=east,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 90
+    },
+    "part=3,facing=east,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 90
+    },
+    "part=3,facing=east,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 90
+    },
+    "part=3,facing=east,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 90
+    },
+    "part=3,facing=south,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 180
+    },
+    "part=3,facing=south,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 180
+    },
+    "part=3,facing=south,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 180
+    },
+    "part=3,facing=south,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 180
+    },
+    "part=3,facing=west,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 270
+    },
+    "part=3,facing=west,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 270
+    },
+    "part=3,facing=west,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 270
+    },
+    "part=3,facing=west,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 270
+    },
+    "part=4,facing=north,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 0
+    },
+    "part=4,facing=north,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_head",
+      "y": 0
+    },
+    "part=4,facing=north,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 0
+    },
+    "part=4,facing=north,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_head_on",
+      "y": 0
+    },
+    "part=4,facing=east,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 90
+    },
+    "part=4,facing=east,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_head",
+      "y": 90
+    },
+    "part=4,facing=east,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 90
+    },
+    "part=4,facing=east,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_head_on",
+      "y": 90
+    },
+    "part=4,facing=south,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 180
+    },
+    "part=4,facing=south,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_head",
+      "y": 180
+    },
+    "part=4,facing=south,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 180
+    },
+    "part=4,facing=south,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_head_on",
+      "y": 180
+    },
+    "part=4,facing=west,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 270
+    },
+    "part=4,facing=west,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_head",
+      "y": 270
+    },
+    "part=4,facing=west,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 270
+    },
+    "part=4,facing=west,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_head_on",
+      "y": 270
+    },
+    "part=5,facing=north,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 0
+    },
+    "part=5,facing=north,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 0
+    },
+    "part=5,facing=north,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 0
+    },
+    "part=5,facing=north,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 0
+    },
+    "part=5,facing=east,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 90
+    },
+    "part=5,facing=east,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 90
+    },
+    "part=5,facing=east,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 90
+    },
+    "part=5,facing=east,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 90
+    },
+    "part=5,facing=south,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 180
+    },
+    "part=5,facing=south,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 180
+    },
+    "part=5,facing=south,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 180
+    },
+    "part=5,facing=south,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 180
+    },
+    "part=5,facing=west,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 270
+    },
+    "part=5,facing=west,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 270
+    },
+    "part=5,facing=west,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 270
+    },
+    "part=5,facing=west,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 270
+    },
+    "part=6,facing=north,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 0
+    },
+    "part=6,facing=north,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 0
+    },
+    "part=6,facing=north,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 0
+    },
+    "part=6,facing=north,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 0
+    },
+    "part=6,facing=east,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 90
+    },
+    "part=6,facing=east,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 90
+    },
+    "part=6,facing=east,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 90
+    },
+    "part=6,facing=east,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 90
+    },
+    "part=6,facing=south,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 180
+    },
+    "part=6,facing=south,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 180
+    },
+    "part=6,facing=south,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 180
+    },
+    "part=6,facing=south,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 180
+    },
+    "part=6,facing=west,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 270
+    },
+    "part=6,facing=west,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 270
+    },
+    "part=6,facing=west,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 270
+    },
+    "part=6,facing=west,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 270
+    },
+    "part=7,facing=north,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 0
+    },
+    "part=7,facing=north,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 0
+    },
+    "part=7,facing=north,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 0
+    },
+    "part=7,facing=north,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 0
+    },
+    "part=7,facing=east,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 90
+    },
+    "part=7,facing=east,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 90
+    },
+    "part=7,facing=east,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 90
+    },
+    "part=7,facing=east,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 90
+    },
+    "part=7,facing=south,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 180
+    },
+    "part=7,facing=south,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 180
+    },
+    "part=7,facing=south,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 180
+    },
+    "part=7,facing=south,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 180
+    },
+    "part=7,facing=west,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 270
+    },
+    "part=7,facing=west,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 270
+    },
+    "part=7,facing=west,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 270
+    },
+    "part=7,facing=west,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 270
+    },
+    "part=8,facing=north,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 0
+    },
+    "part=8,facing=north,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 0
+    },
+    "part=8,facing=north,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 0
+    },
+    "part=8,facing=north,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 0
+    },
+    "part=8,facing=east,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 90
+    },
+    "part=8,facing=east,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 90
+    },
+    "part=8,facing=east,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 90
+    },
+    "part=8,facing=east,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 90
+    },
+    "part=8,facing=south,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 180
+    },
+    "part=8,facing=south,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 180
+    },
+    "part=8,facing=south,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 180
+    },
+    "part=8,facing=south,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 180
+    },
+    "part=8,facing=west,lit=false,multiblock=false": {
+      "model": "conveyance:block/radar",
+      "y": 270
+    },
+    "part=8,facing=west,lit=false,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 270
+    },
+    "part=8,facing=west,lit=true,multiblock=false": {
+      "model": "conveyance:block/radar_on",
+      "y": 270
+    },
+    "part=8,facing=west,lit=true,multiblock=true": {
+      "model": "conveyance:block/radar_base",
+      "y": 270
     }
   }
 }

@@ -40,10 +40,18 @@ public final class RadarEntity extends PoweredMachineEntity {
         super.onLoad();
         if (level instanceof ServerLevel server) WorldMapData.get(server).radar(worldPosition, true);
     }
+    @Override public double powerDistanceSquared(BlockPos pole) {
+        int width = getBlockState().getValue(RadarBlock.MULTIBLOCK) ? RadarBlock.WIDTH : 1;
+        BlockPos far = RadarBlock.partPosition(worldPosition, getBlockState().getValue(RadarBlock.FACING), (width - 1) * RadarBlock.WIDTH + width - 1);
+        int x = Math.max(Math.min(worldPosition.getX(), far.getX()), Math.min(Math.max(worldPosition.getX(), far.getX()), pole.getX()));
+        int z = Math.max(Math.min(worldPosition.getZ(), far.getZ()), Math.min(Math.max(worldPosition.getZ(), far.getZ()), pole.getZ()));
+        return pole.distSqr(new BlockPos(x, worldPosition.getY(), z));
+    }
     public static void tick(Level level, BlockPos pos, BlockState state, RadarEntity radar) {
         if (!(level instanceof ServerLevel server)) return;
+        if (!state.getValue(RadarBlock.MULTIBLOCK) && level.getGameTime() % 20 == 0 && RadarBlock.expandLegacy(level, pos, state)) state = level.getBlockState(pos);
         boolean powered = PowerNetwork.fraction(level, pos) > 0;
-        if (state.getValue(RadarBlock.LIT) != powered) level.setBlockAndUpdate(pos, state.setValue(RadarBlock.LIT, powered));
+        if (state.getValue(RadarBlock.LIT) != powered) RadarBlock.setPowered(level, pos, powered);
         if (!radar.advanceWork()) return;
         var map = WorldMapData.get(server);
         int x = Math.floorDiv(pos.getX(), SECTOR_BLOCKS) * 2, z = Math.floorDiv(pos.getZ(), SECTOR_BLOCKS) * 2;

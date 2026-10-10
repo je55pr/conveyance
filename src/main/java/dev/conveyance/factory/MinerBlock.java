@@ -26,11 +26,13 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 
 public final class MinerBlock extends FactoryBlock {
-    public static final int WIDTH = 4, HEIGHT = 3, PART_COUNT = WIDTH * WIDTH * HEIGHT;
-    public static final IntegerProperty PART = IntegerProperty.create("part", 0, PART_COUNT - 1);
+    public static final int WIDTH = 3, HEIGHT = 3, FOUNDATION = WIDTH * WIDTH, PART_COUNT = FOUNDATION * HEIGHT;
+    // Retain old indices long enough to shrink miners saved by earlier prototypes.
+    public static final IntegerProperty PART = IntegerProperty.create("part", 0, 47);
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     private record Removal(Level level, BlockPos origin) {}
     private static final ThreadLocal<Set<Removal>> REMOVALS = ThreadLocal.withInitial(HashSet::new);
+    private static final ThreadLocal<Boolean> RESIZING = ThreadLocal.withInitial(() -> false);
 
     public MinerBlock(Properties properties) {
         super(properties);
@@ -38,14 +40,20 @@ public final class MinerBlock extends FactoryBlock {
     }
 
     public static BlockPos partPosition(BlockPos origin, Direction facing, int part) {
-        int x = part % WIDTH, z = (part / WIDTH) % WIDTH, y = part / (WIDTH * WIDTH);
+        return partPosition(origin, facing, part, WIDTH);
+    }
+    static BlockPos partPosition(BlockPos origin, Direction facing, int part, int width) {
+        int x = part % width, z = (part / width) % width, y = part / (width * width);
         return origin.offset(rotateX(x, z, facing), y, rotateZ(x, z, facing));
     }
 
     public static BlockPos origin(BlockPos pos, BlockState state) {
-        int part = state.getValue(PART), x = part % WIDTH, z = (part / WIDTH) % WIDTH;
+        return origin(pos, state, WIDTH);
+    }
+    private static BlockPos origin(BlockPos pos, BlockState state, int width) {
+        int part = state.getValue(PART), x = part % width, z = (part / width) % width;
         Direction facing = state.getValue(FACING);
-        return pos.offset(-rotateX(x, z, facing), -part / (WIDTH * WIDTH), -rotateZ(x, z, facing));
+        return pos.offset(-rotateX(x, z, facing), -part / (width * width), -rotateZ(x, z, facing));
     }
 
     private static int rotateX(int x, int z, Direction facing) {
@@ -56,11 +64,40 @@ public final class MinerBlock extends FactoryBlock {
     }
 
     public static MinerEntity controller(Level level, BlockPos pos) {
-        BlockState state = level.getBlockState(pos);
+        return controller(level, pos, level.getBlockState(pos));
+    }
+    private static MinerEntity controller(Level level, BlockPos pos, BlockState state) {
         if (!(state.getBlock() instanceof MinerBlock) && !(state.getBlock() instanceof MinerPartBlock)) return null;
-        BlockPos root = origin(pos, state);
-        if (!level.hasChunkAt(root)) return null;
-        return level.getBlockEntity(root) instanceof MinerEntity entity ? entity : null;
+        for (int width : new int[] {WIDTH, 4}) {
+            BlockPos root = origin(pos, state, width);
+            if (level.hasChunkAt(root) && level.getBlockEntity(root) instanceof MinerEntity entity && entity.footprintWidth() == width) return entity;
+        }
+        return null;
+    }
+    static boolean resizeLegacy(Level level, BlockPos root, Direction facing) {
+        var owned = new HashSet<BlockPos>();
+        boolean oldBorder = false;
+        for (int part = 1; part < 48; part++) {
+            BlockPos pos = partPosition(root, facing, part, 4);
+            if (!level.hasChunkAt(pos)) return false;
+            BlockState state = level.getBlockState(pos);
+            if (state.getBlock() instanceof MinerPartBlock && state.getValue(PART) == part && state.getValue(FACING) == facing) {
+                owned.add(pos);
+                oldBorder |= part % 4 == 3 || part / 4 % 4 == 3;
+            }
+        }
+        if (!oldBorder) return true;
+        for (int part = 1; part < PART_COUNT; part++) {
+            BlockPos pos = partPosition(root, facing, part);
+            if (!owned.contains(pos) && !level.getBlockState(pos).canBeReplaced()) return false;
+        }
+        RESIZING.set(true);
+        try {
+            for (BlockPos pos : owned) level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+            for (int part = 1; part < PART_COUNT; part++) level.setBlockAndUpdate(partPosition(root, facing, part),
+                    FactoryContent.MINER_PART.get().defaultBlockState().setValue(PART, part).setValue(FACING, facing));
+        } finally { RESIZING.set(false); }
+        return true;
     }
 
     @Override public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
@@ -94,17 +131,20 @@ public final class MinerBlock extends FactoryBlock {
     }
 
     static void dismantle(Level level, BlockPos pos, BlockState state) {
-        BlockPos root = origin(pos, state);
+        if (RESIZING.get()) return;
+        MinerEntity entity = controller(level, pos, state);
+        int width = entity == null ? WIDTH : entity.footprintWidth();
+        BlockPos root = origin(pos, state, width);
         var removal = new Removal(level, root);
         if (!REMOVALS.get().add(removal)) return;
         try {
             ItemStack packed = new ItemStack(FactoryContent.MINER_ITEM.get());
-            if (level.getBlockEntity(root) instanceof MinerEntity entity) {
+            if (entity != null) {
                 BlockItem.setBlockEntityData(packed, FactoryContent.MINER_ENTITY.get(), entity.saveWithoutMetadata());
             }
             Direction facing = state.getValue(FACING);
-            for (int part = PART_COUNT - 1; part >= 0; part--) {
-                BlockPos target = partPosition(root, facing, part);
+            for (int part = width * width * HEIGHT - 1; part >= 0; part--) {
+                BlockPos target = partPosition(root, facing, part, width);
                 BlockState current = level.getBlockState(target);
                 if ((current.getBlock() instanceof MinerBlock || current.getBlock() instanceof MinerPartBlock)
                         && current.getValue(PART) == part

@@ -1,6 +1,7 @@
 package dev.conveyance.player;
 
 import dev.conveyance.Conveyance;
+import dev.conveyance.factory.ProcessingMenu;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -15,7 +16,7 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 public final class InventoryNetwork {
-    private static final String VERSION = "5";
+    private static final String VERSION = "6";
     private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(ResourceLocation.fromNamespaceAndPath(Conveyance.MOD_ID, "inventory"),
             () -> VERSION, VERSION::equals, VERSION::equals);
     public record OpenInventory() {}
@@ -26,6 +27,7 @@ public final class InventoryNetwork {
         }
     }
     public record Craft(ResourceLocation recipe, boolean bulk) {}
+    public record SelectAssembly(int containerId, ResourceLocation recipe) {}
     public static void register() {
         CHANNEL.registerMessage(0, OpenInventory.class, (message, buffer) -> {}, buffer -> new OpenInventory(), (message, supplier) -> {
             var context = supplier.get();
@@ -59,6 +61,18 @@ public final class InventoryNetwork {
             });
             context.setPacketHandled(true);
         }, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(4, SelectAssembly.class, (message, buffer) -> {
+            buffer.writeVarInt(message.containerId); buffer.writeResourceLocation(message.recipe);
+        }, buffer -> new SelectAssembly(buffer.readVarInt(), buffer.readResourceLocation()), (message, supplier) -> {
+            var context = supplier.get();
+            context.enqueueWork(() -> {
+                ServerPlayer player = context.getSender();
+                if (player != null && player.containerMenu instanceof ProcessingMenu menu && menu.containerId == message.containerId) {
+                    menu.selectRecipe(player, message.recipe);
+                }
+            });
+            context.setPacketHandled(true);
+        }, Optional.of(NetworkDirection.PLAY_TO_SERVER));
     }
     public static void open(ServerPlayer player) {
         if (player.isAlive() && !player.isSpectator() && !(player.containerMenu instanceof PlayerWorkbenchMenu)) {
@@ -68,6 +82,7 @@ public final class InventoryNetwork {
     public static void requestOpen() { CHANNEL.sendToServer(new OpenInventory()); }
     public static void requestHarvest(BlockPos pos) { CHANNEL.sendToServer(new Harvest(pos)); }
     public static void requestCraft(ResourceLocation recipe, boolean bulk) { CHANNEL.sendToServer(new Craft(recipe, bulk)); }
+    public static void requestAssemblyRecipe(int containerId, ResourceLocation recipe) { CHANNEL.sendToServer(new SelectAssembly(containerId, recipe)); }
     public static void sync(ServerPlayer player) { CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), SyncResearch.capture(player.level())); }
     static void syncAll(Level level) { CHANNEL.send(PacketDistributor.ALL.noArg(), SyncResearch.capture(level)); }
     private InventoryNetwork() {}

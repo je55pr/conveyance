@@ -44,19 +44,29 @@ final class ItemTransfer {
         JunctionEntity junction = JunctionEntity.at(level, pos);
         return junction != null && junction.offer(stack, incomingSide);
     }
-    static ItemStack peekSource(Level level, BlockPos pos, Direction outgoingSide) {
-        Container source = containerAt(level, pos);
-        if (source != null) {
-            for (int slot = 0; slot < source.getContainerSize(); slot++) {
-                ItemStack stack = source.getItem(slot);
-                if (!stack.isEmpty() && source.canTakeItem(source, slot, stack)) return stack.copyWithCount(1);
-            }
-            return ItemStack.EMPTY;
-        }
-        ConveyorEntity belt = ConveyorEntity.outletAt(level, pos);
-        if (belt != null) return belt.peekFront();
+    static boolean outputFromBelt(Level level, BlockPos pos, Direction incomingSide, ItemStack stack, int lane) {
+        if (stack.isEmpty() || !level.hasChunkAt(pos)) return false;
+        Container target = containerAt(level, pos);
+        if (target != null) return insert(target, stack, false).isEmpty();
+        ConveyorEntity belt = ConveyorEntity.connection(level, pos, incomingSide);
+        if (belt != null) return belt.offer(stack, incomingSide, lane);
         JunctionEntity junction = JunctionEntity.at(level, pos);
-        return junction == null ? ItemStack.EMPTY : junction.peekOutput(outgoingSide);
+        return junction != null && junction.offer(stack, incomingSide, lane);
+    }
+    private static ConveyorEntity inserterBelt(Level level, BlockPos pos) {
+        ConveyorEntity direct = ConveyorEntity.at(level, pos);
+        if (direct != null) return direct;
+        ConveyorEntity lower = ConveyorEntity.at(level, pos.below());
+        return lower != null && lower.slope() && level.getBlockState(pos).isAir() ? lower : null;
+    }
+    static boolean canInserterOutput(Level level, BlockPos pos, Direction incomingSide, ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        ConveyorEntity belt = inserterBelt(level, pos);
+        return belt != null ? belt.canAcceptInserter(incomingSide) : canOutput(level, pos, incomingSide, stack);
+    }
+    static boolean inserterOutput(Level level, BlockPos pos, Direction incomingSide, ItemStack stack) {
+        ConveyorEntity belt = inserterBelt(level, pos);
+        return belt != null ? belt.offerInserter(stack, incomingSide) : output(level, pos, incomingSide, stack);
     }
     static ItemStack peekForOutput(Level level, BlockPos from, BlockPos to, Direction facing) {
         Container source = containerAt(level, from);
@@ -65,12 +75,19 @@ final class ItemTransfer {
                 ItemStack stack = source.getItem(slot);
                 if (stack.isEmpty() || !source.canTakeItem(source, slot, stack)) continue;
                 ItemStack candidate = stack.copyWithCount(1);
-                if (canOutput(level, to, facing.getOpposite(), candidate)) return candidate;
+                if (canInserterOutput(level, to, facing.getOpposite(), candidate)) return candidate;
             }
             return ItemStack.EMPTY;
         }
-        ItemStack candidate = peekSource(level, from, facing);
-        return !candidate.isEmpty() && canOutput(level, to, facing.getOpposite(), candidate) ? candidate : ItemStack.EMPTY;
+        ConveyorEntity belt = ConveyorEntity.outletAt(level, from);
+        JunctionEntity junction = JunctionEntity.at(level, from);
+        int preferred = belt == null ? ConveyorEntity.LEFT : belt.nearestLane(facing);
+        for (int offset = 0; offset < ConveyorEntity.LANES; offset++) {
+            int lane = (preferred + offset) % ConveyorEntity.LANES;
+            ItemStack candidate = belt != null ? belt.peekFront(lane) : junction != null ? junction.peekOutput(facing, lane) : ItemStack.EMPTY;
+            if (!candidate.isEmpty() && canInserterOutput(level, to, facing.getOpposite(), candidate)) return candidate;
+        }
+        return ItemStack.EMPTY;
     }
     static ItemStack takeSource(Level level, BlockPos pos, Direction outgoingSide, boolean fuelOnly) {
         return takeSource(level, pos, outgoingSide, fuelOnly, ItemStack.EMPTY);
@@ -91,13 +108,17 @@ final class ItemTransfer {
             }
             return ItemStack.EMPTY;
         }
-        ItemStack candidate = peekSource(level, pos, outgoingSide);
-        if (fuelOnly && !GeneratorEntity.isFuel(candidate)
-                || !expected.isEmpty() && !ItemStack.isSameItemSameTags(candidate, expected)) return ItemStack.EMPTY;
         ConveyorEntity belt = ConveyorEntity.outletAt(level, pos);
-        if (belt != null) return belt.takeFront();
         JunctionEntity junction = JunctionEntity.at(level, pos);
-        return junction == null ? ItemStack.EMPTY : junction.takeOutput(outgoingSide);
+        int preferred = belt == null ? ConveyorEntity.LEFT : belt.nearestLane(outgoingSide);
+        for (int offset = 0; offset < ConveyorEntity.LANES; offset++) {
+            int lane = (preferred + offset) % ConveyorEntity.LANES;
+            ItemStack candidate = belt != null ? belt.peekFront(lane) : junction != null ? junction.peekOutput(outgoingSide, lane) : ItemStack.EMPTY;
+            if (candidate.isEmpty() || fuelOnly && !GeneratorEntity.isFuel(candidate)
+                    || !expected.isEmpty() && !ItemStack.isSameItemSameTags(candidate, expected)) continue;
+            return belt != null ? belt.takeFront(lane) : junction.takeOutput(outgoingSide, lane);
+        }
+        return ItemStack.EMPTY;
     }
 
     static ItemStack insert(Container container, ItemStack input, boolean simulate) {

@@ -30,6 +30,7 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
     }
     private NonNullList<ItemStack> items;
     private ResourceLocation selectedRecipe, smeltingRecipe;
+    private boolean creativeRecipe;
     private int burnTicks, cookingTime = 64, cursor, labResearch;
     private double coalWork;
 
@@ -137,34 +138,51 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
             selectedRecipe = recipes.stream().filter(recipe -> recipe.getId().getPath().equals("conveyor")).findFirst().orElse(recipes.get(0)).getId();
             setChanged();
         }
-        if (!dev.conveyance.player.ResearchState.recipeUnlocked(selectedRecipe, dev.conveyance.player.ResearchState.mask(level))) return null;
+        if (!creativeRecipe && !ResearchState.recipeUnlocked(selectedRecipe, ResearchState.mask(level))) return null;
         var recipe = level.getRecipeManager().byKey(selectedRecipe).orElse(null);
         return recipe instanceof CraftingRecipe crafting ? crafting : null;
     }
     public int selectedRecipeIndex() {
         CraftingRecipe selected = selectedRecipe();
-        var recipes = AssemblyRecipes.available(level);
+        var recipes = AssemblyRecipes.all(level);
         for (int index = 0; index < recipes.size(); index++) if (selected != null && recipes.get(index).getId().equals(selected.getId())) return index;
         return -1;
     }
-    public void changeRecipe(int direction) {
-        var recipes = AssemblyRecipes.available(level);
-        if (recipes.isEmpty()) return;
-        selectedRecipe = recipes.get(Math.floorMod(selectedRecipeIndex() + direction, recipes.size())).getId();
+    public boolean selectRecipe(ResourceLocation id, boolean creative) {
+        if (kind() != MachineKind.ASSEMBLER || level == null
+                || !creative && !ResearchState.recipeUnlocked(id, ResearchState.mask(level))
+                || AssemblyRecipes.all(level).stream().noneMatch(recipe -> recipe.getId().equals(id))) return false;
+        boolean allowLocked = creative && !ResearchState.recipeUnlocked(id, ResearchState.mask(level));
+        if (id.equals(selectedRecipe) && creativeRecipe == allowLocked) return true;
+        selectedRecipe = id;
+        creativeRecipe = allowLocked;
         resetWork();
+        return true;
     }
-    private void assemble() {
+    @Override protected boolean hasWork() {
+        if (level == null) return false;
+        return switch (kind()) {
+            case ASSEMBLER -> runnableAssembly() != null;
+            case LAB -> hasScience(Technology.byId(ResearchState.selected(level)));
+            default -> false;
+        };
+    }
+    private CraftingRecipe runnableAssembly() {
         CraftingRecipe recipe = selectedRecipe();
-        if (recipe == null) return;
+        if (recipe == null) return null;
         var requirements = AssemblyRecipes.requirements(recipe);
-        if (requirements.size() > 4 || requirements.isEmpty()) return;
+        if (requirements.size() > 4 || requirements.isEmpty()) return null;
         for (int slot = 0; slot < requirements.size(); slot++) {
             var requirement = requirements.get(slot);
-            if (!requirement.ingredient().test(items.get(slot)) || items.get(slot).getCount() < requirement.count()) return;
+            if (!requirement.ingredient().test(items.get(slot)) || items.get(slot).getCount() < requirement.count()) return null;
         }
+        return fitsOutput(recipe.getResultItem(level.registryAccess())) ? recipe : null;
+    }
+    private void assemble() {
+        CraftingRecipe recipe = runnableAssembly();
+        if (recipe == null || !advanceWork()) return;
+        var requirements = AssemblyRecipes.requirements(recipe);
         ItemStack result = recipe.getResultItem(level.registryAccess());
-        if (!fitsOutput(result)) return;
-        if (!advanceWork()) return;
         for (int slot = 0; slot < requirements.size(); slot++) items.get(slot).shrink(requirements.get(slot).count());
         putOutput(result);
         setChanged();
@@ -246,6 +264,7 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
         if (selectedRecipe != null) {
             tag.putString("SelectedRecipe", selectedRecipe.toString());
         }
+        tag.putBoolean("CreativeRecipe", creativeRecipe);
     }
     @Override public void load(CompoundTag tag) {
         super.load(tag);
@@ -255,6 +274,7 @@ public final class MachineEntity extends PoweredMachineEntity implements Contain
         coalWork = Math.max(0, tag.getDouble("CoalWork")); cursor = Math.floorMod(tag.getInt("Cursor"), 4);
         labResearch = tag.getInt("LabResearch");
         selectedRecipe = tag.contains("SelectedRecipe") ? ResourceLocation.tryParse(tag.getString("SelectedRecipe")) : null;
+        creativeRecipe = tag.getBoolean("CreativeRecipe");
         smeltingRecipe = tag.contains("SmeltingRecipe") ? ResourceLocation.tryParse(tag.getString("SmeltingRecipe")) : null;
     }
 }

@@ -55,7 +55,8 @@ public final class FactoryContent {
     public static final RegistryObject<PowerPolePartBlock> POWER_POLE_PART = BLOCKS.register("power_pole_part", () -> new PowerPolePartBlock(metal().noOcclusion()));
     public static final RegistryObject<GeneratorBlock> GENERATOR = BLOCKS.register("generator", () -> new GeneratorBlock(metal().lightLevel(state -> state.getValue(GeneratorBlock.LIT) ? 10 : 0)));
     public static final RegistryObject<RadarBlock> RADAR = BLOCKS.register("radar", () -> new RadarBlock(metal().noOcclusion()));
-    public static final RegistryObject<Item> RADAR_ITEM = ITEMS.register("radar", () -> new BlockItem(RADAR.get(), new Item.Properties().stacksTo(100)));
+    public static final RegistryObject<RadarPartBlock> RADAR_PART = BLOCKS.register("radar_part", () -> new RadarPartBlock(metal().noOcclusion()));
+    public static final RegistryObject<Item> RADAR_ITEM = ITEMS.register("radar", () -> new RadarItem(RADAR.get(), new Item.Properties().stacksTo(100)));
     public static final RegistryObject<MachineBlock> BURNER_MINER = BLOCKS.register("burner_miner", () -> new MachineBlock(metal(), MachineKind.BURNER_MINER));
     public static final RegistryObject<MachinePartBlock> BURNER_MINER_PART = BLOCKS.register("burner_miner_part", () -> new MachinePartBlock(metal(), MachineKind.BURNER_MINER));
     public static final RegistryObject<MachineBlock> ASSEMBLER = BLOCKS.register("assembler", () -> new MachineBlock(metal(), MachineKind.ASSEMBLER));

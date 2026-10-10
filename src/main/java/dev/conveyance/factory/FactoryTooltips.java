@@ -54,24 +54,29 @@ public final class FactoryTooltips {
             demand(lines, MinerEntity.DEMAND_KW, level);
             row(lines, "mining", number(20.0 / MinerEntity.CYCLE_TICKS * mining));
         } else if (block instanceof InserterBlock arm) {
+            row(lines, "size", 1, 1, 1);
             boolean burner = block == FactoryContent.BURNER_INSERTER.get();
             if (burner) row(lines, "fuel_usage", GeneratorEntity.OUTPUT_KW); else demand(lines, InserterEntity.DEMAND_KW, level);
             int cycle = burner ? BurnerInserterEntity.CYCLE_TICKS : arm.reach() == 2 ? InserterEntity.LONG_CYCLE_TICKS : InserterEntity.SHORT_CYCLE_TICKS;
             row(lines, "reach", arm.reach()); row(lines, "transfer", number(20.0 / cycle * inserters));
-        } else if (block instanceof GeneratorBlock) row(lines, "generation", GeneratorEntity.OUTPUT_KW);
+        } else if (block instanceof GeneratorBlock) { row(lines, "size", 1, 1, 1); row(lines, "generation", GeneratorEntity.OUTPUT_KW); }
         else if (block instanceof PowerPoleBlock) {
             row(lines, "size", 1, 1, PowerPoleBlock.HEIGHT);
             row(lines, "link_range", PowerNetwork.LINK_RANGE); row(lines, "coverage", PowerNetwork.COVERAGE_RANGE);
             row(lines, "electric_throughput");
         } else if (block instanceof RadarBlock) {
+            row(lines, "size", RadarBlock.WIDTH, RadarBlock.WIDTH, RadarBlock.HEIGHT);
             demand(lines, RadarEntity.DEMAND_KW, level); row(lines, "scan_area", RadarEntity.AREA_BLOCKS, RadarEntity.AREA_BLOCKS);
         } else if (block instanceof ConveyorBlock) {
-            row(lines, "throughput", number(20.0 / ConveyorEntity.MOVE_TICKS)); row(lines, "buffer", ConveyorEntity.CAPACITY);
+            row(lines, "size", 1, 1, block instanceof SlopeConveyorBlock ? 2 : 1);
+            row(lines, "throughput", number(ConveyorEntity.LANES * 20.0 / ConveyorEntity.MOVE_TICKS));
+            row(lines, "throughput_lane", number(20.0 / ConveyorEntity.MOVE_TICKS)); row(lines, "buffer", ConveyorEntity.CAPACITY);
         } else if (block instanceof JunctionBlock) {
-            row(lines, "throughput_port", number(20.0 / JunctionEntity.MOVE_TICKS));
-            row(lines, "throughput_max", number(JunctionEntity.SIDES.length * 20.0 / JunctionEntity.MOVE_TICKS));
+            row(lines, "size", 1, 1, 1);
+            row(lines, "throughput_port", number(JunctionEntity.LANES * 20.0 / JunctionEntity.MOVE_TICKS));
+            row(lines, "throughput_max", number(JunctionEntity.LANES * JunctionEntity.SIDES.length * 20.0 / JunctionEntity.MOVE_TICKS));
             row(lines, "buffer", JunctionEntity.CAPACITY);
-        } else if (block instanceof CrateBlock crate) row(lines, "storage", crate.slots);
+        } else if (block instanceof CrateBlock crate) { row(lines, "size", 1, 1, 1); row(lines, "storage", crate.slots); }
         double fuel = fuelMJ(item);
         if (fuel > 0) {
             row(lines, "fuel_energy", number(fuel));

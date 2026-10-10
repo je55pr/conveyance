@@ -46,7 +46,7 @@ public final class BurnerInserterEntity extends BlockEntity implements Container
             if (arm.held.isEmpty()) return;
             arm.setChanged();
         }
-        if (!ItemTransfer.canOutput(level, to, facing.getOpposite(), arm.held)) return;
+        if (!ItemTransfer.canInserterOutput(level, to, facing.getOpposite(), arm.held)) return;
         if (arm.burnTicks == 0) {
             if (!GeneratorEntity.isFuel(arm.fuel)) return;
             arm.burnTicks = GeneratorEntity.fuelTicks(arm.fuel, level);
@@ -57,7 +57,7 @@ public final class BurnerInserterEntity extends BlockEntity implements Container
         if (level.getGameTime() % 20 == 0) arm.setChanged();
         arm.work += ResearchState.inserterSpeed(level);
         if (arm.work + 0.000001 < CYCLE_TICKS) return;
-        if (ItemTransfer.output(level, to, facing.getOpposite(), arm.held)) {
+        if (ItemTransfer.inserterOutput(level, to, facing.getOpposite(), arm.held)) {
             arm.held = ItemStack.EMPTY;
             arm.work = Math.max(0, arm.work - CYCLE_TICKS);
             arm.setChanged();

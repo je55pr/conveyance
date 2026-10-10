@@ -1,19 +1,51 @@
 {
   "variants": {
-    "facing=north": {
+    "facing=north,turn=straight": {
       "model": "conveyance:block/conveyor",
       "y": 0
     },
-    "facing=east": {
+    "facing=north,turn=left": {
+      "model": "conveyance:block/conveyor_left",
+      "y": 0
+    },
+    "facing=north,turn=right": {
+      "model": "conveyance:block/conveyor_right",
+      "y": 0
+    },
+    "facing=east,turn=straight": {
       "model": "conveyance:block/conveyor",
       "y": 90
     },
-    "facing=south": {
+    "facing=east,turn=left": {
+      "model": "conveyance:block/conveyor_left",
+      "y": 90
+    },
+    "facing=east,turn=right": {
+      "model": "conveyance:block/conveyor_right",
+      "y": 90
+    },
+    "facing=south,turn=straight": {
       "model": "conveyance:block/conveyor",
       "y": 180
     },
-    "facing=west": {
+    "facing=south,turn=left": {
+      "model": "conveyance:block/conveyor_left",
+      "y": 180
+    },
+    "facing=south,turn=right": {
+      "model": "conveyance:block/conveyor_right",
+      "y": 180
+    },
+    "facing=west,turn=straight": {
       "model": "conveyance:block/conveyor",
+      "y": 270
+    },
+    "facing=west,turn=left": {
+      "model": "conveyance:block/conveyor_left",
+      "y": 270
+    },
+    "facing=west,turn=right": {
+      "model": "conveyance:block/conveyor_right",
       "y": 270
     }
   }

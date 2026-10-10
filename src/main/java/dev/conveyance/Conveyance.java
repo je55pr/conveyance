@@ -10,6 +10,7 @@ import dev.conveyance.factory.InventoryBreaking;
 import dev.conveyance.factory.FactoryTooltips;
 import dev.conveyance.player.InventoryNetwork;
 import dev.conveyance.player.PlayerInventoryEvents;
+import dev.conveyance.player.StarterSupplies;
 import dev.conveyance.player.TerrainHarvest;
 import dev.conveyance.player.ResearchState;
 import dev.conveyance.map.MapExploration;
@@ -31,6 +32,7 @@ public final class Conveyance {
         MinecraftForge.EVENT_BUS.register(MapExploration.class);
         MinecraftForge.EVENT_BUS.addListener(ResearchState::registerCommands);
         MinecraftForge.EVENT_BUS.register(PlayerInventoryEvents.class);
+        MinecraftForge.EVENT_BUS.register(StarterSupplies.class);
         MinecraftForge.EVENT_BUS.register(TerrainHarvest.class);
         MinecraftForge.EVENT_BUS.register(InventoryBreaking.class);
         MinecraftForge.EVENT_BUS.register(FactoryTooltips.class);

@@ -147,7 +147,6 @@ public final class TerracedChunkGenerator extends ChunkGenerator {
         }
         if (y < height - TerracedTerrain.LAYER_HEIGHT) return Blocks.STONE.defaultBlockState();
         if (cell.water() || cell.feature() == TerracedTerrain.Feature.SHORE) return Blocks.SAND.defaultBlockState();
-        if (cell.dry()) return Blocks.COARSE_DIRT.defaultBlockState();
         return (y == height - 1 ? Blocks.GRASS_BLOCK : Blocks.DIRT).defaultBlockState();
     }
 

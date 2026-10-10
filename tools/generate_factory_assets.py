@@ -1,5 +1,6 @@
 """Generate the prototype factory's block models, recipes and translations."""
 import json
+import math
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1] / "src/main/resources"
@@ -86,36 +87,82 @@ write("assets/conveyance/blockstates/miner.json", {"multipart": parts})
 write("assets/conveyance/blockstates/miner_part.json", {"variants": {"": {"model": "conveyance:block/miner_casing"}}})
 write("assets/conveyance/models/item/miner.json", {"parent": "conveyance:block/miner_controller"})
 
-write("assets/conveyance/models/block/conveyor.json", {
-    "textures": {"body": "minecraft:block/black_concrete", "arrow": "minecraft:block/yellow_concrete",
-                 "particle": "minecraft:block/black_concrete"},
-    "elements": [box([2, 0, 0], [14, 1, 16], "body"),
-                 box([7, 1, 5], [9, 1.2, 13], "arrow"),
-                 box([5, 1, 3], [11, 1.2, 6], "arrow"),
-                 box([7, 1, 1], [9, 1.2, 3], "arrow")]})
+BELT_TEXTURES = {"body": "minecraft:block/gray_concrete", "frame": "minecraft:block/light_gray_concrete",
+                 "divider": "minecraft:block/black_concrete", "arrow": "minecraft:block/light_gray_concrete",
+                 "particle": "minecraft:block/gray_concrete"}
+
+def belt_model(elements, textures=None):
+    return {"parent": "minecraft:block/block", "ambientocclusion": False,
+            "textures": textures or BELT_TEXTURES, "elements": elements}
+
+def belt_arrow(y):
+    return [box([7.5, y, 5], [8.5, y + 0.12, 12], "arrow"),
+            box([6.5, y, 3], [9.5, y + 0.12, 5], "arrow"),
+            box([7.5, y, 1], [8.5, y + 0.12, 3], "arrow")]
+
+write("assets/conveyance/models/block/conveyor.json", belt_model([
+    box([2, 0, 0], [14, 1, 16], "body"),
+    box([2, 1, 0], [3, 1.2, 16], "frame"),
+    box([13, 1, 0], [14, 1.2, 16], "frame"),
+    box([7.75, 1, 0], [8.25, 1.05, 16], "divider")] + belt_arrow(1.08)))
+
+# A quarter annulus joins the west entrance to the north exit. Its inner and
+# outer lanes have radii 5 and 11, matching the conveyor's item paths.
+corner = []
+for z in range(16):
+    run_start, run_material = 0, None
+    for x in range(17):
+        radius = math.hypot(x + 0.5, z + 0.5)
+        material = None
+        if x < 16 and 2 <= radius <= 14:
+            material = "frame" if radius < 3 or radius > 13 else "divider" if abs(radius - 8) < 0.45 else "body"
+        if material != run_material:
+            if run_material is not None:
+                top = 1.2 if run_material == "frame" else 1.05 if run_material == "divider" else 1
+                corner.append(box([run_start, 0, z], [x, top, z + 1], run_material))
+            run_start, run_material = x, material
+corner += [
+    box([7.5, 1.23, 1], [8.5, 1.35, 4], "arrow"),
+    box([6.5, 1.23, 2], [9.5, 1.35, 3], "arrow")]
+write("assets/conveyance/models/block/conveyor_left.json", belt_model(corner))
+mirrored = json.loads(json.dumps(corner))
+for element in mirrored:
+    element["from"][0], element["to"][0] = 16 - element["to"][0], 16 - element["from"][0]
+write("assets/conveyance/models/block/conveyor_right.json", belt_model(mirrored))
+write("assets/conveyance/blockstates/conveyor.json", {"variants": {
+    f"facing={facing},turn={turn}": {"model": f"conveyance:block/conveyor{suffix}", "y": rotation}
+    for facing, rotation in (("north", 0), ("east", 90), ("south", 180), ("west", 270))
+    for turn, suffix in (("straight", ""), ("left", "_left"), ("right", "_right"))}})
+write("assets/conveyance/models/item/conveyor.json", {"parent": "conveyance:block/conveyor"})
 
 def incline(element):
     element["rotation"] = {"origin": [8, 8, 8], "axis": "x", "angle": 45, "rescale": False}
     return element
 
-for mode, color in (("up", "yellow_concrete"), ("down", "light_blue_concrete"), ("stuck", "red_concrete")):
-    body = incline(box([2, 7.5, -3.3137], [14, 8.5, 19.3137], "body"))
+for mode in ("up", "down", "stuck"):
+    body = [box([2, 7.5, -3.3137], [14, 8.5, 19.3137], "body"),
+            box([2, 8.5, -3.3137], [3, 8.7, 19.3137], "frame"),
+            box([13, 8.5, -3.3137], [14, 8.7, 19.3137], "frame"),
+            box([7.75, 8.5, -3.3137], [8.25, 8.6, 19.3137], "divider")]
+    textures = dict(BELT_TEXTURES)
     if mode == "stuck":
-        arrows = [box([3, 8.6, 7], [13, 8.8, 9], "arrow"), box([7, 8.6, 3], [9, 8.8, 13], "arrow")]
+        textures["arrow"] = "minecraft:block/red_concrete"
+        arrows = [box([6, 8.8, 7.5], [10, 8.92, 8.5], "arrow"),
+                  box([7.5, 8.8, 6], [8.5, 8.92, 10], "arrow")]
     else:
-        arrows = [box([7, 8.6, 5], [9, 8.8, 13], "arrow"), box([5, 8.6, 3], [11, 8.8, 6], "arrow"), box([7, 8.6, 1], [9, 8.8, 3], "arrow")]
+        arrows = belt_arrow(8.8)
         if mode == "down":
             for arrow in arrows:
                 arrow["from"][2], arrow["to"][2] = 16 - arrow["to"][2], 16 - arrow["from"][2]
-    write(f"assets/conveyance/models/block/slope_conveyor_{mode}.json", {
-        "textures": {"body": "minecraft:block/black_concrete", "arrow": f"minecraft:block/{color}", "particle": "minecraft:block/black_concrete"},
-        "elements": [body] + [incline(arrow) for arrow in arrows]})
+    write(f"assets/conveyance/models/block/slope_conveyor_{mode}.json",
+          belt_model([incline(element) for element in body + arrows], textures))
 write("assets/conveyance/blockstates/slope_conveyor.json", {"multipart": [
     {"when": {"facing": facing, "flow": flow}, "apply": {"model": f"conveyance:block/slope_conveyor_{mode}", "y": rotation}}
     for facing, rotation in (("north", 0), ("east", 90), ("south", 180), ("west", 270))
     for flow, mode in (("up", "up"), ("down", "down"), ("unset|stuck_up|stuck_down", "stuck"))]})
 write("assets/conveyance/models/item/slope_conveyor.json", {"parent": "conveyance:block/slope_conveyor_up"})
 write("data/conveyance/loot_tables/blocks/slope_conveyor.json", {"type": "minecraft:block", "pools": []})
+
 write("assets/conveyance/models/block/inserter.json", {
     "textures": {"body": "minecraft:block/iron_block", "arm": "minecraft:block/yellow_concrete",
                  "particle": "minecraft:block/iron_block"},
@@ -134,10 +181,10 @@ write("assets/conveyance/models/block/long_inserter.json", {
                  box([6, 10, -8], [10, 12, 24], "arm"), box([4, 10, -9], [12, 12, -6], "body")]})
 
 write("assets/conveyance/models/block/junction.json", {
-    "textures": {"body": "minecraft:block/black_concrete", "hub": "minecraft:block/iron_block",
-                 "particle": "minecraft:block/black_concrete"},
+    "textures": {"body": "minecraft:block/gray_concrete", "hub": "minecraft:block/light_gray_concrete",
+                 "particle": "minecraft:block/gray_concrete"},
     "elements": [box([0, 0, 0], [16, 8, 16], "body"), box([5, 8, 5], [11, 8.1, 11], "hub")]})
-for port, color in (("input", "lime_concrete"), ("output", "yellow_concrete")):
+for port, color in (("input", "light_gray_concrete"), ("output", "light_gray_concrete")):
     if port == "input":
         elements = [box([7, 8, 0], [9, 8.2, 4], "arrow"), box([5, 8, 3], [11, 8.2, 5], "arrow"),
                     box([7, 8, 5], [9, 8.2, 7], "arrow")]
@@ -153,7 +200,7 @@ for facing, rotation in (("north", 0), ("east", 90), ("south", 180), ("west", 27
 write("assets/conveyance/blockstates/junction.json", {"multipart": junction_parts})
 write("assets/conveyance/models/item/junction.json", {"parent": "conveyance:block/junction"})
 write("data/conveyance/loot_tables/blocks/junction.json", {"type": "minecraft:block", "pools": []})
-for name in ("conveyor", "inserter", "burner_inserter", "long_inserter"):
+for name in ("inserter", "burner_inserter", "long_inserter"):
     write(f"assets/conveyance/blockstates/{name}.json", {"variants": {
         f"facing={facing}": {"model": f"conveyance:block/{name}", "y": rotation}
         for facing, rotation in (("north", 0), ("east", 90), ("south", 180), ("west", 270))}})
@@ -204,6 +251,33 @@ write("assets/conveyance/blockstates/radar.json", {"variants": {
     "lit=false": {"model": "conveyance:block/radar"}, "lit=true": {"model": "conveyance:block/radar_on"}}})
 write("assets/conveyance/models/item/radar.json", {"parent": "conveyance:block/radar_on"})
 write("data/conveyance/loot_tables/blocks/radar.json", {"type": "minecraft:block", "pools": []})
+write("assets/conveyance/models/block/radar_base.json", {
+    "parent": "minecraft:block/block", "textures": {"body": "minecraft:block/polished_deepslate",
+    "particle": "minecraft:block/iron_block"}, "elements": [box([0, 0, 0], [16, 4, 16], "body")]})
+for lit in (False, True):
+    dish = box([-16, 10, 1], [32, 12, 15], "dish")
+    dish["rotation"] = {"origin": [8, 10, 8], "axis": "x", "angle": 22.5}
+    write(f"assets/conveyance/models/block/radar_head{'_on' if lit else ''}.json", {
+        "parent": "minecraft:block/block", "textures": {
+            "body": "minecraft:block/polished_deepslate", "dish": "minecraft:block/iron_block",
+            "light": "minecraft:block/lime_concrete" if lit else "minecraft:block/red_concrete",
+            "particle": "minecraft:block/iron_block"},
+        "elements": [box([0, 0, 0], [16, 4, 16], "body"), box([6, 4, 6], [10, 12, 10], "dish"),
+                     dish, box([7, 12, 7], [9, 16, 9], "dish"), box([6, 2, -0.1], [10, 3, 0], "light")]})
+
+def radar_model(part, lit):
+    return f"conveyance:block/radar_head{'_on' if lit else ''}" if part == 4 else "conveyance:block/radar_base"
+
+write("assets/conveyance/blockstates/radar.json", {"variants": {
+    f"part={part},facing={facing},lit={str(lit).lower()},multiblock={str(multi).lower()}": {
+        "model": radar_model(part, lit) if multi else f"conveyance:block/radar{'_on' if lit else ''}", "y": rotation}
+    for part in range(9) for facing, rotation in (("north", 0), ("east", 90), ("south", 180), ("west", 270))
+    for lit in (False, True) for multi in (False, True)}})
+write("assets/conveyance/blockstates/radar_part.json", {"variants": {
+    f"part={part},facing={facing},lit={str(lit).lower()}": {"model": radar_model(part, lit), "y": rotation}
+    for part in range(9) for facing, rotation in (("north", 0), ("east", 90), ("south", 180), ("west", 270))
+    for lit in (False, True)}})
+write("data/conveyance/loot_tables/blocks/radar_part.json", {"type": "minecraft:block", "pools": []})
 
 panel = {"parent": "minecraft:block/block", "textures": {
     "frame": "minecraft:block/iron_block", "cell": "minecraft:block/blue_concrete", "wire": "minecraft:block/light_gray_concrete", "particle": "minecraft:block/blue_concrete"},
@@ -399,6 +473,8 @@ for language in ("en_us", "en_gb"):
                  "menu.conveyance.output": "Output",
                  "menu.conveyance.requires": "Requires %s x %s per batch",
                  "menu.conveyance.fuel_seconds": "Fuel: %ss",
+                 "menu.conveyance.generator_idle": "Idle",
+                 "menu.conveyance.generator_output": "%s kW",
                  "menu.conveyance.inventory": "Inventory",
                  "menu.conveyance.handcrafting": "Crafting",
                  "menu.conveyance.inventory_tab": "Inventory / Crafting",
@@ -408,6 +484,8 @@ for language in ("en_us", "en_gb"):
                  "menu.conveyance.hotbar": "Hotbar",
                  "menu.conveyance.storage_size": "72 slots | 100 per stack",
                  "menu.conveyance.search": "Search recipes",
+                 "menu.conveyance.recipe_picker": "Select recipe",
+                 "menu.conveyance.no_recipes": "No matching recipes",
                  "menu.conveyance.batch": "%s/batch",
                  "menu.conveyance.have_need": "%s / %s  %s",
                  "menu.conveyance.ingredients": "Ingredients",
@@ -459,8 +537,8 @@ for language in ("en_us", "en_gb"):
                  "message.conveyance.no_power_coverage": "Outside power pole coverage.",
                  "message.conveyance.power_idle": "Supply: %s kW | No connected machines | %s poles",
                  "message.conveyance.power_status": "Supply: %s / %s kW | %s%% power | %s poles, %s machines",
-                 "message.conveyance.miner_space": "Miner needs clear 4x4 space, 3 blocks high, on solid level ground.",
-                 "tooltip.conveyance.miner": "4x4x3 electric miner/quarry. Outputs ore or stone to a belt, crate or machine in front."})
+                 "message.conveyance.miner_space": "Miner needs clear 3x3 space, 3 blocks high, on solid level ground.",
+                 "tooltip.conveyance.miner": "3x3x3 electric miner/quarry. Outputs ore or stone to a belt, crate or machine in front."})
     data.update({
         "block.conveyance.long_inserter": "Long Inserter",
         "block.conveyance.solar_panel": "Solar Panel",
@@ -545,9 +623,9 @@ for language in ("en_us", "en_gb"):
         "tooltip.conveyance.burner_inserter": "Moves items using fuel. Can take fuel from its input to start itself.",
         "tooltip.conveyance.radar": "Automatically explores the map while loaded and powered.",
         "tooltip.conveyance.power_pole": "Connects nearby poles and supplies machines within its coverage.",
-        "tooltip.conveyance.junction": "Shares incoming items evenly between connected conveyor outputs.",
-        "tooltip.conveyance.conveyor": "Moves an owned item queue. Aim at the air ahead of a belt or click its end to extend it; your facing direction sets the output.",
-        "tooltip.conveyance.slope_conveyor": "Moves a queue between heights. Click a belt end to extend uphill; sneak-click to extend downhill. Red means an ambiguous connection.",
+        "tooltip.conveyance.junction": "Balances connected outputs independently for each lane; left and right stay separate.",
+        "tooltip.conveyance.conveyor": "Two independent lanes. Corners follow incoming belts. Aim at the air ahead or click a belt end to extend it.",
+        "tooltip.conveyance.slope_conveyor": "Carries both lanes between heights. Click a belt end to extend uphill; sneak-click for downhill. A red mark means an ambiguous connection.",
         "tooltip.conveyance.stat.power_usage": "Power usage: %s kW",
         "tooltip.conveyance.stat.generation": "Power generation: %s kW",
         "tooltip.conveyance.stat.generation_peak": "Power generation: %s kW (peak)",
@@ -555,6 +633,7 @@ for language in ("en_us", "en_gb"):
         "tooltip.conveyance.stat.fuel_energy": "Fuel energy: %s MJ",
         "tooltip.conveyance.stat.fuel_energy_effective": "With current research: %s MJ",
         "tooltip.conveyance.stat.throughput": "Throughput: %s items/s",
+        "tooltip.conveyance.stat.throughput_lane": "Per lane: %s items/s",
         "tooltip.conveyance.stat.throughput_port": "Per port: %s items/s",
         "tooltip.conveyance.stat.throughput_max": "Maximum throughput: %s items/s",
         "tooltip.conveyance.stat.electric_throughput": "Electrical throughput: unlimited",
@@ -570,6 +649,8 @@ for language in ("en_us", "en_gb"):
         "tooltip.conveyance.stat.storage": "Storage: %s slots",
         "tooltip.conveyance.stat.scan_area": "Scan area: %s × %s blocks"
     })
+    data["message.conveyance.starter_crate"] = "Starter crate placed nearby at %s, %s, %s."
+    data["block.conveyance.radar_part"] = "Radar Frame"
     for group, label in {"miners": "Miners", "inserters": "Inserters", "conveyors": "Conveyors", "storage": "Storage",
                          "furnaces": "Furnaces", "assemblers": "Assemblers", "generators": "Generators", "poles": "Power poles",
                          "radars": "Radars", "labs": "Labs", "science": "Science packs", "tools": "Tools", "components": "Components"}.items():

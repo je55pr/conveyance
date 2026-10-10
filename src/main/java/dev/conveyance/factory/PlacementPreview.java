@@ -26,7 +26,8 @@ public final class PlacementPreview {
         if (context == null) return null;
         BlockPos root = context.getClickedPos();
         BlockState state = blockItem instanceof MachineItem machine ? machine.previewState(context)
-                : blockItem instanceof MinerItem miner ? miner.previewState(context) : blockItem.getBlock().getStateForPlacement(context);
+                : blockItem instanceof MinerItem miner ? miner.previewState(context)
+                : blockItem instanceof RadarItem radar ? radar.previewState(context) : blockItem.getBlock().getStateForPlacement(context);
         boolean valid = state != null && context.canPlace() && player.getAbilities().mayBuild && level.mayInteract(player, root);
         if (state == null) state = blockItem.getBlock().defaultBlockState();
         if (state.getBlock() instanceof SlopeConveyorBlock) state = SlopeConveyorBlock.resolve(level, root, state);
@@ -42,6 +43,11 @@ public final class PlacementPreview {
             Direction facing = state.getValue(MinerBlock.FACING);
             for (int part = 0; part < MinerBlock.PART_COUNT; part++) parts.add(new Part(MinerBlock.partPosition(root, facing, part), part == 0 ? state
                     : FactoryContent.MINER_PART.get().defaultBlockState().setValue(MinerBlock.PART, part).setValue(MinerBlock.FACING, facing)));
+        } else if (state.getBlock() instanceof RadarBlock) {
+            foundation = RadarBlock.PART_COUNT;
+            Direction facing = state.getValue(RadarBlock.FACING);
+            for (int part = 0; part < RadarBlock.PART_COUNT; part++) parts.add(new Part(RadarBlock.partPosition(root, facing, part), part == 0 ? state
+                    : FactoryContent.RADAR_PART.get().defaultBlockState().setValue(RadarBlock.PART, part).setValue(RadarBlock.FACING, facing)));
         } else if (state.getBlock() instanceof PowerPoleBlock) {
             foundation = 1;
             for (int part = 0; part < PowerPoleBlock.HEIGHT; part++) parts.add(new Part(root.above(part), part == 0 ? state

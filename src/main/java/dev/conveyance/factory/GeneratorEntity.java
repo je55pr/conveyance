@@ -21,30 +21,32 @@ public final class GeneratorEntity extends BlockEntity implements Container, Men
     public static final int OUTPUT_KW = 120, FUEL_TICKS = 600;
     public static final int MAX_FUEL_TICKS = 750;
     private NonNullList<ItemStack> items = NonNullList.withSize(1, ItemStack.EMPTY);
-    private int burnTicks;
+    // Remaining fuel energy measured in ticks at the generator's full 120 kW output.
+    private double fuelReserve;
+    private int producingKW;
     boolean recovered;
     public GeneratorEntity(BlockPos pos, BlockState state) { super(FactoryContent.GENERATOR_ENTITY.get(), pos, state); }
 
     public static void tick(Level level, BlockPos pos, BlockState state, GeneratorEntity generator) {
-        boolean wasBurning = generator.burnTicks > 0;
-        if (wasBurning) generator.burnTicks--;
-        if (generator.burnTicks == 0) {
-            for (ItemStack stack : generator.items) {
-                if (isFuel(stack)) {
-                    generator.burnTicks = fuelTicks(stack, level);
-                    stack.shrink(1);
-                    generator.setChanged();
-                    break;
-                }
-            }
+        double load = PowerNetwork.generatorLoad(level, pos);
+        if (load > generator.fuelReserve + 0.000000001 && isFuel(generator.items.get(0))) {
+            generator.fuelReserve += fuelTicks(generator.items.get(0), level);
+            generator.items.get(0).shrink(1);
+            generator.setChanged();
         }
-        boolean burning = generator.burnTicks > 0;
+        double used = Math.min(generator.fuelReserve, load);
+        boolean burning = used > 0;
+        generator.producingKW = (int) Math.round(used * OUTPUT_KW);
+        generator.fuelReserve = Math.max(0, generator.fuelReserve - used);
+        if (generator.fuelReserve < 0.000000001) generator.fuelReserve = 0;
         if (state.getValue(GeneratorBlock.LIT) != burning) level.setBlockAndUpdate(pos, state.setValue(GeneratorBlock.LIT, burning));
-        if (wasBurning != burning) PowerNetwork.invalidateSupply(level);
-        if (generator.burnTicks % 20 == 0 && (wasBurning || burning)) generator.setChanged();
+        if (burning && level.getGameTime() % 20 == 0) generator.setChanged();
     }
-    public int outputPower() { return burnTicks > 0 ? OUTPUT_KW : 0; }
-    public int fuelRemaining() { return burnTicks; }
+    @Override public double availablePower() {
+        return isFuel(items.get(0)) ? OUTPUT_KW : Math.min(OUTPUT_KW, fuelReserve * OUTPUT_KW);
+    }
+    @Override public int outputPower() { return producingKW; }
+    public int fuelRemaining() { return (int) Math.ceil(fuelReserve); }
     public static int fuelTicks(ItemStack stack) {
         if (stack.isEmpty()) return 0;
         return stack.is(FactoryContent.WOOD_ITEM.get()) ? FUEL_TICKS / 2
@@ -72,12 +74,18 @@ public final class GeneratorEntity extends BlockEntity implements Container, Men
     @Override public void clearContent() { items.clear(); setChanged(); }
     @Override public Component getDisplayName() { return Component.translatable("block.conveyance.generator"); }
     @Override public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) { return new GeneratorMenu(id, inventory, this); }
-    @Override protected void saveAdditional(CompoundTag tag) { super.saveAdditional(tag); ContainerHelper.saveAllItems(tag, items); tag.putInt("BurnTicks", burnTicks); }
+    @Override protected void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
+        ContainerHelper.saveAllItems(tag, items);
+        tag.putDouble("FuelReserve", fuelReserve);
+        tag.putInt("BurnTicks", fuelRemaining());
+    }
     @Override public void load(CompoundTag tag) {
         super.load(tag);
         items = NonNullList.withSize(1, ItemStack.EMPTY);
         ContainerHelper.loadAllItems(tag, items);
         if (!isFuel(items.get(0))) items.set(0, ItemStack.EMPTY);
-        burnTicks = Math.max(0, Math.min(MAX_FUEL_TICKS, tag.getInt("BurnTicks")));
+        double saved = tag.contains("FuelReserve") ? tag.getDouble("FuelReserve") : tag.getInt("BurnTicks");
+        fuelReserve = Double.isFinite(saved) ? Math.max(0, Math.min(MAX_FUEL_TICKS, saved)) : 0;
     }
 }

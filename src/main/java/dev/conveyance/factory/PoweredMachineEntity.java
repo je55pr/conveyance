@@ -16,7 +16,8 @@ abstract class PoweredMachineEntity extends BlockEntity {
         this.demand = demand;
         this.cycleTicks = cycleTicks;
     }
-    public int powerDemand() { return level == null ? demand : (int) Math.ceil(demand * ResearchState.powerUse(level)); }
+    public int powerDemand() { return demand == 0 || !hasWork() ? 0 : level == null ? demand : (int) Math.ceil(demand * ResearchState.powerUse(level)); }
+    protected boolean hasWork() { return true; }
     protected double currentWork() { return work; }
     protected void resetWork() { work = 0; setChanged(); }
     public double powerDistanceSquared(BlockPos pole) { return worldPosition.distSqr(pole); }

@@ -1,7 +1,5 @@
 package dev.conveyance.client;
 
-import dev.conveyance.factory.AssemblyRecipes;
-import dev.conveyance.factory.FactoryContent;
 import dev.conveyance.factory.FactoryCraftingRecipe;
 import dev.conveyance.player.HandCrafting;
 import dev.conveyance.player.RecipeCosts;
@@ -28,7 +26,7 @@ import net.minecraft.world.item.crafting.CraftingRecipe;
 
 public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerWorkbenchMenu> {
     private static final int RIGHT = 184, CELL = 26, ROW_HEIGHT = 42, GRID_Y = 73, CONTENT = PlayerWorkbenchMenu.CONTENT_Y;
-    private static final List<String> CATEGORIES = List.of("intermediates", "logistics", "production", "power", "science");
+    private static final List<String> CATEGORIES = RecipePresentation.CATEGORIES;
     private final List<Button> recipeButtons = new ArrayList<>();
     private final List<Button> categoryButtons = new ArrayList<>();
     private final Map<ResourceLocation, Integer> amounts = new HashMap<>();
@@ -44,7 +42,6 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
     private final WorldMapView map = new WorldMapView();
     private boolean researchView, mapView;
     private int scroll, columns, rows;
-    private record CraftRow(String family, List<CraftingRecipe> recipes) {}
     public PlayerWorkbenchScreen(PlayerWorkbenchMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
         category = CATEGORIES.contains(WorkbenchPreferences.category()) ? WorkbenchPreferences.category() : "production";
@@ -117,35 +114,12 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
                 .filter(recipe -> recipe.getResultItem(minecraft.level.registryAccess()).getHoverName().getString().toLowerCase(Locale.ROOT).contains(query)).toList();
     }
     private List<ItemStack> items() { return InventoryAccess.snapshot(minecraft.player, menu.extra()); }
-    private String family(CraftingRecipe recipe) {
-        return switch (net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(recipe.getResultItem(minecraft.level.registryAccess()).getItem()).getPath()) {
-            case "miner", "burner_miner" -> "miners";
-            case "inserter", "burner_inserter", "long_inserter" -> "inserters";
-            case "conveyor", "slope_conveyor", "junction" -> "conveyors";
-            case "wood_crate", "iron_crate" -> "storage";
-            case "industrial_furnace" -> "furnaces";
-            case "assembler" -> "assemblers";
-            case "generator", "solar_panel" -> "generators";
-            case "power_pole" -> "poles";
-            case "radar" -> "radars";
-            case "research_lab" -> "labs";
-            case "red_science_pack", "green_science_pack" -> "science";
-            case "iron_pickaxe" -> "tools";
-            default -> "components";
-        };
+    private List<RecipePresentation.Row> grouped() {
+        return RecipePresentation.grouped(filtered(), minecraft.level, columns);
     }
-    private List<CraftRow> grouped() {
-        var recipes = filtered();
-        var result = new ArrayList<CraftRow>();
-        for (String group : List.of("miners", "inserters", "conveyors", "storage", "furnaces", "assemblers", "generators", "poles", "radars", "labs", "science", "tools", "components")) {
-            var matches = recipes.stream().filter(recipe -> family(recipe).equals(group)).toList();
-            for (int first = 0; first < matches.size(); first += columns) result.add(new CraftRow(group, matches.subList(first, Math.min(matches.size(), first + columns))));
-        }
-        return result;
-    }
-    private CraftingRecipe recipeAt(int cell, List<CraftRow> groups) {
+    private CraftingRecipe recipeAt(int cell, List<RecipePresentation.Row> groups) {
         int row = scroll + cell / columns, column = cell % columns;
-        return row < groups.size() && column < groups.get(row).recipes.size() ? groups.get(row).recipes.get(column) : null;
+        return row < groups.size() && column < groups.get(row).recipes().size() ? groups.get(row).recipes().get(column) : null;
     }
     private void updateAmounts() {
         var current = items();
@@ -235,13 +209,13 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
         }
         var groups = grouped();
         for (int row = 0; row < rows && scroll + row < groups.size(); row++)
-            graphics.drawString(font, Component.translatable("menu.conveyance.group." + groups.get(scroll + row).family),
+            graphics.drawString(font, Component.translatable("menu.conveyance.group." + groups.get(scroll + row).family()),
                     leftPos + RIGHT + 8, topPos + CONTENT + GRID_Y + row * ROW_HEIGHT, 0xFFB5C5D2, false);
         for (int i = 0; i < categoryButtons.size(); i++) {
             Button button = categoryButtons.get(i);
             boolean selected = CATEGORIES.get(i).equals(category);
             graphics.fill(button.getX(), button.getY(), button.getX() + button.getWidth(), button.getY() + 20, selected ? 0xFF618A78 : 0xFF354353);
-            graphics.renderItem(categoryIcon(CATEGORIES.get(i)), button.getX() + (button.getWidth() - 16) / 2, button.getY() + 2);
+            graphics.renderItem(RecipePresentation.categoryIcon(CATEGORIES.get(i)), button.getX() + (button.getWidth() - 16) / 2, button.getY() + 2);
         }
         for (int cell = 0; cell < recipeButtons.size(); cell++) {
             CraftingRecipe recipe = recipeAt(cell, groups);
@@ -272,57 +246,12 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
             }
         }
     }
-    private ItemStack categoryIcon(String tab) { return new ItemStack(switch (tab) {
-        case "intermediates" -> FactoryContent.GEAR_ITEM.get();
-        case "logistics" -> FactoryContent.CONVEYOR_ITEM.get();
-        case "production" -> FactoryContent.BURNER_MINER_ITEM.get();
-        case "power" -> FactoryContent.POWER_POLE_ITEM.get();
-        case "science" -> FactoryContent.RED_SCIENCE_ITEM.get();
-        default -> FactoryContent.GEAR_ITEM.get();
-    }); }
     private void ingredientTooltip(GuiGraphics graphics, CraftingRecipe recipe, int mouseX, int mouseY) {
-        var requirements = AssemblyRecipes.requirements(recipe);
-        ItemStack output = recipe.getResultItem(minecraft.level.registryAccess());
-        Component title = Component.literal(output.getCount() > 1 ? output.getCount() + " × " : "").append(output.getHoverName());
-        var raw = rawCosts.getOrDefault(recipe.getId(), List.of());
-        Component rawTitle = Component.translatable("menu.conveyance.total_raw");
-        int boxWidth = Math.min(width - 8, Math.max(264, Math.max(Math.max(font.width(title), font.width(rawTitle)) + 16, Math.max(requirements.size(), raw.size()) * 30 + 16)));
-        var info = net.minecraft.client.gui.screens.Screen.getTooltipFromItem(minecraft, output);
-        var infoLines = new ArrayList<net.minecraft.util.FormattedCharSequence>();
-        for (int line = 1; line < info.size(); line++) infoLines.addAll(font.split(info.get(line), boxWidth - 16));
-        int infoHeight = infoLines.size() * 10;
-        int iconColumns = Math.max(1, (boxWidth - 16) / 30);
-        int rawTitleY = 35 + infoHeight + 24 * Math.max(1, (requirements.size() + iconColumns - 1) / iconColumns) + 6;
-        int rawIconsY = rawTitleY + 13;
-        int boxHeight = rawIconsY + 24 * Math.max(1, (raw.size() + iconColumns - 1) / iconColumns) + 8;
-        int x = Math.max(4, Math.min(mouseX + 12, width - boxWidth - 4));
-        int y = Math.max(4, Math.min(mouseY + 12, height - boxHeight - 4));
-        graphics.pose().pushPose(); graphics.pose().translate(0, 0, 450);
-        graphics.fill(x - 1, y - 1, x + boxWidth + 1, y + boxHeight + 1, 0xFF718292);
-        graphics.fill(x, y, x + boxWidth, y + boxHeight, 0xFA17212C);
-        graphics.drawString(font, title, x + 8, y + 7, 0xFFE7EEF6, false);
-        for (int line = 0; line < infoLines.size(); line++) graphics.drawString(font, infoLines.get(line), x + 8, y + 21 + line * 10, 0xFFBBC8D4, false);
-        graphics.drawString(font, Component.translatable("menu.conveyance.ingredients"), x + 8, y + 23 + infoHeight, 0xFFA9BBC9, false);
         boolean possible = minecraft.player.isCreative() || amounts.getOrDefault(recipe.getId(), 0) > 0;
-        for (int i = 0; i < requirements.size(); i++) {
-            var requirement = requirements.get(i);
-            var choices = requirement.ingredient().getItems();
-            if (choices.length == 0) continue;
-            int iconX = x + 8 + i % iconColumns * 30, iconY = y + 35 + infoHeight + i / iconColumns * 24;
-            boolean enough = HandCrafting.count(cachedItems, requirement.ingredient()) >= requirement.count();
-            costIcon(graphics, choices[0], requirement.count(), iconX, iconY, enough ? 0xFF8AD8A0 : possible ? 0xFFE1BC76 : 0xFFEB8585);
-        }
-        graphics.drawString(font, rawTitle, x + 8, y + rawTitleY, 0xFFA9BBC9, false);
-        for (int i = 0; i < raw.size(); i++) costIcon(graphics, raw.get(i), raw.get(i).getCount(), x + 8 + i % iconColumns * 30,
-                y + rawIconsY + i / iconColumns * 24, 0xFFE7EEF6);
-        graphics.pose().popPose();
-    }
-    private void costIcon(GuiGraphics graphics, ItemStack item, int count, int x, int y, int colour) {
-        graphics.renderItem(item, x, y);
-        graphics.pose().pushPose(); graphics.pose().translate(0, 0, 200);
-        String text = Integer.toString(count);
-        graphics.drawString(font, text, x + 20 - font.width(text), y + 11, colour, true);
-        graphics.pose().popPose();
+        RecipePresentation.tooltip(graphics, recipe, rawCosts.getOrDefault(recipe.getId(), List.of()),
+                requirement -> HandCrafting.count(cachedItems, requirement.ingredient()) >= requirement.count()
+                        ? 0xFF8AD8A0 : possible ? 0xFFE1BC76 : 0xFFEB8585,
+                width, height, mouseX, mouseY);
     }
     private static boolean over(Button button, double x, double y) { return button.visible && x >= button.getX() && x < button.getX() + button.getWidth() && y >= button.getY() && y < button.getY() + button.getHeight(); }
     @Override public boolean mouseClicked(double x, double y, int button) {
