@@ -1,0 +1,20 @@
+{
+  "parent": "minecraft:block/block",
+  "loader": "forge:obj",
+  "model": "conveyance:models/block/machines/assembler_2/part_7.obj",
+  "mtl_override": "conveyance:models/block/machines/machine_materials.mtl",
+  "automatic_culling": false,
+  "flip_v": true,
+  "emissive_ambient": false,
+  "textures": {
+    "metal": "minecraft:block/iron_block",
+    "dark": "minecraft:block/polished_deepslate",
+    "case": "minecraft:block/blue_concrete",
+    "accent": "minecraft:block/iron_block",
+    "status": "minecraft:block/black_concrete",
+    "stone": "minecraft:block/stone_bricks",
+    "pane": "minecraft:block/blue_concrete",
+    "pane2": "minecraft:block/cyan_concrete",
+    "particle": "minecraft:block/blue_concrete"
+  }
+}

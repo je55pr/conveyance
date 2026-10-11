@@ -24,7 +24,9 @@ public final class FactoryWindowStyle {
     }
     public static void progress(GuiGraphics graphics, int x, int y, int width, int height, float fraction, int color) {
         graphics.fill(x, y, x + width, y + height, SLOT_BACKGROUND);
-        graphics.fill(x, y, x + (int) (width * Mth.clamp(fraction, 0, 1)), y + height, color);
+        float progress = Float.isFinite(fraction) ? Mth.clamp(fraction, 0, 1) : 0;
+        int filled = (int) (width * progress);
+        if (filled > 0) graphics.fill(x, y, x + filled, y + height, color);
     }
     private FactoryWindowStyle() {}
 }

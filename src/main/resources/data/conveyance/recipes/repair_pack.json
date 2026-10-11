@@ -1,0 +1,19 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "combat",
+  "crafting_time": 1,
+  "ingredients": [
+    {
+      "item": "conveyance:gear",
+      "count": 2
+    },
+    {
+      "item": "conveyance:electronic_circuit",
+      "count": 2
+    }
+  ],
+  "result": {
+    "item": "conveyance:repair_pack",
+    "count": 1
+  }
+}

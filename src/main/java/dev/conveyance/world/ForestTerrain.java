@@ -13,8 +13,8 @@ import net.minecraft.world.level.levelgen.Heightmap;
 /** Deterministic forests, clipped to each chunk to avoid cross-chunk generation writes. */
 public final class ForestTerrain {
     private static final double DENSITY_MULTIPLIER = 1.5;
-    private record Tree(int x, int z, int y, int height, int clearance, double priority) {
-        BlockPos root() { return new BlockPos(x, y, z); }
+    public record Tree(int x, int z, int y, int height, int clearance, double priority) {
+        public BlockPos root() { return new BlockPos(x, y, z); }
     }
     private final long seed;
     private final TerracedTerrain terrain;
@@ -56,6 +56,14 @@ public final class ForestTerrain {
         int count = 0;
         for (Tree tree : trees(minX, minZ)) if (inside(tree.x, tree.z, minX, minZ)) count++;
         return count;
+    }
+    public List<Tree> visualTrees(int minX, int minZ) {
+        return trees(minX, minZ).stream().filter(tree -> inside(tree.x, tree.z, minX, minZ)).toList();
+    }
+    public boolean clearTrunks(int x, int z, int radius) {
+        for (Tree tree : trees(Math.floorDiv(x, 16) * 16, Math.floorDiv(z, 16) * 16))
+            if (Math.abs(tree.x - x) <= radius && Math.abs(tree.z - z) <= radius) return false;
+        return true;
     }
     public void generate(ChunkAccess chunk) {
         int minX = chunk.getPos().getMinBlockX(), minZ = chunk.getPos().getMinBlockZ();
@@ -101,13 +109,14 @@ public final class ForestTerrain {
         double forest = terrain.forestCover(x, z);
         double density = forest < 0.44 ? 0.008 : Math.min(0.92, 0.18 + (forest - 0.44) * 3.5);
         density *= (1 - open) * (1 - open);
+        if (terrain.generation() >= 3 && grove <= 0) density *= SurfacePalette.treeDensity(seed, x, z);
         // Keep accessible Wood near the edge of the starter clearing.
         if (grove > 0) density = Math.max(density, 0.18 + grove * 0.74);
         density = Math.min(1, density * DENSITY_MULTIPLIER);
         if (unit(gx, gz, 5) > density) return null;
         var cell = terrain.cellAt(x, z);
         if (cell.feature() != TerracedTerrain.Feature.PLAIN || cell.surfaceHeight() != TerracedTerrain.START_HEIGHT
-                || terrain.oreAt(x, z) != TerracedTerrain.Ore.NONE) return null;
+                || terrain.oreAt(x, z) != TerracedTerrain.Ore.NONE || terrain.generation() != 1 && terrain.oilAt(x, z)) return null;
         int height = 7 + (int) (unit(gx, gz, 6) * 6);
         int clearance = 2 + (int) (unit(gx, gz, 7) * 2);
         return new Tree(x, z, cell.surfaceHeight(), height, clearance, unit(gx, gz, 8));

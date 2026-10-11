@@ -2,6 +2,7 @@ package dev.conveyance.world;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -29,17 +30,22 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 
 public final class TerracedChunkGenerator extends ChunkGenerator {
     public static final Codec<TerracedChunkGenerator> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Biome.CODEC.fieldOf("biome").forGetter(generator -> generator.biome)
+            Biome.CODEC.fieldOf("biome").forGetter(generator -> generator.biome),
+            Codec.intRange(1, TerracedTerrain.CURRENT_GENERATION).optionalFieldOf("generation_version", 1).forGetter(generator -> generator.generation)
     ).apply(instance, TerracedChunkGenerator::new));
     private static final ResourceLocation TERRAIN_RANDOM = ResourceLocation.fromNamespaceAndPath("conveyance", "terrain");
     private final Holder<Biome> biome;
+    private final int generation;
+    public int generation() { return generation; }
     private volatile TerrainContext cachedTerrain;
 
     private record TerrainContext(RandomState state, TerracedTerrain terrain, ForestTerrain forest) {}
 
-    public TerracedChunkGenerator(Holder<Biome> biome) {
+    public TerracedChunkGenerator(Holder<Biome> biome) { this(biome, TerracedTerrain.CURRENT_GENERATION); }
+    public TerracedChunkGenerator(Holder<Biome> biome, int generation) {
         super(new FixedBiomeSource(biome));
         this.biome = biome;
+        this.generation = generation;
     }
 
     @Override
@@ -52,7 +58,7 @@ public final class TerracedChunkGenerator extends ChunkGenerator {
                 context = cachedTerrain;
                 if (context == null || context.state() != state) {
                     long seed = state.getOrCreateRandomFactory(TERRAIN_RANDOM).at(0, 0, 0).nextLong();
-                    var terrain = new TerracedTerrain(seed);
+                    var terrain = new TerracedTerrain(seed, generation);
                     context = new TerrainContext(state, terrain, new ForestTerrain(seed, terrain));
                     cachedTerrain = context;
                 }
@@ -61,6 +67,50 @@ public final class TerracedChunkGenerator extends ChunkGenerator {
         return context;
     }
     private TerracedTerrain terrain(RandomState state) { return context(state).terrain(); }
+    public long paletteSeed(RandomState state) { return terrain(state).paletteSeed(); }
+
+    /** Pure cluster prediction also serves radar scans; it never requests chunks. */
+    public List<BlockPos> nestPositions(RandomState state, long seed, int regionX, int regionZ, BlockPos spawn) {
+        long base = dev.conveyance.combat.EnemyNests.mix(seed ^ regionX * 0x9E3779B97F4A7C15L ^ regionZ * 0xC2B2AE3D27D4EB4FL);
+        // Two thirds of the previous 72% candidate rate, with 2-4 nests per site.
+        if (Math.floorMod(base, 100) >= 48) return List.of();
+        int count = 2 + (int) Math.floorMod(base >>> 32, 3);
+        var context = context(state);
+        for (int attempt = 0; attempt < 24; attempt++) {
+            long hash = dev.conveyance.combat.EnemyNests.mix(base + attempt * 0x632BE59BD9B4E019L);
+            int x = regionX * 128 + 3 + (int) Math.floorMod(hash, 122), z = regionZ * 128 + 3 + (int) Math.floorMod(hash >>> 24, 122);
+            BlockPos anchor = nestSite(context, x, z, spawn);
+            if (anchor == null) continue;
+            var cluster = new ArrayList<BlockPos>();
+            cluster.add(anchor);
+            for (int nearby = 0; nearby < 64 && cluster.size() < count; nearby++) {
+                long offset = dev.conveyance.combat.EnemyNests.mix(hash ^ 0xD6E8FEB86659FD93L ^ nearby * 0x9E3779B97F4A7C15L);
+                int nx = x + (int) Math.floorMod(offset, 29) - 14, nz = z + (int) Math.floorMod(offset >>> 24, 29) - 14;
+                // Keep footprints inside their region so neighbouring camps cannot overlap.
+                if (nx < regionX * 128 + 3 || nx > regionX * 128 + 124 || nz < regionZ * 128 + 3 || nz > regionZ * 128 + 124) continue;
+                if (cluster.stream().anyMatch(pos -> (long) (nx - pos.getX()) * (nx - pos.getX()) + (long) (nz - pos.getZ()) * (nz - pos.getZ()) < 36)) continue;
+                BlockPos neighbour = nestSite(context, nx, nz, spawn);
+                if (neighbour != null && neighbour.getY() == anchor.getY()) cluster.add(neighbour);
+            }
+            // Reject isolated sites rather than falling back to a single nest.
+            if (cluster.size() >= 2) return List.copyOf(cluster);
+        }
+        return List.of();
+    }
+
+    private BlockPos nestSite(TerrainContext context, int x, int z, BlockPos spawn) {
+        double dx = (double) x - spawn.getX(), dz = (double) z - spawn.getZ();
+        if (dx * dx + dz * dz < 144 * 144) return null;
+        var center = context.terrain().cellAt(x, z);
+        if (center.feature() != TerracedTerrain.Feature.PLAIN || center.surfaceHeight() < 1 || center.surfaceHeight() + 2 >= getMinY() + getGenDepth()) return null;
+        for (int ox = -1; ox <= 1; ox++) for (int oz = -1; oz <= 1; oz++) {
+            var cell = context.terrain().cellAt(x + ox, z + oz);
+            if (cell.feature() != TerracedTerrain.Feature.PLAIN || cell.water() || cell.surfaceHeight() != center.surfaceHeight()
+                    || context.terrain().oreAt(x + ox, z + oz) != TerracedTerrain.Ore.NONE || context.terrain().oilAt(x + ox, z + oz)) return null;
+        }
+        if (context.forest().clearTrunks(x, z, 1)) return new BlockPos(x, center.surfaceHeight(), z);
+        return null;
+    }
 
     public record Environment(int waterColumns, int trees) {}
     public Environment environment(RandomState state, int chunkX, int chunkZ) {
@@ -83,6 +133,8 @@ public final class TerracedChunkGenerator extends ChunkGenerator {
             var cell = cells[cellIndex];
             var ore = cell.feature() == TerracedTerrain.Feature.PLAIN ? context.terrain().oreAt(minX + x, minZ + z) : TerracedTerrain.Ore.NONE;
             pixels[z * 16 + x] = dev.conveyance.map.MapPalette.terrain(cell, ore, forest[z * 16 + x]);
+            if (cell.feature() == TerracedTerrain.Feature.PLAIN && cell.surfaceHeight() == TerracedTerrain.START_HEIGHT
+                    && ore == TerracedTerrain.Ore.NONE && context.terrain().oilAt(minX + x, minZ + z)) pixels[z * 16 + x] = dev.conveyance.map.MapPalette.OIL;
         }
         return pixels;
     }
@@ -128,11 +180,13 @@ public final class TerracedChunkGenerator extends ChunkGenerator {
         if (cell.feature() != TerracedTerrain.Feature.PLAIN || cell.surfaceHeight() != TerracedTerrain.START_HEIGHT) {
             return null;
         }
+        if (terrain.oilAt(x, z) && terrain.oreAt(x, z) == TerracedTerrain.Ore.NONE) return terrain.oilState(x, z);
         return switch (terrain.oreAt(x, z)) {
             case IRON -> Blocks.IRON_ORE.defaultBlockState();
             case COPPER -> Blocks.COPPER_ORE.defaultBlockState();
             case COAL -> Blocks.COAL_ORE.defaultBlockState();
             case STONE -> Blocks.STONE.defaultBlockState();
+            case URANIUM -> dev.conveyance.factory.FactoryContent.URANIUM_ORE.get().defaultBlockState();
             case NONE -> null;
         };
     }
@@ -181,7 +235,7 @@ public final class TerracedChunkGenerator extends ChunkGenerator {
     }
 
     // This prototype owns every generation pass. There is no inherited carving,
-    // biome decoration, ore placement, structure or mob pass. Seas, rivers,
+    // biome decoration, ore placement, structure or mob pass. Seas and lakes,
     // resources and forests are filled directly by our own generation rules.
     @Override public void applyCarvers(WorldGenRegion region, long seed, RandomState state,
             BiomeManager biomes, StructureManager structures, ChunkAccess chunk, GenerationStep.Carving step) {}

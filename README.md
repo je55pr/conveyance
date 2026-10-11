@@ -3,6 +3,568 @@
 A standalone industrial overhaul for Minecraft Java Edition **1.20.1**, using
 **Forge 47.4.26** and **Java 17**. No other mods are required.
 
+## Version 0.52.0: laser turrets and military science
+
+Laser turrets have a 2 x 2 x 2 base with a rotating head above it, visible red
+beams, 24-block range, 20 base damage and 1.5 shots per second. They fire over
+two-block walls and leave repairable wrecks. No ammunition slots are needed.
+Each shot consumes 800 kJ from an 801 kJ buffer; network charging is limited to
+9.6 MW with a 24 kW idle drain. Charging demand and accumulator discharge are
+included in the electricity network. A right-click screen shows charge, input
+and weapon stats; B-mode warnings identify missing coverage/power and charging.
+
+The existing oil -> sulfur -> sulfuric acid -> battery production chain supplies
+the turret recipe: 20 steel, 20 electronic circuits and 12 batteries, taking
+20 seconds to craft. Military science makes two grey packs from one piercing
+magazine, one grenade and two walls in 10 seconds. Labs now have four fixed
+science slots, preserving the previous red, green and blue slots.
+
+New military science, laser, laser turret and tier 1-3 laser damage/speed research
+use Factorio base 2.0.77 prerequisites, costs and times. New technologies are
+appended to preserve existing research. See [the production and research guide](docs/laser-turrets.md).
+Restart Minecraft; no new world or research reset is needed.
+
+## Version 0.51.2: free B-mode camera
+
+WASD can move the B-mode camera beyond the five-by-five-chunk building area.
+Distant terrain follows the camera's ground focus as you explore. Building and
+machine interaction still use the existing reach around the player. Returning
+to normal view returns to your character; entering B mode starts over the player.
+Restart Minecraft.
+
+## Version 0.51.1: distant B-mode overview
+
+B mode can zoom out to a camera distance of 4096 blocks, enough to fit the
+1024-block terrain radius (roughly 2048 blocks across) on screen. Close-up zoom
+and the default camera distance are unchanged. Distant terrain stays centred
+on the camera's ground focus, and projection/fog distances account for camera
+height. The near clipping plane increases at high zoom to preserve depth precision.
+Mouse targeting skips the empty sky and traces only through the world's
+height. Building reach remains five by five chunks; this adds an overview without
+loading extra world chunks or increasing the terrain radius. Restart Minecraft.
+
+## Version 0.51.0: B-mode factory overlays
+
+Four top-right buttons toggle power coverage, production icons, warnings and
+inserter directions. Recipes and important warnings start enabled. Power-pole
+coverage automatically appears while hovering or placing a pole, and inserter
+pickup/drop arrows appear while hovering or placing an inserter. The arrows use
+blue for pickup and orange for drop, including long inserters.
+
+Coverage follows the actual eight-block distance rule at the selected building
+height. All-coverage shading merges overlapping poles. Camera-facing production
+badges identify assembler/furnace output, mined resources, chemical recipes and
+active lab research. Recipe badges hide when machines become too small on screen;
+important warnings remain visible. Hover a badge for its name, activity and status.
+
+The server sends bounded snapshots four times per second from already-loaded
+nearby chunks while B mode is active. It distinguishes missing pole coverage,
+empty electrical networks, insufficient generation, empty fuel, missing recipes,
+missing deposits, water/steam shortages and empty turrets. Input shortages and
+blocked outputs are available on hover without filling normal factories with
+alarms. Overlays load no extra chunks and don't change machine behaviour.
+Restart Minecraft. Research and existing worlds are preserved.
+
+## Version 0.50.2: icons alongside tooltip names
+
+Item names have icon rows in ordinary inventory, research, hotbar-link and
+crafting queue tooltips. Research prerequisites, unlocks, production targets and
+science costs show their corresponding icons. Recipe tooltip titles include
+their output icon. Shared native tooltip components preserve colours, wrapping
+and placement. Production milestones use a production-progress label. Restart Minecraft.
+
+## Version 0.50.1: production milestone tooltips
+
+Research graph progress uses each technology's actual target, including
+production milestones with no science-pack cost. Research tooltips render after
+the final button, and progress bars reject non-finite values. Restart Minecraft.
+
+## Version 0.50.0: Factorio early research and equipment tiers
+
+The research tree now has 44 technologies, using Factorio base 2.0.77 science
+costs, research durations and direct prerequisites where the underlying content
+exists. Steam power, electronics, red science, steel axe and oil processing use
+production milestones; handcrafting and factory production both count.
+Long inserters unlock with Automation, iron crates are starter recipes, and
+turrets, walls and repair packs have separate research. Existing prototype
+research resets once because the old global upgrades have been replaced.
+
+Assembling machine 2, steel furnaces, fast inserters, fast conveyors/slopes/junctions
+and steel crates are separate craftable equipment. Sulfuric acid and batteries
+extend chemistry; tanks hold 25,000 fluid and powered pumps transfer between
+separate input/output networks. Accumulators store 5 MJ with 300 kW charging and
+discharging, prioritising factory demand and primary generation.
+
+Tier-one speed, productivity and efficiency modules modify compatible machines.
+Right-click a machine with a module to install it; Shift + right-click with an
+empty hand opens its module inventory. Modules and pending bonus ore return
+separately when picking up machines. Mining productivity grants bonus ore rather
+than faster drills. Labs use technology-specific research time and the base
+20%/30% research-speed upgrades.
+
+Military research unlocks submachine guns and shotguns; Military 2 adds piercing
+ammunition and grenades. Bullet damage and shooting-speed researches affect
+handheld weapons and gun turrets. Grenades damage enemies without editing terrain.
+
+Conveyance retains one pole type, unlimited fluid throughput, protected natural
+terrain and custom slope/four-way junction footprints. Missing trains, vehicles,
+armour, circuit networks and other independent systems are not represented by
+empty research nodes. Art for new items is provisional. Restart Minecraft.
+
+Balance reference: [Wube's 2.0.77 technology data](https://github.com/wube/factorio-data/blob/2.0.77/base/prototypes/technology.lua),
+[recipes](https://github.com/wube/factorio-data/blob/2.0.77/base/prototypes/recipe.lua)
+and [module effects](https://github.com/wube/factorio-data/blob/2.0.77/base/prototypes/item.lua).
+
+## Version 0.49.1: compact recipe grids
+
+Handcrafting and assembler recipe pickers use a compact icon grid without row
+headings. Each item family still starts on its own row, with matching spacing
+between rows and columns. Restart Minecraft.
+
+## Version 0.49.0: research cards and direct connections
+
+Distant terrain returns to a 1,024-block radius, including projection, fog and
+cache bounds. The research screen now has a scrollable, three-column card grid on the left
+and selected technology details with a local graph on the right. Only direct
+prerequisites and direct dependent technologies appear, with clickable nodes
+to inspect their own connections. Cards prioritise active/available research,
+then locked technologies and completed research. Red means unavailable, amber
+means researchable (including active research), and green means researched.
+Cards show only their icon, name and science cost, with status conveyed by colour.
+Progress, unlock icons and detailed item tooltips remain in the selected technology pane.
+The card grid scrolls independently; the local graph retains pan/zoom/Fit.
+Inspecting a technology is separate from starting it with the research button.
+Existing research saves and progression are unchanged. Restart Minecraft.
+
+## Version 0.48.3: doubled distant terrain radius
+
+Distant terrain now reaches 2,048 blocks from the camera, twice the previous
+radius and roughly four times the visible area. The projection, horizon fog,
+tile scheduling, cache eviction and prediction-cache bounds follow the larger
+distance automatically. Mesh uploads retain their per-frame budget and the
+worker still builds nearby tiles first, so the outer landscape fills in
+gradually. Restart Minecraft; existing worlds are supported.
+
+## Version 0.48.2: matching distant lighting and water
+
+Distant terrain uses Minecraft's live light map and the world's face shading,
+replacing the approximate daylight multiplier. Day/night colour, brightness,
+gamma and weather lighting now follow the same lighting texture as real chunks.
+Water uses the biome tint and the native water sprite's transparency in a
+separate pass, with sandy seabeds and depth-dependent skylight beneath it.
+This removes the opaque bright-blue water approximation and brings the ground
+and water colours closer at the handoff. Small differences from detailed tree
+shadows and ambient occlusion remain in the simplified distant geometry.
+Restart Minecraft; existing worlds are supported.
+
+## Version 0.48.1: distant texture scale and section handoff
+
+Distant surfaces repeat their atlas sprite once per block on each axis, including
+the full height of cliff walls. Repetition happens in the shader with unwrapped
+texture derivatives for correct mip selection, keeping the simplified geometry
+and avoiding stretched 4-block textures or bleeding into adjacent atlas sprites.
+
+The handoff now uses a coverage texture with an independent ready flag for each
+16-block height section of each nearby Minecraft chunk. Uncompiled underground
+or empty sections no longer keep LOD surfaces on top of finished real geometry.
+Faces on chunk boundaries sample inside the owning solid, and tree canopies can
+consult neighbouring chunks across LOD tile boundaries. Restart Minecraft to
+load the new vertex data and shader together; existing worlds are supported.
+
+## Version 0.48.0: distant terrain
+
+Conveyance renders a simplified natural landscape out to 1,024 blocks in both
+normal and overhead views. Ground, beaches, opaque distant water, granite
+cliffs, exact surface ore/oil footprints and simplified tree silhouettes use
+the existing seed and saved generation version. Factories and distant entities
+are omitted. The server sends generator settings on login/respawn/dimension
+changes; no extra chunks are loaded, generated, simulated or revealed on the map.
+
+A low-priority worker builds 64 x 64 terrain tiles. Only eight completed CPU
+meshes can wait for upload, render-thread uploads are limited per frame, GPU
+tiles outside the surrounding view are disposed, prediction caches are pruned,
+and disconnect/resource
+reload cancels the worker and closes buffers. A per-tile shader mask hides the
+distant representation wherever the normal chunk sections have compiled, so
+normal terrain takes over as it loads. Prediction shows the natural landscape;
+tree clearing and other player edits outside loaded chunks are not represented
+in this first terrain-only prototype.
+
+The projection reaches beyond the distant terrain and ordinary distance fog
+starts near the far horizon rather than at the normal chunk limit. Pollution
+still draws closer smog, and underwater/lava fog keeps its normal behaviour.
+The distant shader applies atlas textures, directional shading, day/night
+brightness and the same fog. Tiles stream in after joining or moving into a new
+area. Restart Minecraft; existing Conveyance worlds use their saved terrain rules.
+
+## Version 0.47.0: clustered biter nests
+
+Newly discovered enemy regions have a 48% nest-site candidate chance, down from
+72% (one third fewer candidate placements). Each accepted site contains 2-4
+independent nests within 14 blocks of the first nest on each axis, with at least
+6 blocks between centres. Sites without room for two nests are skipped. All
+footprints remain on flat, dry, clear ground, outside ores, oil and tree trunks,
+and outside the 144-block safe radius around spawn. Cluster footprints stay
+inside their region so neighbouring sites cannot overlap.
+
+Radar/map discovery and loaded terrain use the same deterministic cluster
+prediction without loading distant chunks. Each nest keeps its own pollution
+budget, defenders, health and destroyed state. Existing discovered regions
+keep their saved nests; restart and explore new regions or create a new world
+to see the new layout throughout. Terrain generation remains version 4.
+
+Grass sides now use the cutout render layer so the transparent grass overlay
+reveals dirt rather than drawing black over it; the asset generator retains
+the setting when rebuilding models.
+
+## Version 0.46.0: conditional starter resources and rare oil
+
+Coal now uses pure black on the map, including with pollution enabled. New
+worlds use generation version 4: random oil fields occur in 1/15 of candidate
+regions, five times less frequently than version 3's 1/3. Oil wells remain
+3 x 3, and no guaranteed starter oil field is added on login in any world.
+Previously placed wells in older saves are not deleted.
+
+Natural ore can now generate near spawn, outside a small protected centre.
+Starter iron, copper, coal and stone are fallback guarantees. At world-rule
+initialization, each type checks for a usable natural deposit within 128 blocks
+with a dry walkable route from spawn. Only missing types get a fallback patch,
+normally 72-112 blocks away with a preferred 56-block gap from other deposits.
+The whole fallback footprint must be flat, accessible, clear of natural ores
+and clear of potential oil sites. Placement relaxes spacing only if necessary;
+rare rescue sites in the protected inner plain keep bad RNG from softlocking
+resource access. Natural ore takes priority and is never overwritten.
+
+The search uses predicted terrain without loading chunks, and runs once per
+generator context. Results depend on the seed rather than chunk generation order.
+Older generation versions keep their previous ore layouts. Create a new world
+for version 4's changes; the coal map colour also applies to existing saves.
+
+Gun turrets now have a 2 x 2 x 2 base with the rotating head above it; placement
+reserves a 2 x 2 x 3 volume for the head's movement. Rendering, ghost previews,
+collision shapes and the firing origin use the raised geometry. Stone walls
+place two connected blocks from one item, share health across both halves,
+and are picked up together when either half is broken. Wall collisions are
+exactly two blocks high, and wall parts can be rebuilt from their wrecks.
+Existing old turrets/walls should be picked up and placed again to get the
+new full footprints; no item-state migration is needed for the prototype.
+
+## Version 0.45.0: map contrast and sparser dry forests
+
+Nests colour their 3 x 3 footprint bright red in the map raster, including coarse
+overview pixels; the former outlined icons are removed. Clearing/discovering
+nests invalidates the corresponding map colour cache. Oil is vivid magenta,
+iron cyan, copper orange, coal light slate, stone cream and uranium lime.
+Resource colours remain intact under the pollution overlay. Overview pixels
+are at least one screen pixel so small important features remain visible.
+
+New worlds use saved generation version 3. Random ore candidate rates are a
+third of version 2: 0.2/3 per basic ore, 0.08/3 uranium. Natural oil fields also
+occur in one third of their previous regions. Starter ore and the nearby oil
+field remain guaranteed. Granite cliff paths are doubled to 320-544 blocks,
+with a wider region search to avoid clipping long paths at generation boundaries.
+
+Forest density follows the same seeded dryness field as grass colours: greener
+wet regions retain dense pockets, average regions have around half the trees,
+and the driest regions have about 90% fewer tree candidates. The starter wood
+grove remains protected. Versions 1 and 2 keep their previous layout/density
+rules; a new world is required for version 3's generation changes.
+The dryness noise and density curve now form part of generation version 3's
+layout rules and must remain stable; RGB palette colours can still change freely.
+
+Biters currently avoid water routes (negative water pathfinding cost) and have
+a FloatGoal if they fall in. They do not deliberately swim across seas. The
+abstract distant-wave entry-point shortcut does not yet check the full terrain
+route, so it can bypass water/cliff barriers when materializing a group.
+
+## Version 0.44.0: playthrough terrain, water and surface colours
+
+New worlds use saved `generation_version: 2`. Older saves without the field
+decode as version 1 and keep their previous terrain, ore, river, cliff and oil
+layout rules when generating more chunks. Layout changes must introduce a new
+generation version and retain the old branches: do not change version 2's rules
+under an existing playthrough. Colour/model improvements can change independently.
+Restart Minecraft and create a new world to use this layout.
+
+Version 2 reduces random deposit candidates by 80% (20% chance per basic ore
+per 128-block region, 8% uranium), preserving the four separated starter patches.
+Random ore candidates require a flat, base-level 3 x 3 centre. The guaranteed
+starter lake is centred 64 blocks from spawn between ore directions, with a
+roughly 40 x 32 block footprint and a usable bank about 40-50 blocks away.
+The shore/shallow-water height steps and raised offshore-pump outlet are unchanged.
+
+Rivers are removed. Seas/lakes have less fine shoreline noise, and every wet
+4 x 4 cell must belong to a 2 x 2 wet group, preventing isolated single-cell
+pools and single-cell-width channels. Only granite cliffs generate, with 160-272
+block paths, narrow cross-sections, heights up to six three-block sections,
+tapered ends and an interior gap. Large clear plains remain protected.
+
+Oil wells are complete 3 x 3 surface footprints, excluding cliffs, water, ores
+and tree trunks. The nine model tiles form one broad dark well, suitable for a
+3 x 3 pumpjack. The nearby starter oil field also places three full wells.
+Older single-block wells keep their legacy model. Savannah trunks now use brown
+oak bark and end grain; trees still produce the same Wood item.
+
+Grass uses a smooth seed-dependent cosmetic climate, fading from green through
+gold to brown over hundreds of blocks. The map uses the same base palette.
+Local pollution blends grass toward grey; active nest territories blend it
+purple at the edges and red nearer nests, fading back when the nest is cleared.
+These are tints, not replacement terrain blocks or separate biomes. A 17 x 17
+chunk ambient packet carries pollution and nest influence. Client meshes rebuild
+when visible colour bands change, including neighbouring chunks to keep blending
+continuous. Existing smog and pollution-map controls retain their behaviour.
+
+## Version 0.43.1: Creative map reveal
+
+The Creative map has a `Reveal 2,000 × 2,000` button. It reveals roughly that
+square around the character, including resource patches and predicted nests,
+and zooms out to frame it. Chunk-aligned sampling can add a small border.
+The reveal runs from the centre outwards, with progress on the button, up to
+128 tiles and an eight-millisecond sampling budget per server tick. It continues
+if the map closes, skips already revealed tiles and uses the radar's terrain
+sampling without generating or loading distant world chunks. Survival has no
+button, and the server also requires Creative mode. Jobs cancel if the player
+leaves the world, dies or leaves Creative mode; completed tiles remain explored.
+
+## Version 0.43.0: nests and pollution attacks
+
+Adds shootable 350-health biter nests with a breathing placeholder model.
+Natural nests use irregular seeded placement on clear, flat, dry terrain, with
+a 144-block exclusion radius around the world spawn. Each 128 x 128 region has
+a 72% chance to search for one suitable nest site. They avoid trees, ore, wells
+and existing buildings. The same discovery path works in existing worlds;
+explored or loaded regions are checked without regenerating terrain.
+
+Nests absorb up to 2 local pollution units per second into a persistent budget,
+spending 4 units per small biter. A nest can dispatch 4-8 attackers per wave,
+at least 60 seconds apart, towards a nearby pollution concentration. Budgets
+cap at 64 units. Unloaded nests keep their abstract pollution/budget bookkeeping
+without loading chunks or simulating mobs. A distant wave travels abstractly at
+4 blocks/s, then materializes on active terrain 48-96 blocks from its destination;
+nearby nests spawn attackers directly. Queued waves wait if no suitable active
+ground is available. Spawns check actual ground and collision. Automatic spawning
+stops at 48 local or 256 loaded biters.
+
+Approaching a nest also wakes a local group of up to two defenders, which stays
+near the nest unless provoked. Missing defenders replenish at most once per ten
+seconds. Long-distance attackers navigate in short waypoints. Clearing a nest
+permanently removes its automatic spawning and pollution absorption; surviving
+biters still need dealing with. Pistols, turrets and B-mode aiming can target
+both biters and nests. Neither produces items or experience on death.
+
+The map shows revealed nests as red outlined markers and loaded biters as red
+dots. Radar scans discover distant nest sites without loading terrain; enemy
+markers stay hidden in unexplored chunks. Nest hover labels include coordinates.
+An incoming-wave notification appears in chat and briefly on the HUD, below the
+B-mode controls when needed.
+
+For a quick playtest with commands enabled, use `/conveyance combat nest` to
+place a nest about 48 blocks ahead, then `/conveyance combat provoke` to add
+pollution at the nearest nest and direct its first queued wave towards your
+current location. A wave normally starts after about eight seconds if space
+is available. `/conveyance combat nest_info` shows its pollution, budget and
+cooldown. `/summon conveyance:biter_nest` also creates a persistent nest.
+These rates and wave sizes are prototype balance; enemy evolution is not added.
+
+## Version 0.42.0: combat and repairable wrecks
+
+Adds a first defence prototype: custom six-legged small biters, a pistol,
+firearm magazines, ammunition-fed 2 x 2 gun turrets and connecting stone walls.
+There are no natural spawns or pollution attacks yet. With commands enabled,
+use `/conveyance combat kit` for supplies, `/conveyance combat wave 8` to spawn
+an attacking group around you, and `/conveyance combat clear` to remove nearby
+biters. `/summon conveyance:small_biter` also works. Waves skip unloaded chunks
+and water, so fewer enemies can appear if the surrounding terrain is unsuitable.
+
+Pistols fire at 4 shots/s over 15 blocks; turrets fire at 10 shots/s over 18
+blocks. Each magazine supplies ten 5-damage rounds. Turrets use no power,
+automatically aim at visible biters and fire over stone walls. Inserters supply
+up to ten magazines; right-clicking a turret with ammunition fills its slot.
+Hold left click with a pistol to fire, including cursor aiming in B mode. Shots
+always originate from your character, with the same range in both views.
+Player combat uses Minecraft health; biters deal 2 damage to players and 7 to
+buildings every half-second. They path around terrain and attack obstructing
+factory buildings and walls. Native pathfinding is the prototype starting point.
+
+Buildings have persistent health shared across their entire multiblock footprint.
+Destroyed buildings become low rubble over their base; the wreck stores the
+original footprint, settings, processing state, items and local fluid buffers.
+Right-click with one repair pack to rebuild a wreck or fully heal a damaged
+building. The original space must be clear, including players standing in it.
+Picking up any part of a wreck salvages its items into your inventory and removes
+the whole wreck; it does not recover the machine itself. A full inventory leaves
+the wreck in place. Combat and enemy deaths never produce loose item entities.
+To inspect wrecks quickly, aim at a building in normal view and use
+`/conveyance combat damage 1000`.
+
+Pistols, magazines and repair packs are starter recipes. Basic Defence costs
+10 red science and unlocks walls and turrets. New recipes have a Combat tab in
+handcrafting and assembly pickers. Combat models are provisional native geometry;
+existing user-supplied item sprites continue to take precedence.
+
+## Version 0.41.1: uranium deposits
+
+New terrain can generate green uranium patches level with the base ground,
+using the same irregular per-block footprints as existing ores. Uranium has a
+40% chance of a deposit candidate per resource region and is excluded from the
+starter resource area. Existing iron/copper/coal/stone placement keeps its seeds
+and priority. Uranium appears in map resource labels and radar terrain previews.
+Its natural block has no inventory item, drops or extraction/processing yet.
+
+## Version 0.41.0: oil, chemical science and creative power
+
+Adds surface oil wells, 3 x 3 pumpjacks, 5 x 5 refineries and 3 x 3 chemical
+plants, all two blocks tall. New chunks generate non-depleting wells on flat
+terrain; existing worlds receive one nearby starter field on login, with its
+coordinates in chat. Oil wells are labelled on the map, including radar previews.
+Pumpjacks produce 10 crude oil/s at 90 kW, with output on the front-right corner.
+
+Refineries draw 420 kW plus 14 kW standby; chemical plants draw 210 kW plus 7 kW
+standby. Both have a separate icon recipe picker and processing view using the
+shared compact factory window. Solid inputs are automatically limited to twice
+the selected recipe's requirements. Fixed fluid ports are active according to
+the recipe, with unlimited pipe throughput and mixing prevention across all
+fluid types. Fluid buffers save locally; changes to recipes refund item slots.
+
+Basic refining: 100 crude -> 45 petroleum in 5 seconds. Chemical plants make
+2 plastic from 20 petroleum + 1 coal in 1 second, or 2 sulfur from 30 petroleum
++ 30 water in 1 second. Engine units require an assembler (1 steel + 1 gear +
+2 pipes, 10-second base recipe). Advanced circuits cost 2 circuits + 2 plastic +
+4 copper wire with a 6-second base recipe. Two blue science packs cost 2 engines
++ 3 advanced circuits + 1 sulfur, with a 24-second base recipe.
+
+Assemblers now have five input slots and use recipe duration at Factorio
+assembling machine 1's crafting speed of 0.5, instead of a fixed two seconds.
+Blue science therefore takes 48 seconds per batch before speed research.
+Recursive hand crafting never manufactures engine units; existing engines can
+be used to craft the final science packs. Creative crafting can give any new
+solid item directly, including the chemical plant products.
+
+Research gains Engine, Oil Processing, Plastics, Sulfur Processing, Advanced
+Circuits and Chemical Science nodes. Labs now have red, green and blue slots;
+each technology declares its required science combination. Advanced Oil
+Processing spends all three pack types and unlocks three-output refining plus
+heavy/light cracking. Advanced refining consumes 100 crude + 50 water to produce
+25 heavy oil + 45 light oil + 55 petroleum per five-second batch. Refineries take
+water at rear-left and crude at rear-right; front outputs are heavy, light and
+petroleum from left to right. Chemical plants take primary fluid at rear-left
+and water at rear-right, with fluid output at front-left.
+
+The old generator is now a Creative Generator. It has no fuel inventory,
+pollution or consumption and supplies unlimited power to its connected pole
+network. Its item/recipe are Creative-only; Survival placement is rejected and
+switching out of Creative removes its inventory items. Breaking one in Survival
+does not grant the item. Creative metal uses magenta diffuse tint while retaining
+the metal texture, with the same material applied to the item model. Existing
+placed generators convert in place; their former fuel is discarded.
+
+Inventory protocol is 14; both sides need the updated mod. Custom item sprites
+are preserved when regenerating machine assets, with the Creative Generator
+using its magenta model icon. No tests are added; build and client loading are
+checked for this prototype.
+
+## Version 0.40.0: Factorio base power consumption
+
+Audited against normal-quality Factorio 2.0 prototype data and its official wiki.
+Power accounting now retains fractional kW, including standby load, and shared
+tooltips report the same values used by machine ticks. Base values before our
+existing efficiency/speed research:
+
+| Machine | Working consumption | Idle consumption |
+| --- | --- | --- |
+| Electric miner | 90 kW electricity | 0 |
+| Burner miner | 150 kW fuel | 0 |
+| Stone furnace | 90 kW fuel | 0 |
+| Assembler (assembling machine 1) | 75 + 2.5 = 77.5 kW electricity | 2.5 kW |
+| Research lab | 60 kW electricity | 0 |
+| Radar | 300 kW electricity while enabled | 300 kW |
+| Inserter | 4.2 kW rotation, up to 14.7 kW movement, plus 0.4 kW drain | 0.4 kW |
+| Long inserter | 6 kW rotation, up to 21 kW movement, plus 0.4 kW drain | 0.4 kW |
+| Burner inserter | 39 kW rotation, up to 144 kW movement | 0 |
+| Boiler | Up to 1,800 kW fuel | 0 once steam storage is full |
+| Offshore pump / pipes / belts / junctions / poles / crates | 0 | 0 |
+
+Inserter pickup/drop spikes use Factorio's 5/60-second duration (4/60 for long
+inserters), averaged across Minecraft's 20 Hz ticks. This matches the base power
+rates and peak draw; transfer timings still use our prototype cycles, so energy
+per transfer differs from Factorio. Idle drain is constant; our existing power
+efficiency research affects active consumption and speed research affects inserter
+movement draw. Standby consumers now create generator demand even without work.
+
+Burners save an MJ reserve, replacing the shared generator-duration countdown.
+A coal item supplies exactly 4 MJ and Wood 2 MJ, with partial final ticks using
+only the remaining energy. Burner miners therefore get 26.667 active seconds
+per coal and Stone furnaces 44.444 seconds before efficiency research. Burner
+inserters consume energy for motion and begin with Factorio's 0.5 MJ starter
+reserve. Their fuel screen shows MJ because operating time varies with motion.
+Existing saved fuel countdowns convert to stored energy on load.
+
+Steam engines and solar panels already match their 900 kW and 60 kW peak output.
+The custom direct-fuel generator retains 120 kW; it has no vanilla Factorio
+equivalent. Generator/steam screens also retain fractional output for small loads.
+Inventory protocol is now 13 because power display values changed scale.
+
+Sources: [Factorio 2.0.72 data](https://github.com/wube/factorio-data/tree/2.0.72/base/prototypes),
+[electric system and cumulative drain](https://wiki.factorio.com/Electric_system),
+and [inserter power characteristics](https://wiki.factorio.com/Inserters#Power_usage).
+
+## Version 0.39.1: preserve build controls after closing menus
+
+Closing inventory, map, technology or machine menus while B mode is active now
+returns directly to the build screen, retaining the free mouse and camera pan,
+zoom and height. The previous Forge screen-opening hook never ran when a screen
+closed to null, allowing vanilla to capture the mouse for player head movement.
+The null destination is now replaced before mouse capture. Exiting B mode still
+restores normal POV and mouse controls.
+
+## Version 0.39.0: water, pipes and steam power
+
+Adds offshore pumps, six-way pipes, 3 x 2 boilers and 3 x 5 steam engines. These
+are starter recipes and use Factorio 2.0's ingredients and 0.5-second crafting
+times. Boilers and 1 x 2 pumps are two blocks tall; engines occupy one layer.
+Break any machine part to recover its plain item and fuel separately. Fluid and
+heat reserves are discarded on pickup.
+
+Place a pump on a flat bank touching water one block below the intake. Placement
+from B mode's default Y=1 snaps down onto the Y=0 shoreline. It faces the water
+automatically, draws an intake pipe down into it and supplies water through the
+raised blue inland port at Y=1, the same level as ordinary buildings. Pumps
+need no electricity or fuel and produce up to 1,200 water/s without draining the
+lake. Pipes connect horizontally and vertically with unlimited throughput.
+Connections that would mix water and steam are rejected, including connections
+between empty networks with incompatible machine ports.
+
+Boilers have two blue water ports on opposite sides and one orange steam output
+at the front. At full output each consumes 6 water/s and 1.8 MW of fuel to make
+60 steam/s at 165 degrees C. Steam engines have orange ports at both ends and
+consume up to 30 steam/s for 900 kW each. One boiler supplies two engines. Coal
+contains 4 MJ and Wood 2 MJ, shared by the fuel tooltips and generator logic.
+Engines throttle to electrical demand after solar generation; boilers pause when
+steam storage fills. Only working boilers emit pollution (30/min at full output).
+
+Fluid storage is 100 units per pipe/pump and 200 per boiler fluid channel/engine.
+Connected storage shares its contents immediately; unloaded chunks disconnect.
+Each block saves its local share so disconnecting and reloading preserves fluid.
+Right-click machines for the shared compact inventory and fluid status window;
+right-click a pipe with an empty hand for its network contents. Boilers accept
+fuel from inserters (five-item automatic buffer) and the usual right-click fuel
+fill/sweep. Blue pipe markers indicate water, orange markers indicate steam.
+
+Balance sources: [Factorio steam power](https://wiki.factorio.com/Power_production)
+and [Factorio 2.0.72 prototype data](https://github.com/wube/factorio-data/tree/2.0.72/base/prototypes).
+
+## Version 0.38.2: radar texture fix
+
+The wide radar dish and protruding status light now use explicit texture
+coordinates within their own sprites. Powered and idle radars no longer sample
+neighbouring textures from the block atlas, such as wood logs and grindstones.
+
+## Version 0.38.1: compact idle research indicator
+
+Idle research uses a small top-right badge containing the lab icon and **T** (or
+its rebound key). Selecting a technology expands it to the research name, units,
+percentage and progress bar. It collapses again when research finishes or clears.
+
 ## Version 0.38.0: overhead camera transitions
 
 B starts eight wheel steps closer than the old distance of 48: about 17.3 blocks.
@@ -1106,7 +1668,7 @@ Close the previously launched development game, then from PowerShell in this fol
 powershell -ExecutionPolicy Bypass -File .\dev.ps1 runClient
 ```
 
-Open **Mods** to find **Conveyance 0.38.0**, then use an existing ore world or create a
+Open **Mods** to find **Conveyance 0.38.1**, then use an existing ore world or create a
 **new Creative world**.
 The only world type should be **Conveyance**; normal and hidden alternate preset
 lists contain only that preset. Seed entry and game mode remain available.
@@ -1133,7 +1695,7 @@ and a supplied magical item should disappear on the next player tick.
 powershell -ExecutionPolicy Bypass -File .\dev.ps1 assemble
 ```
 
-The resulting file is `build/libs/conveyance-1.20.1-0.38.0.jar`. Put it in the
+The resulting file is `build/libs/conveyance-1.20.1-0.38.1.jar`. Put it in the
 `mods` folder of a Minecraft 1.20.1 instance with Forge 47.4.26 installed. Replace
 the previous Conveyance jar; do not install both versions together.
 

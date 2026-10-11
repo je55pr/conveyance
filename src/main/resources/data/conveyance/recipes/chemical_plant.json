@@ -1,0 +1,29 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "production",
+  "crafting_time": 5,
+  "machine_only": false,
+  "creative_only": false,
+  "ingredients": [
+    {
+      "item": "conveyance:steel_ingot",
+      "count": 5
+    },
+    {
+      "item": "conveyance:gear",
+      "count": 5
+    },
+    {
+      "item": "conveyance:electronic_circuit",
+      "count": 5
+    },
+    {
+      "item": "conveyance:pipe",
+      "count": 5
+    }
+  ],
+  "result": {
+    "item": "conveyance:chemical_plant",
+    "count": 1
+  }
+}

@@ -16,7 +16,7 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class RadarEntity extends PoweredMachineEntity {
     // Factorio explores 29x29 sectors of 32 tiles. Each sector here spans 2x2
     // Minecraft chunks, giving exactly 928x928 blocks rather than an odd 16-block grid.
-    public static final int SECTOR_RANGE = 14, SECTOR_BLOCKS = 32, DEMAND_KW = 30;
+    public static final int SECTOR_RANGE = 14, SECTOR_BLOCKS = 32, DEMAND_KW = 300;
     public static final int AREA_CHUNKS = (SECTOR_RANGE * 2 + 1) * 2;
     public static final int AREA_BLOCKS = AREA_CHUNKS * 16;
     private record Offset(int x, int z) {}

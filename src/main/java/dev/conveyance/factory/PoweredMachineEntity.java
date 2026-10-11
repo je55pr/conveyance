@@ -10,22 +10,27 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
 abstract class PoweredMachineEntity extends BlockEntity {
-    private final int demand, cycleTicks;
+    public final MachineModules modules = new MachineModules(this);
+    private final double demand;
+    private final int cycleTicks;
     private double work;
 
-    protected PoweredMachineEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, int demand, int cycleTicks) {
+    protected PoweredMachineEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, double demand, int cycleTicks) {
         super(type, pos, state);
         this.demand = demand;
         this.cycleTicks = cycleTicks;
     }
-    public int powerDemand() { return demand == 0 || !hasWork() ? 0 : level == null ? demand : (int) Math.ceil(demand * ResearchState.powerUse(level)); }
+    protected double idlePower() { return 0; }
+    protected double workingPower() { return demand; }
+    public double powerDemand() { return idlePower() + (!hasWork() ? 0 : workingPower() * modules.consumption()); }
     protected boolean hasWork() { return true; }
     protected double currentWork() { return work; }
+    protected int workDuration() { return cycleTicks; }
     protected void resetWork() { work = 0; setChanged(); }
-    protected void setWork(double value) { work = Math.max(0, Math.min(cycleTicks, value)); setChanged(); }
+    protected void setWork(double value) { work = Math.max(0, Math.min(workDuration(), value)); setChanged(); }
     /** Inserters stop at the drop position before completing the empty return. */
-    protected double advanceInserterWork() {
-        double rate = PowerNetwork.fraction(level, worldPosition) * ResearchState.inserterSpeed(level);
+    protected double advanceInserterWork(double limit) {
+        double rate = PowerNetwork.fraction(level, worldPosition) * Math.min(ResearchState.inserterSpeed(level), Math.max(0, limit - work));
         if (rate <= 0) return 0;
         work += rate;
         if (level.getGameTime() % 20 == 0) setChanged();
@@ -36,33 +41,35 @@ abstract class PoweredMachineEntity extends BlockEntity {
     protected boolean advanceWork() {
         double supplied = PowerNetwork.fraction(level, worldPosition);
         if (supplied <= 0) return false;
-        PollutionData.emit(level, worldPosition, PollutionRates.effective(getBlockState().getBlock(), level) * supplied);
+        PollutionData.emit(level, worldPosition, PollutionRates.effective(getBlockState().getBlock(), level) * supplied * modules.pollution());
         double speed = this instanceof MinerEntity ? ResearchState.miningSpeed(level)
                 : this instanceof InserterEntity ? ResearchState.inserterSpeed(level)
                 : this instanceof MachineEntity machine && machine.kind() == MachineKind.LAB ? ResearchState.researchSpeed(level)
-                : this instanceof MachineEntity machine && machine.kind() == MachineKind.ASSEMBLER ? ResearchState.assemblySpeed(level) : 1;
-        work += supplied * speed;
+                : this instanceof MachineEntity machine && machine.kind().assembler() ? ResearchState.assemblySpeed(level) : 1;
+        work += supplied * speed * modules.speed();
         if (level.getGameTime() % 20 == 0) setChanged();
-        if (work + 0.000001 < cycleTicks) return false;
-        work = Math.max(0, work - cycleTicks);
+        if (work + 0.000001 < workDuration()) return false;
+        work = Math.max(0, work - workDuration());
         setChanged();
         return true;
     }
     @Override public void onLoad() {
         super.onLoad();
-        if (demand > 0) PowerNetwork.register(level, worldPosition, PowerNetwork.Kind.MACHINE);
+        if (demand > 0 || idlePower() > 0) PowerNetwork.register(level, worldPosition, PowerNetwork.Kind.MACHINE);
     }
     @Override public void setRemoved() {
-        if (demand > 0) PowerNetwork.unregister(level, worldPosition, PowerNetwork.Kind.MACHINE);
+        if (demand > 0 || idlePower() > 0) PowerNetwork.unregister(level, worldPosition, PowerNetwork.Kind.MACHINE);
         super.setRemoved();
     }
     @Override protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putDouble("PoweredWork", work);
+        tag.put("Modules", modules.save());
     }
     @Override public void load(CompoundTag tag) {
         super.load(tag);
+        modules.load(tag.getCompound("Modules"));
         double saved = tag.getDouble("PoweredWork");
-        work = Double.isFinite(saved) ? Math.max(0, Math.min(cycleTicks, saved)) : 0;
+        work = Double.isFinite(saved) ? Math.max(0, Math.min(60000, saved)) : 0;
     }
 }

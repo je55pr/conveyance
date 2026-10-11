@@ -1,0 +1,29 @@
+{
+  "type": "conveyance:chemical_processing",
+  "machine": "chemical_plant",
+  "seconds": 1,
+  "items": [
+    {
+      "item": "conveyance:sulfur",
+      "count": 5
+    },
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 1
+    }
+  ],
+  "inputs": [
+    {
+      "channel": 0,
+      "fluid": "water",
+      "amount": 100
+    }
+  ],
+  "outputs": [
+    {
+      "channel": 2,
+      "fluid": "sulfuric_acid",
+      "amount": 50
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "power",
+  "crafting_time": 10,
+  "ingredients": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 2
+    },
+    {
+      "item": "conveyance:battery",
+      "count": 5
+    }
+  ],
+  "result": {
+    "item": "conveyance:accumulator",
+    "count": 1
+  }
+}

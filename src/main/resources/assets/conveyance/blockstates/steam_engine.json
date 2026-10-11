@@ -1,0 +1,1604 @@
+{
+  "variants": {
+    "part=0,facing=north,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_0",
+      "y": 0
+    },
+    "part=0,facing=north,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_0_on",
+      "y": 0
+    },
+    "part=0,facing=east,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_0",
+      "y": 90
+    },
+    "part=0,facing=east,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_0_on",
+      "y": 90
+    },
+    "part=0,facing=south,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_0",
+      "y": 180
+    },
+    "part=0,facing=south,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_0_on",
+      "y": 180
+    },
+    "part=0,facing=west,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_0",
+      "y": 270
+    },
+    "part=0,facing=west,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_0_on",
+      "y": 270
+    },
+    "part=1,facing=north,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_1",
+      "y": 0
+    },
+    "part=1,facing=north,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_1_on",
+      "y": 0
+    },
+    "part=1,facing=east,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_1",
+      "y": 90
+    },
+    "part=1,facing=east,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_1_on",
+      "y": 90
+    },
+    "part=1,facing=south,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_1",
+      "y": 180
+    },
+    "part=1,facing=south,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_1_on",
+      "y": 180
+    },
+    "part=1,facing=west,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_1",
+      "y": 270
+    },
+    "part=1,facing=west,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_1_on",
+      "y": 270
+    },
+    "part=2,facing=north,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_2",
+      "y": 0
+    },
+    "part=2,facing=north,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_2_on",
+      "y": 0
+    },
+    "part=2,facing=east,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_2",
+      "y": 90
+    },
+    "part=2,facing=east,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_2_on",
+      "y": 90
+    },
+    "part=2,facing=south,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_2",
+      "y": 180
+    },
+    "part=2,facing=south,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_2_on",
+      "y": 180
+    },
+    "part=2,facing=west,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_2",
+      "y": 270
+    },
+    "part=2,facing=west,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_2_on",
+      "y": 270
+    },
+    "part=3,facing=north,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_3",
+      "y": 0
+    },
+    "part=3,facing=north,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_3_on",
+      "y": 0
+    },
+    "part=3,facing=east,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_3",
+      "y": 90
+    },
+    "part=3,facing=east,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_3_on",
+      "y": 90
+    },
+    "part=3,facing=south,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_3",
+      "y": 180
+    },
+    "part=3,facing=south,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_3_on",
+      "y": 180
+    },
+    "part=3,facing=west,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_3",
+      "y": 270
+    },
+    "part=3,facing=west,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_3_on",
+      "y": 270
+    },
+    "part=4,facing=north,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_4",
+      "y": 0
+    },
+    "part=4,facing=north,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_4_on",
+      "y": 0
+    },
+    "part=4,facing=east,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_4",
+      "y": 90
+    },
+    "part=4,facing=east,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_4_on",
+      "y": 90
+    },
+    "part=4,facing=south,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_4",
+      "y": 180
+    },
+    "part=4,facing=south,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_4_on",
+      "y": 180
+    },
+    "part=4,facing=west,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_4",
+      "y": 270
+    },
+    "part=4,facing=west,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_4_on",
+      "y": 270
+    },
+    "part=5,facing=north,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_5",
+      "y": 0
+    },
+    "part=5,facing=north,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_5_on",
+      "y": 0
+    },
+    "part=5,facing=east,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_5",
+      "y": 90
+    },
+    "part=5,facing=east,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_5_on",
+      "y": 90
+    },
+    "part=5,facing=south,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_5",
+      "y": 180
+    },
+    "part=5,facing=south,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_5_on",
+      "y": 180
+    },
+    "part=5,facing=west,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_5",
+      "y": 270
+    },
+    "part=5,facing=west,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_5_on",
+      "y": 270
+    },
+    "part=6,facing=north,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_6",
+      "y": 0
+    },
+    "part=6,facing=north,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_6_on",
+      "y": 0
+    },
+    "part=6,facing=east,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_6",
+      "y": 90
+    },
+    "part=6,facing=east,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_6_on",
+      "y": 90
+    },
+    "part=6,facing=south,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_6",
+      "y": 180
+    },
+    "part=6,facing=south,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_6_on",
+      "y": 180
+    },
+    "part=6,facing=west,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_6",
+      "y": 270
+    },
+    "part=6,facing=west,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_6_on",
+      "y": 270
+    },
+    "part=7,facing=north,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_7",
+      "y": 0
+    },
+    "part=7,facing=north,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_7_on",
+      "y": 0
+    },
+    "part=7,facing=east,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_7",
+      "y": 90
+    },
+    "part=7,facing=east,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_7_on",
+      "y": 90
+    },
+    "part=7,facing=south,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_7",
+      "y": 180
+    },
+    "part=7,facing=south,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_7_on",
+      "y": 180
+    },
+    "part=7,facing=west,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_7",
+      "y": 270
+    },
+    "part=7,facing=west,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_7_on",
+      "y": 270
+    },
+    "part=8,facing=north,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_8",
+      "y": 0
+    },
+    "part=8,facing=north,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_8_on",
+      "y": 0
+    },
+    "part=8,facing=east,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_8",
+      "y": 90
+    },
+    "part=8,facing=east,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_8_on",
+      "y": 90
+    },
+    "part=8,facing=south,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_8",
+      "y": 180
+    },
+    "part=8,facing=south,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_8_on",
+      "y": 180
+    },
+    "part=8,facing=west,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_8",
+      "y": 270
+    },
+    "part=8,facing=west,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_8_on",
+      "y": 270
+    },
+    "part=9,facing=north,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_9",
+      "y": 0
+    },
+    "part=9,facing=north,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_9_on",
+      "y": 0
+    },
+    "part=9,facing=east,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_9",
+      "y": 90
+    },
+    "part=9,facing=east,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_9_on",
+      "y": 90
+    },
+    "part=9,facing=south,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_9",
+      "y": 180
+    },
+    "part=9,facing=south,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_9_on",
+      "y": 180
+    },
+    "part=9,facing=west,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_9",
+      "y": 270
+    },
+    "part=9,facing=west,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_9_on",
+      "y": 270
+    },
+    "part=10,facing=north,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_10",
+      "y": 0
+    },
+    "part=10,facing=north,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_10_on",
+      "y": 0
+    },
+    "part=10,facing=east,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_10",
+      "y": 90
+    },
+    "part=10,facing=east,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_10_on",
+      "y": 90
+    },
+    "part=10,facing=south,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_10",
+      "y": 180
+    },
+    "part=10,facing=south,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_10_on",
+      "y": 180
+    },
+    "part=10,facing=west,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_10",
+      "y": 270
+    },
+    "part=10,facing=west,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_10_on",
+      "y": 270
+    },
+    "part=11,facing=north,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_11",
+      "y": 0
+    },
+    "part=11,facing=north,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_11_on",
+      "y": 0
+    },
+    "part=11,facing=east,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_11",
+      "y": 90
+    },
+    "part=11,facing=east,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_11_on",
+      "y": 90
+    },
+    "part=11,facing=south,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_11",
+      "y": 180
+    },
+    "part=11,facing=south,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_11_on",
+      "y": 180
+    },
+    "part=11,facing=west,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_11",
+      "y": 270
+    },
+    "part=11,facing=west,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_11_on",
+      "y": 270
+    },
+    "part=12,facing=north,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_12",
+      "y": 0
+    },
+    "part=12,facing=north,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_12_on",
+      "y": 0
+    },
+    "part=12,facing=east,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_12",
+      "y": 90
+    },
+    "part=12,facing=east,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_12_on",
+      "y": 90
+    },
+    "part=12,facing=south,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_12",
+      "y": 180
+    },
+    "part=12,facing=south,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_12_on",
+      "y": 180
+    },
+    "part=12,facing=west,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_12",
+      "y": 270
+    },
+    "part=12,facing=west,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_12_on",
+      "y": 270
+    },
+    "part=13,facing=north,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_13",
+      "y": 0
+    },
+    "part=13,facing=north,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_13_on",
+      "y": 0
+    },
+    "part=13,facing=east,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_13",
+      "y": 90
+    },
+    "part=13,facing=east,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_13_on",
+      "y": 90
+    },
+    "part=13,facing=south,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_13",
+      "y": 180
+    },
+    "part=13,facing=south,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_13_on",
+      "y": 180
+    },
+    "part=13,facing=west,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_13",
+      "y": 270
+    },
+    "part=13,facing=west,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_13_on",
+      "y": 270
+    },
+    "part=14,facing=north,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_14",
+      "y": 0
+    },
+    "part=14,facing=north,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_14_on",
+      "y": 0
+    },
+    "part=14,facing=east,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_14",
+      "y": 90
+    },
+    "part=14,facing=east,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_14_on",
+      "y": 90
+    },
+    "part=14,facing=south,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_14",
+      "y": 180
+    },
+    "part=14,facing=south,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_14_on",
+      "y": 180
+    },
+    "part=14,facing=west,lit=false": {
+      "model": "conveyance:block/machines/steam_engine/part_14",
+      "y": 270
+    },
+    "part=14,facing=west,lit=true": {
+      "model": "conveyance:block/machines/steam_engine/part_14_on",
+      "y": 270
+    },
+    "part=15,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=15,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=15,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=15,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=15,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=15,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=15,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=15,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=16,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=16,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=16,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=16,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=16,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=16,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=16,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=16,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=17,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=17,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=17,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=17,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=17,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=17,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=17,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=17,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=18,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=18,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=18,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=18,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=18,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=18,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=18,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=18,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=19,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=19,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=19,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=19,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=19,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=19,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=19,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=19,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=20,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=20,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=20,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=20,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=20,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=20,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=20,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=20,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=21,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=21,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=21,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=21,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=21,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=21,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=21,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=21,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=22,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=22,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=22,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=22,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=22,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=22,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=22,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=22,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=23,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=23,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=23,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=23,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=23,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=23,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=23,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=23,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=24,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=24,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=24,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=24,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=24,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=24,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=24,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=24,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=25,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=25,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=25,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=25,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=25,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=25,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=25,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=25,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=26,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=26,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=26,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=26,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=26,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=26,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=26,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=26,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=27,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=27,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=27,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=27,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=27,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=27,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=27,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=27,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=28,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=28,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=28,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=28,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=28,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=28,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=28,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=28,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=29,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=29,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=29,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=29,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=29,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=29,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=29,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=29,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=30,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=30,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=30,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=30,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=30,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=30,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=30,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=30,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=31,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=31,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=31,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=31,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=31,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=31,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=31,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=31,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=32,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=32,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=32,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=32,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=32,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=32,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=32,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=32,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=33,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=33,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=33,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=33,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=33,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=33,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=33,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=33,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=34,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=34,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=34,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=34,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=34,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=34,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=34,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=34,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=35,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=35,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=35,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=35,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=35,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=35,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=35,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=35,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=36,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=36,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=36,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=36,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=36,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=36,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=36,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=36,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=37,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=37,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=37,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=37,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=37,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=37,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=37,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=37,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=38,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=38,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=38,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=38,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=38,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=38,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=38,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=38,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=39,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=39,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=39,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=39,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=39,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=39,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=39,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=39,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=40,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=40,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=40,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=40,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=40,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=40,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=40,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=40,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=41,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=41,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=41,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=41,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=41,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=41,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=41,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=41,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=42,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=42,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=42,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=42,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=42,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=42,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=42,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=42,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=43,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=43,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=43,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=43,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=43,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=43,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=43,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=43,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=44,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=44,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=44,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=44,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=44,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=44,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=44,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=44,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=45,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=45,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=45,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=45,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=45,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=45,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=45,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=45,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=46,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=46,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=46,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=46,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=46,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=46,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=46,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=46,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=47,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=47,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=47,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=47,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=47,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=47,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=47,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=47,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=48,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=48,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=48,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=48,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=48,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=48,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=48,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=48,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=49,facing=north,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=49,facing=north,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 0
+    },
+    "part=49,facing=east,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=49,facing=east,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 90
+    },
+    "part=49,facing=south,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=49,facing=south,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 180
+    },
+    "part=49,facing=west,lit=false": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    },
+    "part=49,facing=west,lit=true": {
+      "model": "conveyance:block/machines/empty",
+      "y": 270
+    }
+  }
+}

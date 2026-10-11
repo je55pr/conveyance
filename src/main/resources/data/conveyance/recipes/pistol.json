@@ -1,0 +1,19 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "combat",
+  "crafting_time": 1,
+  "ingredients": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 5
+    },
+    {
+      "item": "minecraft:copper_ingot",
+      "count": 5
+    }
+  ],
+  "result": {
+    "item": "conveyance:pistol",
+    "count": 1
+  }
+}

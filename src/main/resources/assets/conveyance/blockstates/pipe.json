@@ -1,0 +1,108 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "fluid": "0"
+      },
+      "apply": {
+        "model": "conveyance:block/pipe_core_0"
+      }
+    },
+    {
+      "when": {
+        "fluid": "1"
+      },
+      "apply": {
+        "model": "conveyance:block/pipe_core_1"
+      }
+    },
+    {
+      "when": {
+        "fluid": "2"
+      },
+      "apply": {
+        "model": "conveyance:block/pipe_core_2"
+      }
+    },
+    {
+      "when": {
+        "fluid": "3"
+      },
+      "apply": {
+        "model": "conveyance:block/pipe_core_3"
+      }
+    },
+    {
+      "when": {
+        "fluid": "4"
+      },
+      "apply": {
+        "model": "conveyance:block/pipe_core_4"
+      }
+    },
+    {
+      "when": {
+        "fluid": "5"
+      },
+      "apply": {
+        "model": "conveyance:block/pipe_core_5"
+      }
+    },
+    {
+      "when": {
+        "fluid": "6"
+      },
+      "apply": {
+        "model": "conveyance:block/pipe_core_6"
+      }
+    },
+    {
+      "when": {
+        "north": "true"
+      },
+      "apply": {
+        "model": "conveyance:block/pipe_north"
+      }
+    },
+    {
+      "when": {
+        "south": "true"
+      },
+      "apply": {
+        "model": "conveyance:block/pipe_south"
+      }
+    },
+    {
+      "when": {
+        "east": "true"
+      },
+      "apply": {
+        "model": "conveyance:block/pipe_east"
+      }
+    },
+    {
+      "when": {
+        "west": "true"
+      },
+      "apply": {
+        "model": "conveyance:block/pipe_west"
+      }
+    },
+    {
+      "when": {
+        "up": "true"
+      },
+      "apply": {
+        "model": "conveyance:block/pipe_up"
+      }
+    },
+    {
+      "when": {
+        "down": "true"
+      },
+      "apply": {
+        "model": "conveyance:block/pipe_down"
+      }
+    }
+  ]
+}

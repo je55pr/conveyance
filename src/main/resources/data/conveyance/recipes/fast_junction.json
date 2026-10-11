@@ -1,0 +1,23 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "logistics",
+  "crafting_time": 2,
+  "ingredients": [
+    {
+      "item": "conveyance:junction",
+      "count": 1
+    },
+    {
+      "item": "conveyance:gear",
+      "count": 10
+    },
+    {
+      "item": "conveyance:electronic_circuit",
+      "count": 10
+    }
+  ],
+  "result": {
+    "item": "conveyance:fast_junction",
+    "count": 1
+  }
+}

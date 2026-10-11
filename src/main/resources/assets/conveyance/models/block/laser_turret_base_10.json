@@ -1,0 +1,15 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "metal": "minecraft:block/iron_block",
+    "dark": "minecraft:block/polished_deepslate",
+    "copper": "minecraft:block/copper_block",
+    "yellow": "minecraft:block/yellow_concrete",
+    "red": "minecraft:block/red_concrete",
+    "stone": "minecraft:block/stone_bricks",
+    "particle": "minecraft:block/iron_block",
+    "lens": "minecraft:block/red_concrete",
+    "pale": "minecraft:block/light_gray_concrete"
+  },
+  "elements": []
+}

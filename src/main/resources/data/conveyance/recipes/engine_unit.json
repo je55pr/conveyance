@@ -1,0 +1,25 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "intermediates",
+  "crafting_time": 10,
+  "machine_only": true,
+  "creative_only": false,
+  "ingredients": [
+    {
+      "item": "conveyance:steel_ingot",
+      "count": 1
+    },
+    {
+      "item": "conveyance:gear",
+      "count": 1
+    },
+    {
+      "item": "conveyance:pipe",
+      "count": 2
+    }
+  ],
+  "result": {
+    "item": "conveyance:engine_unit",
+    "count": 1
+  }
+}

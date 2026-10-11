@@ -4,16 +4,16 @@
   "crafting_time": 0.5,
   "ingredients": [
     {
-      "item": "minecraft:iron_ingot",
-      "count": 7
-    },
-    {
       "item": "conveyance:electronic_circuit",
-      "count": 1
+      "count": 3
     },
     {
       "item": "conveyance:gear",
-      "count": 1
+      "count": 5
+    },
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 9
     }
   ],
   "result": {

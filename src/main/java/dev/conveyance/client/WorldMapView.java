@@ -21,7 +21,7 @@ import net.minecraft.world.level.ChunkPos;
 public final class WorldMapView {
     private int canvasHeight = 154, bodyHeight = 208, viewportWidth = 396;
     private record Page(int x, int z, int step) {}
-    private record Texture(ResourceLocation id, long revision, long pollutionRevision, boolean pollution) {}
+    private record Texture(ResourceLocation id, long revision, long pollutionRevision, boolean pollution, long seed, long nestRevision) {}
     private final Minecraft game = Minecraft.getInstance();
     private final LinkedHashMap<Page, Texture> textures = new LinkedHashMap<>(32, 0.75F, true);
     private double centerX, centerZ, zoom = 1;
@@ -38,6 +38,11 @@ public final class WorldMapView {
         if (game.player != null) { centerX = game.player.getX(); centerZ = game.player.getZ(); }
         requestedAt = Long.MIN_VALUE;
     }
+    public void showArea(double x, double z, int side) {
+        centerX = x; centerZ = z; dragging = false;
+        zoom = Math.max(.0625, Math.min(6, Math.min(viewportWidth - 8, canvasHeight) * .9 / side));
+        requestedAt = Long.MIN_VALUE;
+    }
     private static int canvasX(int left) { return left + 4; }
     private static int canvasY(int top) { return top + 23; }
     private int step() {
@@ -45,7 +50,7 @@ public final class WorldMapView {
         while (step < 256) {
             double columns = (viewportWidth - 8) / (16 * step * zoom) + 2;
             double rows = canvasHeight / (16 * step * zoom) + 2;
-            if (zoom * step >= 0.5 && columns < 62 && rows < 62 && columns * rows <= 1536) break;
+            if (zoom * step >= 1 && columns < 62 && rows < 62 && columns * rows <= 1536) break;
             step *= 2;
         }
         return step;
@@ -65,19 +70,33 @@ public final class WorldMapView {
     private ResourceLocation texture(WorldMapData.ViewTile tile) {
         Page key = new Page(tile.x(), tile.z(), tile.step());
         Texture cached = textures.get(key);
+        long seed = PollutionData.clientField().seed();
         if (cached != null && cached.revision == tile.revision() && cached.pollution == pollution
-                && (!pollution || cached.pollutionRevision == tile.pollutionRevision())) return cached.id;
+                && cached.seed == seed && cached.nestRevision == WorldMapData.clientNestRevision() && (!pollution || cached.pollutionRevision == tile.pollutionRevision())) return cached.id;
         if (cached != null) game.getTextureManager().release(cached.id);
         var image = new NativeImage(16, 16, false);
+        boolean[] nests = nestPixels(tile);
         for (int z = 0; z < 16; z++) for (int x = 0; x < 16; x++) {
-            int rgb = MapPalette.color(tile.pixels()[z * 16 + x] & 255);
-            if (pollution && tile.pixels()[z * 16 + x] != MapPalette.UNKNOWN) rgb = pollutionColor(rgb, tile.pollution()[z * 16 + x] & 255);
+            int value = tile.pixels()[z * 16 + x] & 255;
+            int rgb = MapPalette.color(value, seed, (tile.x() * 16.0 + x + .5) * tile.step(), (tile.z() * 16.0 + z + .5) * tile.step());
+            if (pollution && value != MapPalette.UNKNOWN && !MapPalette.isResource(value)) rgb = pollutionColor(rgb, tile.pollution()[z * 16 + x] & 255);
+            if (nests[z * 16 + x] && value != MapPalette.UNKNOWN) rgb = MapPalette.color(MapPalette.NEST);
             image.setPixelRGBA(x, z, 0xFF000000 | (rgb & 255) << 16 | rgb & 0xFF00 | rgb >> 16 & 255);
         }
         var id = ResourceLocation.fromNamespaceAndPath("conveyance", "map/" + tile.step() + "/" + Long.toHexString(ChunkPos.asLong(tile.x(), tile.z())));
         game.getTextureManager().register(id, new DynamicTexture(image));
-        textures.put(key, new Texture(id, tile.revision(), tile.pollutionRevision(), pollution));
+        textures.put(key, new Texture(id, tile.revision(), tile.pollutionRevision(), pollution, seed, WorldMapData.clientNestRevision()));
         return id;
+    }
+    private static boolean[] nestPixels(WorldMapData.ViewTile tile) {
+        boolean[] pixels = new boolean[256];
+        for (long packed : WorldMapData.clientNests()) {
+            BlockPos pos = BlockPos.of(packed);
+            int minX = Math.max(0, Math.floorDiv(pos.getX() - 1, tile.step()) - tile.x() * 16), maxX = Math.min(15, Math.floorDiv(pos.getX() + 1, tile.step()) - tile.x() * 16);
+            int minZ = Math.max(0, Math.floorDiv(pos.getZ() - 1, tile.step()) - tile.z() * 16), maxZ = Math.min(15, Math.floorDiv(pos.getZ() + 1, tile.step()) - tile.z() * 16);
+            for (int x = minX; x <= maxX; x++) for (int z = minZ; z <= maxZ; z++) pixels[z * 16 + x] = true;
+        }
+        return pixels;
     }
     private static int pollutionColor(int rgb, int intensity) {
         if (intensity == 0) return rgb;
@@ -116,6 +135,10 @@ public final class WorldMapView {
             graphics.fill(sx - 3, sy - 3, sx + 4, sy + 4, 0xFF12252F);
             outline(graphics, sx - 2, sy - 2, sx + 3, sy + 3, 0xFF74D4FF);
         }
+        for (long packed : WorldMapData.clientBiters()) {
+            BlockPos enemy = BlockPos.of(packed); int sx = screenX(enemy.getX() + .5, x, canvasWidth), sy = screenZ(enemy.getZ() + .5, y);
+            graphics.fill(sx - 1, sy - 1, sx + 2, sy + 2, 0xFFFF4444);
+        }
         if (game.player != null) {
             int px = screenX(game.player.getX(), x, canvasWidth), pz = screenZ(game.player.getZ(), y);
             graphics.fill(px - 4, pz - 4, px + 5, pz + 5, 0xFF182B21);
@@ -128,7 +151,7 @@ public final class WorldMapView {
         graphics.drawString(game.font, "N ↑", x + 5, y + 5, 0xFFE7EEF6, true);
         graphics.disableScissor();
         int legendX = left + 7;
-        for (int value : new int[] {MapPalette.IRON, MapPalette.COPPER, MapPalette.COAL, MapPalette.STONE}) {
+        for (int value : new int[] {MapPalette.IRON, MapPalette.COPPER, MapPalette.COAL, MapPalette.STONE, MapPalette.OIL, MapPalette.URANIUM}) {
             Component label = Component.translatable("map.conveyance." + MapPalette.name(value));
             graphics.fill(legendX, top + bodyHeight - 26, legendX + 5, top + bodyHeight - 20, 0xFF000000 | MapPalette.color(value));
             graphics.drawString(game.font, label, legendX + 7, top + bodyHeight - 27, 0xFFBCCAD6, false);
@@ -152,11 +175,27 @@ public final class WorldMapView {
             var tile = WorldMapData.clientTile(Math.floorDiv(wx, pageBlocks), Math.floorDiv(wz, pageBlocks), step);
             int pixel = Math.floorMod(wz, pageBlocks) / step * 16 + Math.floorMod(wx, pageBlocks) / step;
             int value = tile == null ? MapPalette.UNKNOWN : tile.pixels()[pixel] & 255;
-            var tooltip = new ArrayList<Component>();
-            if (MapPalette.isResource(value)) tooltip.add(Component.translatable("map.conveyance." + MapPalette.name(value)));
+            var tooltip = new ArrayList<IconTooltips.Row>();
+            for (long packed : WorldMapData.clientNests()) {
+                BlockPos nest = BlockPos.of(packed);
+                if (Math.floorDiv(wx, step) >= Math.floorDiv(nest.getX() - 1, step) && Math.floorDiv(wx, step) <= Math.floorDiv(nest.getX() + 1, step)
+                        && Math.floorDiv(wz, step) >= Math.floorDiv(nest.getZ() - 1, step) && Math.floorDiv(wz, step) <= Math.floorDiv(nest.getZ() + 1, step)) {
+                    tooltip.add(IconTooltips.text(Component.translatable("map.conveyance.biter_nest", nest.getX(), nest.getZ()))); break;
+                }
+            }
+            if (tooltip.isEmpty() && MapPalette.isResource(value)) {
+                var icon = switch (value) {
+                    case MapPalette.IRON -> new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.RAW_IRON);
+                    case MapPalette.COPPER -> new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.RAW_COPPER);
+                    case MapPalette.COAL -> new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.COAL);
+                    case MapPalette.STONE -> new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.COBBLESTONE);
+                    default -> net.minecraft.world.item.ItemStack.EMPTY;
+                };
+                tooltip.add(IconTooltips.item(icon, Component.translatable("map.conveyance." + MapPalette.name(value))));
+            }
             int encoded = pollution && tile != null ? tile.pollution()[pixel] & 255 : 0;
-            if (encoded > 0) tooltip.add(Component.translatable("map.conveyance.pollution_value", encoded == 255 ? "≥100" : "~" + FactoryTooltips.number(PollutionData.decode(encoded))));
-            if (!tooltip.isEmpty()) graphics.renderComponentTooltip(game.font, tooltip, mouseX, mouseY);
+            if (encoded > 0) tooltip.add(IconTooltips.text(Component.translatable("map.conveyance.pollution_value", encoded == 255 ? "≥100" : "~" + FactoryTooltips.number(PollutionData.decode(encoded)))));
+            if (!tooltip.isEmpty()) IconTooltips.render(graphics, tooltip, mouseX, mouseY);
         }
         while (textures.size() > 2048) {
             var first = textures.entrySet().iterator().next();

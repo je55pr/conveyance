@@ -23,26 +23,26 @@ public final class ProcessingMenu extends FactoryMenu {
     public ProcessingMenu(int id, Inventory inventory, MachineKind kind) { this(id, inventory, new SimpleContainer(kind.slots), kind, null); }
     public ProcessingMenu(int id, Inventory inventory, MachineEntity machine) { this(id, inventory, machine, machine.kind(), machine); }
     private ProcessingMenu(int id, Inventory inventory, Container container, MachineKind kind, MachineEntity machine) {
-        super(kind == MachineKind.ASSEMBLER ? FactoryContent.ASSEMBLER_MENU.get() : FactoryContent.FURNACE_MENU.get(), id);
+        super(kind.assembler() ? FactoryContent.ASSEMBLER_MENU.get() : FactoryContent.FURNACE_MENU.get(), id);
         this.container = container; this.kind = kind; this.machine = machine; this.level = inventory.player.level();
         checkContainerSize(container, kind.slots);
         container.startOpen(inventory.player);
-        if (kind == MachineKind.FURNACE) {
+        if (kind.furnace()) {
             slot(0, PlayerStorageLayout.MACHINE_X + 32, 60); slot(1, PlayerStorageLayout.MACHINE_X + 32, 100); slot(2, PlayerStorageLayout.MACHINE_X + 124, 80);
         } else {
-            for (int index = 0; index < 4; index++) slot(index, PlayerStorageLayout.MACHINE_X + 8 + index * PlayerStorageLayout.CELL, 70);
-            slot(4, PlayerStorageLayout.MACHINE_X + 152, 70);
+            for (int index = 0; index < 5; index++) slot(index, PlayerStorageLayout.MACHINE_X + 8 + index * PlayerStorageLayout.CELL, 70);
+            slot(5, PlayerStorageLayout.MACHINE_X + 152, 70);
         }
         addPlayerInventory(inventory);
         data = machine == null ? new SimpleContainerData(3) : new ContainerData() {
-            @Override public int get(int index) { return index == 0 ? machine.fuelRemaining() : index == 1 ? machine.progressPixels() : kind == MachineKind.ASSEMBLER ? machine.selectedRecipeIndex() : -1; }
+            @Override public int get(int index) { return index == 0 ? machine.fuelRemaining() : index == 1 ? machine.progressPixels() : kind.assembler() ? machine.selectedRecipeIndex() : -1; }
             @Override public void set(int index, int value) {}
             @Override public int getCount() { return 3; }
         };
         if (machine == null) data.set(2, -1);
         addDataSlots(data);
     }
-    public boolean assembler() { return kind == MachineKind.ASSEMBLER; }
+    public boolean assembler() { return kind.assembler(); }
     public void showProcessing(boolean visible) { processingVisible = visible; }
     public int progress() { return Math.max(0, Math.min(24, data.get(1))); }
     public boolean burning() { return data.get(0) > 0; }
@@ -54,7 +54,7 @@ public final class ProcessingMenu extends FactoryMenu {
     }
     private boolean accepts(int index, ItemStack stack) {
         if (machine != null) return machine.canPlaceItem(index, stack);
-        if (kind == MachineKind.FURNACE) return index == 1 ? GeneratorEntity.isFuel(stack)
+        if (kind.furnace()) return index == 1 ? GeneratorEntity.isFuel(stack)
                 : index == 0 && IndustrialSmelting.find(level, stack) != null;
         CraftingRecipe recipe = recipe();
         var requirements = recipe == null ? java.util.List.<AssemblyRecipes.Requirement>of() : AssemblyRecipes.requirements(recipe);

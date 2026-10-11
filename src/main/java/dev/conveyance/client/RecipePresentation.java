@@ -17,8 +17,8 @@ import net.minecraft.world.level.Level;
 
 /** Shared recipe groups, category icons and ingredient tooltips for crafting and machines. */
 final class RecipePresentation {
-    static final List<String> CATEGORIES = List.of("intermediates", "logistics", "production", "power", "science");
-    private static final List<String> FAMILIES = List.of("miners", "inserters", "conveyors", "storage", "furnaces", "assemblers", "generators", "poles", "radars", "labs", "science", "tools", "components");
+    static final List<String> CATEGORIES = List.of("intermediates", "logistics", "production", "power", "science", "combat");
+    private static final List<String> FAMILIES = List.of("miners", "inserters", "conveyors", "pipes", "storage", "furnaces", "assemblers", "pumps", "chemistry", "boilers", "generators", "poles", "radars", "labs", "science", "weapons", "ammunition", "defences", "repairs", "tools", "modules", "components");
     record Row(String family, List<CraftingRecipe> recipes) {}
 
     static List<Row> grouped(List<CraftingRecipe> recipes, Level level, int columns) {
@@ -33,17 +33,26 @@ final class RecipePresentation {
     private static String family(CraftingRecipe recipe, Level level) {
         return switch (BuiltInRegistries.ITEM.getKey(recipe.getResultItem(level.registryAccess()).getItem()).getPath()) {
             case "miner", "burner_miner" -> "miners";
-            case "inserter", "burner_inserter", "long_inserter" -> "inserters";
-            case "conveyor", "slope_conveyor", "junction" -> "conveyors";
-            case "wood_crate", "iron_crate" -> "storage";
-            case "industrial_furnace" -> "furnaces";
-            case "assembler" -> "assemblers";
-            case "generator", "solar_panel" -> "generators";
+            case "inserter", "burner_inserter", "long_inserter", "fast_inserter" -> "inserters";
+            case "conveyor", "slope_conveyor", "junction", "fast_conveyor", "fast_slope_conveyor", "fast_junction" -> "conveyors";
+            case "wood_crate", "iron_crate", "steel_crate", "storage_tank" -> "storage";
+            case "industrial_furnace", "steel_furnace" -> "furnaces";
+            case "assembler", "assembler_2" -> "assemblers";
+            case "generator", "solar_panel", "steam_engine", "accumulator" -> "generators";
+            case "boiler" -> "boilers";
+            case "offshore_pump", "pumpjack", "fluid_pump" -> "pumps";
+            case "oil_refinery", "chemical_plant" -> "chemistry";
+            case "pipe" -> "pipes";
             case "power_pole" -> "poles";
             case "radar" -> "radars";
             case "research_lab" -> "labs";
-            case "red_science_pack", "green_science_pack" -> "science";
+            case "red_science_pack", "green_science_pack", "chemical_science_pack", "military_science_pack" -> "science";
             case "iron_pickaxe" -> "tools";
+            case "pistol", "submachine_gun", "shotgun", "grenade" -> "weapons";
+            case "firearm_magazine", "piercing_magazine", "shotgun_shell" -> "ammunition";
+            case "gun_turret", "laser_turret", "stone_wall" -> "defences";
+            case "repair_pack" -> "repairs";
+            case "speed_module", "productivity_module", "efficiency_module" -> "modules";
             default -> "components";
         };
     }
@@ -54,6 +63,7 @@ final class RecipePresentation {
             case "production" -> FactoryContent.BURNER_MINER_ITEM.get();
             case "power" -> FactoryContent.POWER_POLE_ITEM.get();
             case "science" -> FactoryContent.RED_SCIENCE_ITEM.get();
+            case "combat" -> FactoryContent.GUN_TURRET_ITEM.get();
             default -> FactoryContent.GEAR_ITEM.get();
         });
     }
@@ -71,10 +81,12 @@ final class RecipePresentation {
         ItemStack output = recipe.getResultItem(minecraft.level.registryAccess());
         Component title = Component.literal(output.getCount() > 1 ? output.getCount() + " × " : "").append(output.getHoverName());
         Component rawTitle = Component.translatable("menu.conveyance.total_raw");
-        int boxWidth = Math.min(width - 8, Math.max(264, Math.max(Math.max(font.width(title), font.width(rawTitle)) + 16, Math.max(requirements.size(), raw.size()) * 30 + 16)));
+        int boxWidth = Math.min(width - 8, Math.max(264, Math.max(Math.max(font.width(title) + 20, font.width(rawTitle)) + 16, Math.max(requirements.size(), raw.size()) * 30 + 16)));
         var info = Screen.getTooltipFromItem(minecraft, output);
         var infoLines = new ArrayList<FormattedCharSequence>();
         for (int line = 1; line < info.size(); line++) infoLines.addAll(font.split(info.get(line), boxWidth - 16));
+        if (recipe instanceof dev.conveyance.factory.FactoryCraftingRecipe factory && factory.creativeOnly())
+            infoLines.addAll(font.split(Component.translatable("tooltip.conveyance.stat.creative_only"), boxWidth - 16));
         for (var line : additionalInfo) infoLines.addAll(font.split(line, boxWidth - 16));
         int infoHeight = infoLines.size() * 10;
         int iconColumns = Math.max(1, (boxWidth - 16) / 30);
@@ -86,7 +98,8 @@ final class RecipePresentation {
         graphics.pose().pushPose(); graphics.pose().translate(0, 0, 450);
         graphics.fill(x - 1, y - 1, x + boxWidth + 1, y + boxHeight + 1, 0xFF718292);
         graphics.fill(x, y, x + boxWidth, y + boxHeight, 0xFA17212C);
-        graphics.drawString(font, title, x + 8, y + 7, 0xFFE7EEF6, false);
+        graphics.renderItem(output, x + 6, y + 3);
+        graphics.drawString(font, title, x + 28, y + 7, 0xFFE7EEF6, false);
         for (int line = 0; line < infoLines.size(); line++) graphics.drawString(font, infoLines.get(line), x + 8, y + 21 + line * 10, 0xFFBBC8D4, false);
         graphics.drawString(font, Component.translatable("menu.conveyance.ingredients"), x + 8, y + 23 + infoHeight, 0xFFA9BBC9, false);
         for (int i = 0; i < requirements.size(); i++) {
@@ -101,7 +114,7 @@ final class RecipePresentation {
                 y + rawIconsY + i / iconColumns * 24, 0xFFE7EEF6);
         graphics.pose().popPose();
     }
-    private static void costIcon(GuiGraphics graphics, ItemStack item, int count, int x, int y, int colour) {
+    static void costIcon(GuiGraphics graphics, ItemStack item, int count, int x, int y, int colour) {
         var font = Minecraft.getInstance().font;
         graphics.renderItem(item, x, y);
         graphics.pose().pushPose(); graphics.pose().translate(0, 0, 200);

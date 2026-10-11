@@ -23,12 +23,12 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 public final class InventoryNetwork {
-    private static final String VERSION = "12";
+    private static final String VERSION = "15";
     private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(ResourceLocation.fromNamespaceAndPath(Conveyance.MOD_ID, "inventory"),
             () -> VERSION, VERSION::equals, VERSION::equals);
     public record OpenInventory(int tab) {}
     public record Harvest(BlockPos pos) {}
-    public record SyncResearch(int mask, int selected, int[] progress) {
+    public record SyncResearch(long mask, int selected, int[] progress) {
         static SyncResearch capture(Level level) {
             return new SyncResearch(ResearchState.mask(level), ResearchState.selected(level), ResearchState.progressSnapshot(level));
         }
@@ -54,8 +54,8 @@ public final class InventoryNetwork {
             context.setPacketHandled(true);
         }, Optional.of(NetworkDirection.PLAY_TO_SERVER));
         CHANNEL.registerMessage(2, SyncResearch.class, (message, buffer) -> {
-            buffer.writeVarInt(message.mask); buffer.writeVarInt(message.selected); buffer.writeVarIntArray(message.progress);
-        }, buffer -> new SyncResearch(buffer.readVarInt(), buffer.readVarInt(), buffer.readVarIntArray(Technology.values().length)), (message, supplier) -> {
+            buffer.writeLong(message.mask); buffer.writeVarInt(message.selected); buffer.writeVarIntArray(message.progress);
+        }, buffer -> new SyncResearch(buffer.readLong(), buffer.readVarInt(), buffer.readVarIntArray(Technology.values().length)), (message, supplier) -> {
             var context = supplier.get();
             context.enqueueWork(() -> ResearchState.updateClient(message.mask, message.selected, message.progress));
             context.setPacketHandled(true);
@@ -83,6 +83,10 @@ public final class InventoryNetwork {
             context.enqueueWork(() -> {
                 ServerPlayer player = context.getSender();
                 if (player != null && player.containerMenu instanceof ProcessingMenu menu && menu.containerId == message.containerId) {
+                    boolean accepted = menu.selectRecipe(player, message.recipe);
+                    CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new AssemblySelected(menu.containerId, message.recipe, accepted));
+                }
+                else if (player != null && player.containerMenu instanceof dev.conveyance.factory.ChemicalMenu menu && menu.containerId == message.containerId) {
                     boolean accepted = menu.selectRecipe(player, message.recipe);
                     CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new AssemblySelected(menu.containerId, message.recipe, accepted));
                 }

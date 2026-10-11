@@ -59,9 +59,9 @@ public final class CraftingHud {
     }
     public static void tooltip(GuiGraphics graphics, HandCraftingQueue.OrderView order, int mouseX, int mouseY) {
         var game = Minecraft.getInstance();
-        graphics.renderComponentTooltip(game.font, List.of(order.output().getHoverName(),
-                Component.translatable("menu.conveyance.queued_items", order.batches() * order.output().getCount()),
-                Component.translatable("menu.conveyance.crafting_cancel")), mouseX, mouseY);
+        IconTooltips.render(graphics, List.of(IconTooltips.item(order.output(), order.output().getHoverName()),
+                IconTooltips.text(Component.translatable("menu.conveyance.queued_items", order.batches() * order.output().getCount())),
+                IconTooltips.text(Component.translatable("menu.conveyance.crafting_cancel"))), mouseX, mouseY);
     }
     private CraftingHud() {}
 }

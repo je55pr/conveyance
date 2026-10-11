@@ -13,7 +13,7 @@ public final class CrateMenu extends FactoryMenu {
     private final Container crate;
     public CrateMenu(int id, Inventory inventory, int size) { this(id, inventory, new SimpleContainer(size)); }
     public CrateMenu(int id, Inventory inventory, Container crate) {
-        super(crate.getContainerSize() == 16 ? FactoryContent.WOOD_CRATE_MENU.get() : FactoryContent.IRON_CRATE_MENU.get(), id);
+        super(crate.getContainerSize() == 16 ? FactoryContent.WOOD_CRATE_MENU.get() : crate.getContainerSize() == 48 ? FactoryContent.STEEL_CRATE_MENU.get() : FactoryContent.IRON_CRATE_MENU.get(), id);
         this.crate = crate;
         crate.startOpen(inventory.player);
         for (int slot = 0; slot < crate.getContainerSize(); slot++) addSlot(new Slot(crate, slot, PlayerStorageLayout.MACHINE_X + 8 + slot % 8 * PlayerStorageLayout.CELL, 70 + slot / 8 * PlayerStorageLayout.CELL));

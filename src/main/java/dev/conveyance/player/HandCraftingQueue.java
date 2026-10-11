@@ -83,6 +83,7 @@ public final class HandCraftingQueue {
                         cancel(player, order.id); player.displayClientMessage(Component.translatable("message.conveyance.craft_failed"), true); return;
                     }
                 }
+                ResearchState.recordCraft(player.level(), step.operation.output());
                 order.pool.clear(); ingredients.stream().filter(item -> !item.isEmpty()).forEach(order.pool::add);
                 if (step.operation.finished()) state.ready = step.operation.output().copy();
                 else { add(order.pool, step.operation.output()); completeBatch(state, order, false); }

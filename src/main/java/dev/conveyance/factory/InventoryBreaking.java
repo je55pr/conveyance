@@ -27,6 +27,12 @@ public final class InventoryBreaking {
         if (!(event.getPlayer() instanceof ServerPlayer player) || !(event.getLevel() instanceof ServerLevel level)) return;
         BlockPos pos = event.getPos();
         var state = event.getState();
+        WreckEntity wreck = WreckEntity.at(level, pos);
+        if (wreck != null) {
+            event.setCanceled(true);
+            if (!wreck.salvage(player)) player.displayClientMessage(Component.translatable("message.conveyance.inventory_full"), true);
+            return;
+        }
         var machine = MachineBlock.controller(level, pos);
         var miner = MinerBlock.controller(level, pos);
         var radar = RadarBlock.controller(level, pos);
@@ -46,6 +52,7 @@ public final class InventoryBreaking {
             if (entity instanceof Container container)
                 for (int slot = 0; slot < container.getContainerSize(); slot++) FactoryPickups.add(loot, container.getItem(slot));
         }
+        if (!player.isCreative()) loot = loot.stream().filter(item -> !(item.getItem() instanceof CreativeOnlyItem)).toList();
         var extra = InventoryAccess.extra(player);
         var inventory = InventoryAccess.snapshot(player, extra);
         event.setCanceled(true); // Our transaction replaces vanilla removal and entity drops.
@@ -55,6 +62,7 @@ public final class InventoryBreaking {
                 return;
             }
         }
+        BuildingDamage.clear(level, FactoryActions.root(level, pos));
         if (tree) ForestLogBlock.removeTree(level, pos, state);
         else if (machine != null) MachineBlock.dismantle(level, pos, state);
         else if (miner != null) MinerBlock.dismantle(level, pos, state);

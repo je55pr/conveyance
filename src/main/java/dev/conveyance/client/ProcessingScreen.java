@@ -22,7 +22,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 
 public final class ProcessingScreen extends FactoryWindowScreen<ProcessingMenu> {
-    private static final int CELL = 26, ROW_HEIGHT = 42, GRID_Y = 98;
+    private static final int CELL = 26, ROW_HEIGHT = CELL, GRID_Y = 98;
     private static String lastCategory = "intermediates";
     private final List<Button> recipeButtons = new ArrayList<>(), categoryButtons = new ArrayList<>();
     private final Map<ResourceLocation, List<ItemStack>> rawCosts = new HashMap<>();
@@ -33,7 +33,8 @@ public final class ProcessingScreen extends FactoryWindowScreen<ProcessingMenu> 
     private FactoryIconButton changeRecipe, backToProcessing;
     private boolean pickerOpen, manualPicker;
     private ResourceLocation pendingRecipe;
-    private int scroll, columns, rows, cachedMask = -1;
+    private int scroll, columns, rows;
+    private long cachedMask = -1;
     private boolean cachedCreative;
 
     public ProcessingScreen(ProcessingMenu menu, Inventory inventory, Component title) {
@@ -81,7 +82,7 @@ public final class ProcessingScreen extends FactoryWindowScreen<ProcessingMenu> 
                 if (recipe != null && pendingRecipe == null) {
                     pendingRecipe = recipe.getId(); InventoryNetwork.requestAssemblyRecipe(menu.containerId, pendingRecipe); refresh();
                 }
-            }).bounds(leftPos + RIGHT + 8 + cell % columns * CELL, topPos + GRID_Y + cell / columns * ROW_HEIGHT + 12, 24, 24).build()));
+            }).bounds(leftPos + RIGHT + 8 + cell % columns * CELL, topPos + GRID_Y + cell / columns * ROW_HEIGHT, 24, 24).build()));
         }
         refresh();
     }
@@ -99,7 +100,7 @@ public final class ProcessingScreen extends FactoryWindowScreen<ProcessingMenu> 
         backToProcessing.active = pendingRecipe == null;
         search.setVisible(pickerOpen);
         if (!pickerOpen) search.setFocused(false);
-        int mask = ResearchState.mask(minecraft.level);
+        long mask = ResearchState.mask(minecraft.level);
         boolean creative = minecraft.player.isCreative();
         if (mask != cachedMask || creative != cachedCreative) {
             cachedMask = mask; cachedCreative = creative;
@@ -174,12 +175,12 @@ public final class ProcessingScreen extends FactoryWindowScreen<ProcessingMenu> 
     }
     @Override protected void renderMachineTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
         if (!menu.assembler()) return;
-        if (!pickerOpen && hoveredSlot != null && !hoveredSlot.hasItem() && hoveredSlot.index < 4 && menu.recipe() != null) {
+        if (!pickerOpen && hoveredSlot != null && !hoveredSlot.hasItem() && hoveredSlot.index < 5 && menu.recipe() != null) {
             var requirements = AssemblyRecipes.requirements(menu.recipe());
             int index = hoveredSlot.index;
             if (index < requirements.size() && requirements.get(index).ingredient().getItems().length > 0)
-                graphics.renderTooltip(font, Component.translatable("menu.conveyance.requires", requirements.get(index).count(),
-                        requirements.get(index).ingredient().getItems()[0].getHoverName()), mouseX, mouseY);
+                IconTooltips.render(graphics, List.of(IconTooltips.item(requirements.get(index).ingredient().getItems()[0],
+                        Component.translatable("menu.conveyance.requires", requirements.get(index).count(), requirements.get(index).ingredient().getItems()[0].getHoverName()))), mouseX, mouseY);
         }
         if (pickerOpen) for (int cell = 0; cell < recipeButtons.size(); cell++) if (over(recipeButtons.get(cell), mouseX, mouseY)) {
             CraftingRecipe recipe = recipeAt(cell);
@@ -188,10 +189,7 @@ public final class ProcessingScreen extends FactoryWindowScreen<ProcessingMenu> 
         }
     }
     private void renderPicker(GuiGraphics graphics, int mouseX, int mouseY) {
-        if (groups.isEmpty()) text(graphics, Component.translatable("menu.conveyance.no_recipes"), RIGHT + 8, GRID_Y + 12, FactoryWindowStyle.MUTED);
-        for (int row = 0; row < rows && scroll + row < groups.size(); row++)
-            graphics.drawString(font, Component.translatable("menu.conveyance.group." + groups.get(scroll + row).family()),
-                    leftPos + RIGHT + 8, topPos + GRID_Y + row * ROW_HEIGHT, 0xFFB5C5D2, false);
+        if (groups.isEmpty()) text(graphics, Component.translatable("menu.conveyance.no_recipes"), RIGHT + 8, GRID_Y, FactoryWindowStyle.MUTED);
         for (int i = 0; i < categoryButtons.size(); i++) {
             Button button = categoryButtons.get(i);
             boolean selected = RecipePresentation.CATEGORIES.get(i).equals(category);

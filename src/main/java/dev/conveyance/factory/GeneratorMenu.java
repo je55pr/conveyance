@@ -23,14 +23,14 @@ public final class GeneratorMenu extends FactoryMenu {
     }
     public GeneratorMenu(int id, Inventory inventory, Container fuel, boolean lab) {
         super(lab ? FactoryContent.LAB_MENU.get() : FactoryContent.GENERATOR_MENU.get(), id);
-        int size = lab ? 2 : 1;
+        int size = lab ? Technology.SCIENCE_SLOTS : 1;
         checkContainerSize(fuel, size);
         this.fuel = fuel;
         this.lab = lab;
         fuel.startOpen(inventory.player);
         for (int slot = 0; slot < size; slot++) {
             final int input = slot;
-            addSlot(new Slot(fuel, input, PlayerStorageLayout.MACHINE_X + 8 + (lab ? input * 36 : 0), 70) {
+            addSlot(new Slot(fuel, input, PlayerStorageLayout.MACHINE_X + 8 + (lab ? input * 28 : 0), 70) {
                 @Override public boolean mayPlace(ItemStack stack) { return accepts(input, stack); }
             });
         }
@@ -49,7 +49,8 @@ public final class GeneratorMenu extends FactoryMenu {
                 if (index == 0) return fuel instanceof GeneratorEntity generator ? generator.fuelRemaining()
                         : fuel instanceof MachineEntity machine ? machine.fuelRemaining()
                         : fuel instanceof BurnerInserterEntity arm ? arm.fuelRemaining() : 0;
-                if (fuel instanceof GeneratorEntity generator) return index == 1 ? -1 : index == 2 ? generator.outputPower() : 0;
+                if (fuel instanceof GeneratorEntity generator) return index == 1 ? -1 : index == 2 ? (int) Math.round(generator.outputPower() * 10) : 0;
+                if (fuel instanceof BurnerInserterEntity arm) return index == 1 ? -2 : index == 3 ? (int) Math.round(arm.fuelReserveMJ() * 1000) : 0;
                 if (fuel instanceof MachineEntity machine && machine.kind() == MachineKind.BURNER_MINER)
                     return index == 1 ? machine.miningStatus().ordinal() + 1 : index == 2 ? machine.progressPixels() : 0;
                 return 0;
@@ -59,11 +60,13 @@ public final class GeneratorMenu extends FactoryMenu {
         };
         addDataSlots(research);
     }
-    private boolean accepts(int slot, ItemStack stack) { return lab ? stack.is(slot == 0 ? FactoryContent.RED_SCIENCE_ITEM.get() : FactoryContent.GREEN_SCIENCE_ITEM.get()) : GeneratorEntity.isFuel(stack); }
+    private boolean accepts(int slot, ItemStack stack) { return lab ? stack.is(Technology.packItem(slot)) : GeneratorEntity.isFuel(stack); }
     public boolean lab() { return lab; }
     public int fuelRemaining() { return lab ? 0 : research.get(0); }
     public boolean generator() { return !lab && research.get(1) == -1; }
-    public int generatorOutput() { return Math.max(0, research.get(2)); }
+    public double generatorOutput() { return Math.max(0, research.get(2)) / 10.0; }
+    public boolean burnerInserter() { return !lab && research.get(1) == -2; }
+    public double fuelReserveMJ() { return research.get(3) / 1000.0; }
     public MachineEntity.MiningStatus minerStatus() {
         int code = lab ? 0 : research.get(1);
         return code > 0 && code <= MachineEntity.MiningStatus.values().length ? MachineEntity.MiningStatus.values()[code - 1] : null;
@@ -76,6 +79,6 @@ public final class GeneratorMenu extends FactoryMenu {
     @Override public boolean stillValid(Player player) { return fuel.stillValid(player); }
     @Override public void removed(Player player) { super.removed(player); fuel.stopOpen(player); }
     @Override protected boolean moveToMachine(ItemStack stack) {
-        return moveItemStackTo(stack, 0, lab ? 2 : 1, false);
+        return moveItemStackTo(stack, 0, lab ? Technology.SCIENCE_SLOTS : 1, false);
     }
 }

@@ -1,0 +1,15 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "combat",
+  "crafting_time": 0.5,
+  "ingredients": [
+    {
+      "item": "minecraft:stone_bricks",
+      "count": 5
+    }
+  ],
+  "result": {
+    "item": "conveyance:stone_wall",
+    "count": 1
+  }
+}

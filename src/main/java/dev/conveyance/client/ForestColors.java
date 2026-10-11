@@ -15,7 +15,7 @@ public final class ForestColors {
         event.register((state, level, pos, tint) -> level == null || pos == null ? 0x929B59
                 : BiomeColors.getAverageFoliageColor(level, pos), FactoryContent.TREE_LEAVES.get());
         event.register((state, level, pos, tint) -> level == null || pos == null ? 0xB5B66B
-                : BiomeColors.getAverageGrassColor(level, pos), TerrainBlocks.grass());
+                : SurfaceColors.grass(pos), TerrainBlocks.grass());
     }
     private ForestColors() {}
 }

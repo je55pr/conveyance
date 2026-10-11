@@ -57,6 +57,7 @@ public final class WorldMapData extends SavedData {
     public int count() { return tiles.size(); }
     public long revision() { return revision; }
     public boolean reveal(ServerLevel level, int x, int z) {
+        dev.conveyance.combat.EnemyNests.get(level).discoverMap(level, x, z);
         byte[] pixels = sample(level, x, z);
         if (pixels == null) return false;
         long key = ChunkPos.asLong(x, z);
@@ -151,6 +152,13 @@ public final class WorldMapData extends SavedData {
     private static long clientRevision;
     private static int clientCount;
     private static long[] clientRadars = new long[0];
+    private static long[] clientNests = new long[0], clientBiters = new long[0];
+    private static long clientNestRevision;
+    public static long clientNestRevision() { return clientNestRevision; }
+    private static int revealDone, revealTotal;
+    public static void revealProgress(int done, int total) { revealDone = done; revealTotal = total; }
+    public static boolean revealing() { return revealTotal > revealDone; }
+    public static int revealPercent() { return revealTotal == 0 ? 0 : (int) (100L * revealDone / revealTotal); }
     public static ViewTile clientTile(int x, int z, int step) {
         var pages = CLIENT.get(step);
         return pages == null ? null : pages.get(ChunkPos.asLong(x, z));
@@ -158,9 +166,13 @@ public final class WorldMapData extends SavedData {
     public static long clientRevision() { return clientRevision; }
     public static int clientCount() { return clientCount; }
     public static long[] clientRadars() { return clientRadars; }
-    public static void updateClient(long revision, int count, List<ViewTile> tiles, long[] radars) {
+    public static long[] clientNests() { return clientNests; }
+    public static long[] clientBiters() { return clientBiters; }
+    public static void updateClient(long revision, int count, List<ViewTile> tiles, long[] radars, long[] nests, long[] biters) {
         for (ViewTile tile : tiles) CLIENT.computeIfAbsent(tile.step, ignored -> new HashMap<>()).put(ChunkPos.asLong(tile.x, tile.z), tile);
         clientRevision = revision; clientCount = count; clientRadars = radars;
+        if (!Arrays.equals(clientNests, nests)) clientNestRevision++;
+        clientNests = nests; clientBiters = biters;
     }
-    public static void resetClient() { CLIENT.clear(); clientRevision = 0; clientCount = 0; clientRadars = new long[0]; }
+    public static void resetClient() { CLIENT.clear(); clientRevision = 0; clientCount = 0; clientRadars = new long[0]; clientNests = new long[0]; clientBiters = new long[0]; clientNestRevision = 0; revealDone = 0; revealTotal = 0; }
 }

@@ -1,0 +1,39 @@
+newmtl metal
+Kd 1 0.12 0.82
+Ka 0 0 0
+map_Kd #metal
+
+newmtl dark
+Kd 1 1 1
+Ka 0 0 0
+map_Kd #dark
+
+newmtl case
+Kd 1 0.12 0.82
+Ka 0 0 0
+map_Kd #case
+
+newmtl accent
+Kd 1 1 1
+Ka 0 0 0
+map_Kd #accent
+
+newmtl status
+Kd 1 1 1
+Ka 0 0 0
+map_Kd #status
+
+newmtl stone
+Kd 1 1 1
+Ka 0 0 0
+map_Kd #stone
+
+newmtl pane
+Kd 1 1 1
+Ka 0 0 0
+map_Kd #pane
+
+newmtl pane2
+Kd 1 1 1
+Ka 0 0 0
+map_Kd #pane2

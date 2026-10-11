@@ -1,0 +1,23 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "combat",
+  "crafting_time": 20,
+  "ingredients": [
+    {
+      "item": "conveyance:steel_ingot",
+      "count": 20
+    },
+    {
+      "item": "conveyance:electronic_circuit",
+      "count": 20
+    },
+    {
+      "item": "conveyance:battery",
+      "count": 12
+    }
+  ],
+  "result": {
+    "item": "conveyance:laser_turret",
+    "count": 1
+  }
+}

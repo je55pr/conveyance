@@ -28,9 +28,12 @@ public final class Conveyance {
         context.getModEventBus().addListener(ItemPolicy::onCreativeContents);
         WorldGeneration.register(context.getModEventBus());
         FactoryContent.register(context.getModEventBus());
+        dev.conveyance.combat.CombatContent.register(context.getModEventBus());
         InventoryNetwork.register();
         dev.conveyance.player.RemoteBuildNetwork.register();
+        dev.conveyance.player.FactoryOverlayNetwork.register();
         MapNetwork.register();
+        dev.conveyance.world.DistantTerrainNetwork.register();
         MinecraftForge.EVENT_BUS.register(MapExploration.class);
         MinecraftForge.EVENT_BUS.register(PollutionEvents.class);
         MinecraftForge.EVENT_BUS.addListener(ResearchState::registerCommands);

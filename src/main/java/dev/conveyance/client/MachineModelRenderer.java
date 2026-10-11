@@ -36,23 +36,40 @@ public final class MachineModelRenderer<T extends BlockEntity> implements BlockE
     }
     @SubscribeEvent public static void models(ModelEvent.RegisterAdditional event) {
         for (String name : new String[] {"miner", "burner_miner"}) event.register(model(name));
+        event.register(ResourceLocation.fromNamespaceAndPath(Conveyance.MOD_ID, "block/gun_turret_head"));
+        event.register(ResourceLocation.fromNamespaceAndPath(Conveyance.MOD_ID, "block/laser_turret_head"));
     }
     @Override public boolean shouldRender(T entity, Vec3 camera) {
-        return (entity instanceof MinerEntity || entity instanceof MachineEntity machine && machine.kind() == MachineKind.BURNER_MINER)
+        return (entity instanceof MinerEntity || entity instanceof MachineEntity machine && (machine.kind() == MachineKind.BURNER_MINER || machine.kind().turret()))
                 && BlockEntityRenderer.super.shouldRender(entity, camera);
     }
     @Override public void render(T entity, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
         if (entity instanceof MinerEntity miner) rotor("miner", MinerBlock.WIDTH, entity.getBlockState().getValue(MinerBlock.FACING), miner.drillMotion().angle(partialTick), pose, buffers, light, overlay);
         else if (entity instanceof MachineEntity machine && machine.kind() == MachineKind.BURNER_MINER)
             rotor("burner_miner", machine.kind().width, entity.getBlockState().getValue(MachineBlock.FACING), machine.drillMotion().angle(partialTick), pose, buffers, light, overlay);
+        else if (entity instanceof MachineEntity machine && machine.kind().turret()) {
+            boolean laser = machine.kind() == MachineKind.LASER_TURRET;
+            var center = (laser ? machine.laser().center() : machine.turret().center()).subtract(Vec3.atLowerCornerOf(machine.getBlockPos()));
+            turret(machine.kind().id, center.x, center.z, laser ? machine.laser().yaw(partialTick) : machine.turret().yaw(partialTick), pose, buffers, light, overlay);
+        }
     }
     public static void preview(BlockState state, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
         if (state.getBlock() instanceof MinerBlock && state.getValue(MinerBlock.PART) == 0)
             rotor("miner", MinerBlock.WIDTH, state.getValue(MinerBlock.FACING), 0, pose, buffers, light, overlay);
         else if (state.getBlock() instanceof MachineBlock block && block.kind == MachineKind.BURNER_MINER && state.getValue(MachineBlock.PART) == 0)
             rotor("burner_miner", block.kind.width, state.getValue(MachineBlock.FACING), 0, pose, buffers, light, overlay);
+        else if (state.getBlock() instanceof MachineBlock block && block.kind.turret() && state.getValue(MachineBlock.PART) == 0) {
+            Direction facing = state.getValue(MachineBlock.FACING);
+            turret(block.kind.id, facing == Direction.EAST || facing == Direction.SOUTH ? 0 : 1, facing == Direction.WEST || facing == Direction.SOUTH ? 0 : 1, 180 - facing.toYRot(), pose, buffers, light, overlay);
+        }
     }
     private static ResourceLocation model(String name) { return ResourceLocation.fromNamespaceAndPath(Conveyance.MOD_ID, "block/machines/" + name + "/drill"); }
+    private static void turret(String name, double x, double z, float yaw, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
+        var game = Minecraft.getInstance(); pose.pushPose(); pose.translate(x, 2, z); pose.mulPose(Axis.YP.rotationDegrees(yaw));
+        game.getBlockRenderer().getModelRenderer().renderModel(pose.last(), buffers.getBuffer(RenderType.solid()), null,
+                game.getModelManager().getModel(ResourceLocation.fromNamespaceAndPath(Conveyance.MOD_ID, "block/" + name + "_head")), 1, 1, 1, light, overlay, ModelData.EMPTY, RenderType.solid());
+        pose.popPose();
+    }
     private static void rotor(String name, int width, Direction facing, float angle, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
         var game = Minecraft.getInstance();
         float turn = switch (facing) { case EAST -> -90; case SOUTH -> 180; case WEST -> 90; default -> 0; };

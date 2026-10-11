@@ -20,13 +20,14 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 
 public final class HandCrafting {
-    public static List<CraftingRecipe> recipes(Level level, int unlocks) {
+    public static List<CraftingRecipe> recipes(Level level, long unlocks) {
         return recipes(level, unlocks, false);
     }
-    public static List<CraftingRecipe> recipes(Level level, int unlocks, boolean creative) {
+    public static List<CraftingRecipe> recipes(Level level, long unlocks, boolean creative) {
         return level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING).stream()
                 .filter(recipe -> recipe.getId().getNamespace().equals(Conveyance.MOD_ID) && (creative || ResearchState.recipeUnlocked(recipe.getId(), unlocks)))
                 .filter(recipe -> !recipe.getResultItem(level.registryAccess()).isEmpty() && !ItemPolicy.isDisabled(recipe.getResultItem(level.registryAccess())))
+                .filter(recipe -> creative || !(recipe instanceof FactoryCraftingRecipe factory) || !factory.creativeOnly())
                 .sorted(Comparator.comparing(recipe -> recipe.getResultItem(level.registryAccess()).getHoverName().getString())).toList();
     }
     public static int count(List<ItemStack> items, Ingredient ingredient) {
@@ -54,9 +55,10 @@ public final class HandCrafting {
     public static final class Planner {
         private final Level level;
         private final List<CraftingRecipe> recipes;
-        public Planner(Level level, int unlocks) { this.level = level; recipes = recipes(level, unlocks); }
+        public Planner(Level level, long unlocks) { this.level = level; recipes = recipes(level, unlocks); }
 
         private boolean produce(List<ItemStack> items, CraftingRecipe recipe, int batches, Set<ResourceLocation> path, List<Operation> operations) {
+            if (recipe instanceof FactoryCraftingRecipe factory && (factory.machineOnly() || factory.creativeOnly())) return false;
             if (path.size() >= 32 || !path.add(recipe.getId())) return false;
             try {
                 var requirements = AssemblyRecipes.requirements(recipe);
@@ -142,7 +144,9 @@ public final class HandCrafting {
         Technology tech = Technology.byId(research);
         if (tech == null) return List.of();
         var red = new AssemblyRecipes.Requirement(Ingredient.of(FactoryContent.RED_SCIENCE_ITEM.get()), tech.packs);
-        return tech.green ? List.of(red, new AssemblyRecipes.Requirement(Ingredient.of(FactoryContent.GREEN_SCIENCE_ITEM.get()), tech.packs)) : List.of(red);
+        var costs = new ArrayList<AssemblyRecipes.Requirement>();
+        for (int slot = 0; slot < 3; slot++) if (tech.needsPack(slot)) costs.add(new AssemblyRecipes.Requirement(Ingredient.of(Technology.packItem(slot)), tech.packs));
+        return List.copyOf(costs);
     }
     public static boolean research(ServerPlayer player, Container extra, int research) {
         return ResearchState.select(player.level(), research);

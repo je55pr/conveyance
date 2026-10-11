@@ -29,12 +29,17 @@ public final class FactoryPickups {
     private static void contents(List<ItemStack> loot, CompoundTag data, int multiplier, int depth) {
         var items = data.getList("Items", Tag.TAG_COMPOUND);
         for (int i = 0; i < items.size(); i++) add(loot, ItemStack.of(items.getCompound(i)), multiplier, depth);
+        add(loot, ItemStack.of(data.getCompound("PendingOre")), multiplier, depth);
         add(loot, ItemStack.of(data.getCompound("Held")), multiplier, depth);
         add(loot, ItemStack.of(data.getCompound("Fuel")), multiplier, depth);
+        var modules = data.getCompound("Modules").getList("Items", Tag.TAG_COMPOUND);
+        for (int i = 0; i < modules.size(); i++) add(loot, ItemStack.of(modules.getCompound(i)), multiplier, depth);
     }
     public static List<ItemStack> block(BlockEntity entity) {
         var loot = new ArrayList<ItemStack>();
         loot.add(new ItemStack(entity.getBlockState().getBlock()));
+        add(loot, ItemStack.of(entity.saveWithoutMetadata().getCompound("PendingOre")));
+        if (entity instanceof PoweredMachineEntity machine) machine.modules.contents().forEach(item -> add(loot, item));
         if (entity instanceof Container container)
             for (int slot = 0; slot < container.getContainerSize(); slot++) add(loot, container.getItem(slot));
         if (entity instanceof ConveyorEntity belt)

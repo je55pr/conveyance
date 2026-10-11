@@ -21,7 +21,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 /** A persistent, sparse field of pollution units per 16x16 Minecraft chunk. */
 public final class PollutionData extends SavedData {
-    public static final int AMBIENT_WIDTH = 9;
+    public static final int AMBIENT_WIDTH = 17;
     public static final double TREE_PER_MINUTE = 0.18, WATER_PER_MINUTE = 0.006;
     private static final double MIN_AMOUNT = 0.0001, MAX_AMOUNT = 1_000_000, DIFFUSION = 0.02;
     private static final double MAP_SCALE = Math.log1p(100);
@@ -49,7 +49,17 @@ public final class PollutionData extends SavedData {
         cells.merge(key, Math.min(MAX_AMOUNT, amount), (a, b) -> Math.min(MAX_AMOUNT, a + b));
         setDirty();
     }
-    /** Enemy nests can later use this to turn local pollution into attack budgets. */
+    public long[] pollutedChunks() { return cells.keySet().stream().mapToLong(Long::longValue).toArray(); }
+    public BlockPos strongestNearby(BlockPos origin, int radius) {
+        int cx = origin.getX() >> 4, cz = origin.getZ() >> 4; double best = 0; BlockPos target = null;
+        for (var entry : cells.entrySet()) {
+            int x = ChunkPos.getX(entry.getKey()), z = ChunkPos.getZ(entry.getKey());
+            if (Math.abs(x - cx) > radius || Math.abs(z - cz) > radius || entry.getValue() <= best) continue;
+            best = entry.getValue(); target = new BlockPos(x * 16 + 8, TerracedTerrain.START_HEIGHT, z * 16 + 8);
+        }
+        return target;
+    }
+    /** Nests spend locally absorbed pollution on attack groups. */
     public double consume(BlockPos pos, double requested) {
         if (!Double.isFinite(requested) || requested <= 0) return 0;
         long key = ChunkPos.asLong(Math.floorDiv(pos.getX(), 16), Math.floorDiv(pos.getZ(), 16));
@@ -181,19 +191,23 @@ public final class PollutionData extends SavedData {
     }
 
     // Common-side packet cache: no Minecraft client classes load on the server.
-    private static int clientMinX, clientMinZ;
-    private static float[] clientNearby = new float[AMBIENT_WIDTH * AMBIENT_WIDTH];
-    public static void updateClient(int minX, int minZ, float[] values) { clientMinX = minX; clientMinZ = minZ; clientNearby = values.clone(); }
-    public static void resetClient() { clientNearby = new float[AMBIENT_WIDTH * AMBIENT_WIDTH]; }
-    private static double clientAt(int x, int z) {
-        x -= clientMinX; z -= clientMinZ;
-        return x < 0 || z < 0 || x >= AMBIENT_WIDTH || z >= AMBIENT_WIDTH ? 0 : clientNearby[z * AMBIENT_WIDTH + x];
+    public record ClientField(int minX, int minZ, long seed, float[] pollution, float[] territory) {
+        private double at(float[] field, int x, int z) {
+            x -= minX; z -= minZ;
+            return x < 0 || z < 0 || x >= AMBIENT_WIDTH || z >= AMBIENT_WIDTH ? 0 : field[z * AMBIENT_WIDTH + x];
+        }
+        private double sample(float[] field, double blockX, double blockZ) {
+            double x = blockX / 16 - .5, z = blockZ / 16 - .5; int cx = (int) Math.floor(x), cz = (int) Math.floor(z);
+            double tx = x - cx, tz = z - cz;
+            return (1 - tz) * ((1 - tx) * at(field, cx, cz) + tx * at(field, cx + 1, cz)) + tz * ((1 - tx) * at(field, cx, cz + 1) + tx * at(field, cx + 1, cz + 1));
+        }
+        public double pollutionAt(double x, double z) { return sample(pollution, x, z); }
+        public double territoryAt(double x, double z) { return sample(territory, x, z); }
     }
-    public static double clientSample(double blockX, double blockZ) {
-        double x = blockX / 16 - 0.5, z = blockZ / 16 - 0.5;
-        int cx = (int) Math.floor(x), cz = (int) Math.floor(z);
-        double tx = x - cx, tz = z - cz;
-        return (1 - tz) * ((1 - tx) * clientAt(cx, cz) + tx * clientAt(cx + 1, cz))
-                + tz * ((1 - tx) * clientAt(cx, cz + 1) + tx * clientAt(cx + 1, cz + 1));
-    }
+    private static volatile ClientField client = emptyClient();
+    private static ClientField emptyClient() { return new ClientField(0, 0, 0, new float[AMBIENT_WIDTH * AMBIENT_WIDTH], new float[AMBIENT_WIDTH * AMBIENT_WIDTH]); }
+    public static ClientField clientField() { return client; }
+    public static void updateClient(int minX, int minZ, long seed, float[] values, float[] territory) { client = new ClientField(minX, minZ, seed, values.clone(), territory.clone()); }
+    public static void resetClient() { client = emptyClient(); }
+    public static double clientSample(double x, double z) { return client.pollutionAt(x, z); }
 }

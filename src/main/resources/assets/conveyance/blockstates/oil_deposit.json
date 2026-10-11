@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "tile=9": {
+      "model": "conveyance:block/oil_deposit"
+    },
+    "tile=0": {
+      "model": "conveyance:block/oil_deposit_tile_0"
+    },
+    "tile=1": {
+      "model": "conveyance:block/oil_deposit_tile_1"
+    },
+    "tile=2": {
+      "model": "conveyance:block/oil_deposit_tile_2"
+    },
+    "tile=3": {
+      "model": "conveyance:block/oil_deposit_tile_3"
+    },
+    "tile=4": {
+      "model": "conveyance:block/oil_deposit_tile_4"
+    },
+    "tile=5": {
+      "model": "conveyance:block/oil_deposit_tile_5"
+    },
+    "tile=6": {
+      "model": "conveyance:block/oil_deposit_tile_6"
+    },
+    "tile=7": {
+      "model": "conveyance:block/oil_deposit_tile_7"
+    },
+    "tile=8": {
+      "model": "conveyance:block/oil_deposit_tile_8"
+    }
+  }
+}

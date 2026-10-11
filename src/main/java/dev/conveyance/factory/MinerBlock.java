@@ -120,6 +120,7 @@ public final class MinerBlock extends FactoryBlock {
             InteractionHand hand, BlockHitResult hit) {
         if (player.getItemInHand(hand).getItem() instanceof BlockItem) return InteractionResult.PASS;
         var entity = controller(level, pos);
+        if (MachineModules.interact(entity, player, hand)) return InteractionResult.sidedSuccess(level.isClientSide);
         if (entity != null && !level.isClientSide) {
             PowerNetwork.showStatus(level, entity.getBlockPos(), player);
         }

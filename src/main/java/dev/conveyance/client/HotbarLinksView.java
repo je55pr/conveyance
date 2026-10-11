@@ -2,7 +2,6 @@ package dev.conveyance.client;
 
 import dev.conveyance.player.LinkedHotbar;
 import java.util.ArrayList;
-import java.util.Optional;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -40,7 +39,12 @@ final class HotbarLinksView {
             lines.add(0, Component.translatable("menu.conveyance.empty_hand"));
             lines.add(Component.translatable(item.isEmpty() ? "menu.conveyance.empty_hand_help" : "menu.conveyance.temporary_hand_help"));
         } else lines.add(Component.translatable("menu.conveyance.link_help"));
-        graphics.renderTooltip(game.font, lines, Optional.empty(), mouseX, mouseY);
+        var rows = IconTooltips.itemLines(item, lines);
+        if (slot == 0 && !item.isEmpty() && rows.size() > 1) {
+            rows.set(0, IconTooltips.text(lines.get(0)));
+            rows.set(1, IconTooltips.item(item, lines.get(1)));
+        }
+        IconTooltips.render(graphics, rows, mouseX, mouseY);
     }
     private HotbarLinksView() {}
 }

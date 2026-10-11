@@ -133,7 +133,7 @@ public final class JunctionBlock extends FactoryBlock {
     private static void recover(Level level, BlockPos pos) {
         if (!(level.getBlockEntity(pos) instanceof JunctionEntity junction) || junction.recovered) return;
         junction.recovered = true;
-        ItemStack packed = new ItemStack(FactoryContent.JUNCTION_ITEM.get());
+        ItemStack packed = new ItemStack(junction.getBlockState().getBlock());
         BlockItem.setBlockEntityData(packed, FactoryContent.JUNCTION_ENTITY.get(), junction.saveWithoutMetadata());
         Block.popResource(level, pos, packed);
     }

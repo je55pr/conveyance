@@ -1,0 +1,81 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "conveyance:block/fast_junction"
+      }
+    },
+    {
+      "when": {
+        "north": "input"
+      },
+      "apply": {
+        "model": "conveyance:block/fast_junction_input",
+        "y": 0
+      }
+    },
+    {
+      "when": {
+        "north": "output"
+      },
+      "apply": {
+        "model": "conveyance:block/fast_junction_output",
+        "y": 0
+      }
+    },
+    {
+      "when": {
+        "east": "input"
+      },
+      "apply": {
+        "model": "conveyance:block/fast_junction_input",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "east": "output"
+      },
+      "apply": {
+        "model": "conveyance:block/fast_junction_output",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "south": "input"
+      },
+      "apply": {
+        "model": "conveyance:block/fast_junction_input",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "south": "output"
+      },
+      "apply": {
+        "model": "conveyance:block/fast_junction_output",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "west": "input"
+      },
+      "apply": {
+        "model": "conveyance:block/fast_junction_input",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "west": "output"
+      },
+      "apply": {
+        "model": "conveyance:block/fast_junction_output",
+        "y": 270
+      }
+    }
+  ]
+}

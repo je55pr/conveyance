@@ -219,6 +219,112 @@ def solar():
     return mesh
 
 
+def horizontal_cylinder(mesh, x, y, z0, z1, radius, material):
+    cylinder = Mesh()
+    cylinder.cylinder(0, 0, z0, z1, radius, radius, material, sides=12)
+    for mat, _, vertices in cylinder.faces:
+        mesh.face([(x + v[0], y + v[2], v[1]) for v in reversed(vertices)], mat)
+    mesh.solids.append([x-radius, y-radius, z0, x+radius, y+radius, z1])
+
+
+def boiler():
+    mesh = Mesh()
+    mesh.box((.12,0,.12),(2.88,.16,1.88),"dark")
+    mesh.box((.30,.16,.28),(2.70,1.10,1.72),"stone")
+    mesh.box((.42,1.10,.39),(2.58,1.32,1.61),"case")
+    mesh.box((1.12,.35,1.72),(1.88,.83,1.76),"dark")
+    mesh.box((1.24,.44,1.76),(1.76,.72,1.79),"status")
+    mesh.cylinder(2.33,1.36,1.16,1.90,.18,.14,"dark")
+    mesh.cylinder(2.33,1.36,1.85,1.96,.20,.20,"metal")
+    # Blue water ports at opposite ends of the back row, orange steam at the front.
+    mesh.box((0,.36,1.36),(.31,.64,1.64),"pane")
+    mesh.box((2.69,.36,1.36),(3,.64,1.64),"pane")
+    mesh.box((1.36,.36,0),(1.64,.64,.30),"accent")
+    for x in (.47,.91,1.35,1.79,2.23): mesh.box((x,1.32,.54),(x+.055,1.38,1.47),"metal")
+    return mesh
+
+
+def steam_engine():
+    mesh = Mesh()
+    mesh.box((.12,0,.12),(2.88,.13,4.88),"dark")
+    for x in (.32,2.48): mesh.box((x,.13,.33),(x+.20,.28,4.67),"metal")
+    horizontal_cylinder(mesh,1.5,.58,.72,3.10,.35,"case")
+    for z in (.88,2.77):
+        mesh.box((.92,.22,z),(2.08,.36,z+.19),"dark")
+        mesh.box((1.10,.27,z+.04),(1.90,.92,z+.14),"metal")
+    mesh.box((1.40,.47,3.10),(1.60,.67,4.26),"metal")
+    horizontal_cylinder(mesh,.65,.54,3.54,3.88,.42,"dark")
+    horizontal_cylinder(mesh,.65,.54,3.49,3.94,.12,"accent")
+    mesh.box((.31,.49,3.47),(.99,.59,3.50),"metal")
+    mesh.box((.60,.20,3.47),(.70,.88,3.50),"metal")
+    mesh.box((1.87,.29,3.28),(2.65,.73,4.10),"case")
+    mesh.box((2.65,.38,3.40),(2.69,.63,3.96),"status")
+    mesh.box((1.35,.35,0),(1.65,.65,.73),"accent")
+    mesh.box((1.35,.35,4.25),(1.65,.65,5),"accent")
+    return mesh
+
+
+def offshore_pump():
+    mesh = Mesh()
+    mesh.box((.12,0,.10),(.88,.15,1.45),"dark")
+    mesh.cylinder(.5,.48,.15,1.65,.29,.25,"case")
+    mesh.cylinder(.5,.48,1.63,1.78,.28,.28,"metal")
+    mesh.box((.33,.36,.78),(.67,1.67,1.05),"metal")
+    mesh.box((.35,1.35,1.05),(.65,1.65,2),"pane")
+    mesh.box((.18,1.07,.69),(.22,1.34,.89),"status")
+    return mesh
+
+
+def pump_intake():
+    mesh = Mesh()
+    mesh.box((.36,.36,-.67),(.64,.64,.21),"metal")
+    mesh.box((.36,-.82,-.67),(.64,.36,-.39),"metal")
+    mesh.box((.29,-.94,-.74),(.71,-.80,-.32),"dark")
+    return mesh
+
+
+def pumpjack():
+    mesh = Mesh()
+    mesh.box((.12,0,.12),(2.88,.15,2.88),"dark")
+    for x in (.35,2.35): mesh.box((x,.15,.35),(x+.25,1.65,2.30),"case")
+    mesh.box((.30,1.65,.25),(2.70,1.87,2.30),"accent")
+    mesh.box((1.35,.30,.48),(1.65,1.80,.78),"metal")
+    mesh.cylinder(1.50,1.50,.18,.60,.48,.48,"dark")
+    mesh.box((.70,.50,1.10),(2.30,.86,2.50),"case")
+    mesh.box((2.36,.36,0),(2.64,.64,.45),"metal")
+    mesh.box((.32,.60,2.40),(.70,.90,2.44),"status")
+    return mesh
+
+
+def refinery():
+    mesh = Mesh()
+    mesh.box((.12,0,.12),(4.88,.16,4.88),"dark")
+    for x,z,r in ((1.1,1.4,.65),(2.6,1.5,.65),(3.8,2.7,.65),(1.2,3.6,.72)):
+        mesh.cylinder(x,z,.16,1.60,r,r,"case",sides=12)
+        mesh.cylinder(x,z,1.60,1.85,r,.18,"metal",sides=12)
+    mesh.box((2.0,.18,3.20),(3.20,1.35,4.20),"case")
+    mesh.box((2.08,.53,4.20),(2.58,.91,4.23),"status")
+    # Water/crude inputs behind, heavy/light/petroleum outputs in front.
+    for x,mat in ((1.5,"pane"),(3.5,"dark")): mesh.box((x-.15,.35,4.1),(x+.15,.65,5),mat)
+    for x,mat in ((1.5,"accent"),(2.5,"metal"),(3.5,"pane2")): mesh.box((x-.15,.35,0),(x+.15,.65,.8),mat)
+    for z in (2.55,2.95): mesh.box((.6,1.07,z),(3.6,1.23,z+.12),"metal")
+    return mesh
+
+
+def chemical_plant():
+    mesh = Mesh()
+    mesh.box((.12,0,.12),(2.88,.16,2.88),"dark")
+    for x in (.85,2.05):
+        mesh.cylinder(x,1.2,.16,1.55,.48,.48,"case",sides=12)
+        mesh.cylinder(x,1.2,1.55,1.85,.48,.12,"metal",sides=12)
+    mesh.box((.75,.4,2.08),(2.25,1.24,2.70),"case")
+    mesh.box((1.06,.61,2.70),(1.73,.95,2.74),"status")
+    for x,mat in ((.5,"pane2"),(2.5,"pane")): mesh.box((x-.15,.35,2.05),(x+.15,.65,3),mat)
+    for x in (.5,2.5): mesh.box((x-.15,.35,0),(x+.15,.65,.73),"metal")
+    mesh.box((.8,1.1,1.6),(2.15,1.24,1.78),"metal")
+    return mesh
+
+
 def clip_polygon(vertices, axis, bound, above):
     result=[]
     if not vertices: return result
@@ -278,8 +384,8 @@ def model(root,name,mesh,textures):
     folder=root/"assets/conveyance/models/block/machines"
     write_obj(folder/(name+".obj"),mesh)
     write_json(folder/(name+".json"),{"parent":"minecraft:block/block","loader":"forge:obj",
-        "model":"conveyance:models/block/machines/"+name+".obj", "mtl_override":"conveyance:models/block/machines/machine_materials.mtl",
-        "automatic_culling":False,"flip_v":True,"emissive_ambient":False,"textures":textures|{"particle":textures["case"]}})
+        "model":"conveyance:models/block/machines/"+name+".obj", "mtl_override":"conveyance:models/block/machines/"+("creative_materials.mtl" if name.startswith("generator/") else "machine_materials.mtl"),
+        "automatic_culling":False,"flip_v":True,"emissive_ambient":False,"textures":textures|{"particle":"minecraft:block/magenta_concrete" if name.startswith("generator/") else textures["case"]}})
 
 
 def definitions():
@@ -288,28 +394,39 @@ def definitions():
             "industrial_furnace":(2,3,furnace(),materials()),
             "research_lab":(3,2,lab(),materials("light_blue_concrete")),
             "assembler":(3,2,assembler(),materials("copper_block")),
-            "generator":(1,1,generator(),materials("orange_concrete")),
-            "solar_panel":(3,1,solar(),materials())}
+            "generator":(1,1,generator(),materials("magenta_concrete","iron_block")),
+            "solar_panel":(3,1,solar(),materials()),
+            "boiler":(3,2,boiler(),materials("orange_concrete")),
+            "steam_engine":(3,1,steam_engine(),materials("orange_concrete","gray_concrete")),
+            "offshore_pump":(1,2,offshore_pump(),materials("blue_concrete")),
+            "pumpjack":(3,2,pumpjack(),materials("yellow_concrete")),
+            "oil_refinery":(5,2,refinery(),materials("orange_concrete")),
+            "chemical_plant":(3,2,chemical_plant(),materials("cyan_concrete"))}
 
 
 def generate_all(root=ROOT):
     folder=root/"assets/conveyance/models/block/machines"; folder.mkdir(parents=True,exist_ok=True)
     folder.joinpath("machine_materials.mtl").write_text("\n".join(
         f"newmtl {name}\nKd 1 1 1\nKa 0 0 0\nmap_Kd #{name}\n" for name in materials()),encoding="utf-8")
+    folder.joinpath("creative_materials.mtl").write_text("\n".join(
+        f"newmtl {name}\nKd {'1 0.12 0.82' if name in ('metal','case') else '1 1 1'}\nKa 0 0 0\nmap_Kd #{name}\n" for name in materials()),encoding="utf-8")
     write_json(folder/"empty.json",{"textures":{"particle":"minecraft:block/iron_block"},"elements":[]})
     shapes={}
     for name,(width,height,mesh,textures) in definitions().items():
-        count=width*width*height; parts=[]
+        depth={"boiler":2,"steam_engine":5,"offshore_pump":2}.get(name,width)
+        count=width*depth*height; parts=[]
         lit_textures=textures|{"status":"minecraft:block/orange_concrete" if name in ("industrial_furnace","generator") else "minecraft:block/lime_concrete"}
         if name=="research_lab": lit_textures|={"pane":"minecraft:block/light_blue_concrete","pane2":"minecraft:block/cyan_concrete"}
         for part in range(count):
-            clipped=part_mesh(mesh,part%width,part//(width*width),part//width%width)
+            clipped=part_mesh(mesh,part%width,part//(width*depth),part//width%depth)
+            # Intake is visual only and extends below the bank into the water.
+            if name=="offshore_pump" and part==0: clipped.faces.extend(pump_intake().faces)
             parts.append(clipped.solids)
             model(root,f"{name}/part_{part}",clipped,textures)
             if name not in ("miner","burner_miner"):
                 write_json(folder/f"{name}/part_{part}_on.json",{"parent":f"conveyance:block/machines/{name}/part_{part}","textures":lit_textures})
         shapes[name]=parts
-        state_count=48 if name=="miner" else 18 if name!="generator" else 1
+        state_count=48 if name=="miner" else 50 if name!="generator" else 1
         variants={}
         for part in range(state_count):
             for facing,rotation in FACINGS if name!="generator" else (("north",0),):
@@ -320,15 +437,18 @@ def generate_all(root=ROOT):
         write_json(root/f"assets/conveyance/blockstates/{name}.json",{"variants":variants})
         if name!="generator": write_json(root/f"assets/conveyance/blockstates/{name}_part.json",{"variants":variants})
         full=Mesh(); full.extend(mesh)
+        if name=="offshore_pump": full.extend(pump_intake())
         if name in ("miner","burner_miner"):
             rotating=drill(height-.65,.34 if width==3 else .27)
             model(root,f"{name}/drill",rotating,textures)
             full.extend(rotating,(width/2-.5,0,width/2-.5))
-        item=Mesh(); scale=max(width,height)
+        item=Mesh(); scale=max(width,depth,height)
         for material,n,vertices in full.faces:
-            item.faces.append((material,n,[((v[0]-width/2)/scale+.5,v[1]/scale,(v[2]-width/2)/scale+.5)+v[3:] for v in vertices]))
+            item.faces.append((material,n,[((v[0]-width/2)/scale+.5,v[1]/scale,(v[2]-depth/2)/scale+.5)+v[3:] for v in vertices]))
         model(root,f"{name}/item",item,textures)
-        write_json(root/f"assets/conveyance/models/item/{name}.json",{"parent":f"conveyance:block/machines/{name}/item"})
+        sprite = root/f"assets/conveyance/textures/item/{name}.png"
+        write_json(root/f"assets/conveyance/models/item/{name}.json", {"parent":"minecraft:item/generated", "textures":{"layer0":f"conveyance:item/{name}"}}
+                   if sprite.exists() and name != "generator" else {"parent":f"conveyance:block/machines/{name}/item"})
     write_json(root/"assets/conveyance/machine_shapes.json",shapes)
 
 
@@ -351,6 +471,7 @@ def preview(path):
             "research_lab":"Research lab · 3×3×2","assembler":"Assembler · 3×3×2","generator":"Burner generator · 1×1×1","solar_panel":"Solar panel · 3×3×1"}
     for i,(name,(width,height,mesh,_)) in enumerate(definitions().items()):
         left=i%4*320; top=i//4*325
+        if name not in labels: continue
         draw.text((left+14,top+12),labels[name],font=font,fill=(227,235,240))
         full=Mesh(); full.extend(mesh)
         if name in ("miner","burner_miner"): full.extend(drill(height-.65,.34 if width==3 else .27),(width/2-.5,0,width/2-.5))
@@ -368,3 +489,7 @@ if __name__=="__main__":
     generate_all()
     import sys
     if "--preview" in sys.argv: preview(ROOT.parents[2]/".tools/machine-models-preview.png")
+
+# Keep expanded early-game assets consistent after regenerating base assets.
+import runpy
+runpy.run_path(str(Path(__file__).with_name("generate_early_game_assets.py")))

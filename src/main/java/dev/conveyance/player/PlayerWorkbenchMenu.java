@@ -48,7 +48,7 @@ public final class PlayerWorkbenchMenu extends AbstractContainerMenu {
         InventoryAccess.click(slot, type, () -> super.clicked(slot, button, type, player));
     }
     public void showStorage(boolean visible) { storageVisible = visible; }
-    public int researchMask() { return ResearchState.mask(owner.level()); }
+    public long researchMask() { return ResearchState.mask(owner.level()); }
     @Override public boolean stillValid(Player player) { return player == owner && player.isAlive(); }
     @Override public boolean clickMenuButton(Player player, int id) {
         Technology tech = Technology.byMenuId(id);

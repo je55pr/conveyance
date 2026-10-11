@@ -1,0 +1,27 @@
+{
+  "type": "conveyance:chemical_processing",
+  "machine": "chemical_plant",
+  "seconds": 4,
+  "items": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 1
+    },
+    {
+      "item": "minecraft:copper_ingot",
+      "count": 1
+    }
+  ],
+  "inputs": [
+    {
+      "channel": 0,
+      "fluid": "sulfuric_acid",
+      "amount": 20
+    }
+  ],
+  "outputs": [],
+  "result": {
+    "item": "conveyance:battery",
+    "count": 1
+  }
+}

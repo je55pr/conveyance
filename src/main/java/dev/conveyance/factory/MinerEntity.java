@@ -10,15 +10,16 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 public final class MinerEntity extends PoweredMachineEntity {
-    public static final int DEMAND_KW = 90, CYCLE_TICKS = 20;
+    public static final int DEMAND_KW = 90, CYCLE_TICKS = 40;
     private int cursor;
+    private ItemStack pendingOre = ItemStack.EMPTY;
     private boolean legacyFootprint;
     private final DrillMotion drill = new DrillMotion(this);
     public DrillMotion drillMotion() { return drill; }
     int footprintWidth() { return legacyFootprint ? 4 : MinerBlock.WIDTH; }
     public MinerEntity(BlockPos pos, BlockState state) { super(FactoryContent.MINER_ENTITY.get(), pos, state, DEMAND_KW, CYCLE_TICKS); }
     @Override protected boolean hasWork() {
-        if (level == null || legacyFootprint) return false;
+        if (level == null || legacyFootprint || !pendingOre.isEmpty()) return false;
         var facing = getBlockState().getValue(MinerBlock.FACING);
         var resource = MiningResources.find(level, MinerBlock.FOUNDATION, cursor, part -> MinerBlock.partPosition(worldPosition, facing, part).below());
         return !resource.stack().isEmpty() && ItemTransfer.canOutput(level, worldPosition.relative(facing), facing.getOpposite(), resource.stack());
@@ -41,19 +42,26 @@ public final class MinerEntity extends PoweredMachineEntity {
             miner.setChanged();
             PowerNetwork.register(level, pos, PowerNetwork.Kind.MACHINE);
         }
+        if (!miner.pendingOre.isEmpty()) {
+            miner.drill.capture(0);
+            if (ItemTransfer.output(level, pos.relative(facing), facing.getOpposite(), miner.pendingOre.copyWithCount(1))) { miner.pendingOre.shrink(1); miner.setChanged(); }
+            return;
+        }
         var resource = MiningResources.find(level, MinerBlock.FOUNDATION, miner.cursor, part -> MinerBlock.partPosition(pos, facing, part).below());
         if (resource.stack().isEmpty() || !ItemTransfer.canOutput(level, pos.relative(facing), facing.getOpposite(), resource.stack())) { miner.drill.capture(0); return; }
-        miner.drill.capture(18 * PowerNetwork.fraction(level, pos) * ResearchState.miningSpeed(level));
+        miner.drill.capture(18 * PowerNetwork.fraction(level, pos) * ResearchState.miningSpeed(level) * miner.modules.speed());
         if (!miner.advanceWork()) return;
         if (ItemTransfer.output(level, pos.relative(facing), facing.getOpposite(), resource.stack())) {
+            if (miner.modules.produce("mining", miner.modules.productivity(true) + ResearchState.miningProductivity(level)) > 0) miner.pendingOre = resource.stack().copy();
             miner.cursor = resource.nextCursor();
             miner.setChanged();
         }
     }
 
-    @Override protected void saveAdditional(CompoundTag tag) { super.saveAdditional(tag); tag.putInt("Cursor", cursor % MinerBlock.FOUNDATION); tag.putInt("FootprintWidth", footprintWidth()); }
+    @Override protected void saveAdditional(CompoundTag tag) { super.saveAdditional(tag); tag.put("PendingOre", pendingOre.save(new CompoundTag())); tag.putInt("Cursor", cursor % MinerBlock.FOUNDATION); tag.putInt("FootprintWidth", footprintWidth()); }
     @Override public void load(CompoundTag tag) {
         super.load(tag);
+        pendingOre = ItemStack.of(tag.getCompound("PendingOre"));
         cursor = Math.floorMod(tag.getInt("Cursor"), MinerBlock.FOUNDATION);
         legacyFootprint = !tag.contains("FootprintWidth") || tag.getInt("FootprintWidth") == 4;
         drill.read(tag);

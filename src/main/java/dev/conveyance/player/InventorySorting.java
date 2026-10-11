@@ -20,19 +20,23 @@ public final class InventorySorting {
             case "raw_iron", "iron_ore", "iron_ingot" -> { category = 0; family = 3; }
             case "raw_copper", "copper_ore", "copper_ingot" -> { category = 0; family = 4; }
             case "dirt", "grass_block", "sand", "red_sand", "gravel", "clay", "clay_ball" -> { category = 0; family = 5; }
-            case "gear", "copper_wire", "electronic_circuit", "steel_ingot" -> category = 1;
-            case "conveyor", "slope_conveyor", "junction" -> { category = 2; family = 0; }
-            case "burner_inserter", "inserter", "long_inserter" -> { category = 2; family = 1; }
-            case "wood_crate", "iron_crate" -> { category = 2; family = 2; }
+            case "gear", "copper_wire", "electronic_circuit", "steel_ingot", "engine_unit", "advanced_circuit", "plastic_bar", "sulfur", "battery", "solid_fuel" -> category = 1;
+            case "conveyor", "slope_conveyor", "junction", "fast_conveyor", "fast_slope_conveyor", "fast_junction" -> { category = 2; family = 0; }
+            case "burner_inserter", "inserter", "long_inserter", "fast_inserter" -> { category = 2; family = 1; }
+            case "wood_crate", "iron_crate", "steel_crate", "storage_tank" -> { category = 2; family = 2; }
+            case "pipe" -> { category = 2; family = 3; }
             case "burner_miner", "miner" -> { category = 3; family = 0; }
-            case "industrial_furnace" -> { category = 3; family = 1; }
-            case "assembler" -> { category = 3; family = 2; }
+            case "industrial_furnace", "steel_furnace" -> { category = 3; family = 1; }
+            case "assembler", "assembler_2" -> { category = 3; family = 2; }
             case "radar" -> { category = 3; family = 3; }
-            case "generator", "solar_panel" -> { category = 4; family = 0; }
+            case "pumpjack", "oil_refinery", "chemical_plant", "fluid_pump" -> { category = 3; family = 4; }
+            case "generator", "solar_panel", "steam_engine", "boiler", "offshore_pump", "accumulator" -> { category = 4; family = 0; }
             case "power_pole" -> { category = 4; family = 1; }
-            case "red_science_pack", "green_science_pack" -> { category = 5; family = 0; }
+            case "red_science_pack", "green_science_pack", "chemical_science_pack" -> { category = 5; family = 0; }
             case "research_lab" -> { category = 5; family = 1; }
+            case "speed_module", "productivity_module", "efficiency_module" -> { category = 3; family = 5; }
             case "iron_pickaxe" -> category = 6;
+            case "pistol", "submachine_gun", "shotgun", "grenade", "firearm_magazine", "piercing_magazine", "shotgun_shell", "gun_turret", "stone_wall", "repair_pack" -> { category = 6; family = 1; }
             default -> {}
         }
         return new Order(category, family, id.toString());

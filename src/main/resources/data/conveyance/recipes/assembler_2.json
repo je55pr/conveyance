@@ -1,0 +1,27 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "production",
+  "crafting_time": 0.5,
+  "ingredients": [
+    {
+      "item": "conveyance:steel_ingot",
+      "count": 2
+    },
+    {
+      "item": "conveyance:electronic_circuit",
+      "count": 3
+    },
+    {
+      "item": "conveyance:gear",
+      "count": 5
+    },
+    {
+      "item": "conveyance:assembler",
+      "count": 1
+    }
+  ],
+  "result": {
+    "item": "conveyance:assembler_2",
+    "count": 1
+  }
+}

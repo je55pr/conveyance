@@ -137,7 +137,7 @@ public class ConveyorBlock extends FactoryBlock {
     private static void recover(Level level, BlockPos pos) {
         if (!(level.getBlockEntity(pos) instanceof ConveyorEntity belt) || belt.recovered) return;
         belt.recovered = true;
-        ItemStack packed = new ItemStack(FactoryContent.CONVEYOR_ITEM.get());
+        ItemStack packed = new ItemStack(belt.getBlockState().getBlock());
         boolean occupied = false;
         for (int slot = 0; slot < ConveyorEntity.CAPACITY; slot++) occupied |= !belt.item(slot).isEmpty();
         if (occupied) BlockItem.setBlockEntityData(packed, FactoryContent.CONVEYOR_ENTITY.get(), belt.saveWithoutMetadata());

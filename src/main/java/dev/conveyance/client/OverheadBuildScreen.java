@@ -39,12 +39,19 @@ public final class OverheadBuildScreen extends Screen {
     private final Set<BlockPos> placed = new HashSet<>(), transferred = new HashSet<>(), pasted = new HashSet<>();
     private BlockPos floor, breaking;
     private BlockHitResult hit;
+    private Vec3 combatAim;
     private int work;
+    private final java.util.List<Button> overlayButtons = new java.util.ArrayList<>();
     public OverheadBuildScreen() { super(Component.translatable("screen.conveyance.overhead")); }
     @Override protected void init() {
         KeyMapping.releaseAll();
         OverheadView.startPanTick();
         mouseX = width / 2.0; mouseY = height / 2.0;
+        overlayButtons.clear();
+        for (int index = 0; index < FactoryOverlayView.Layer.values().length; index++) {
+            var layer = FactoryOverlayView.Layer.values()[index];
+            overlayButtons.add(addRenderableWidget(Button.builder(Component.empty(), button -> layer.toggle()).bounds(width - 102 + index * 24, 7, 22, 20).build()));
+        }
         addRenderableWidget(Button.builder(Component.literal("−"), b -> changeHeight(-1)).bounds(12, 28, 22, 20).build());
         addRenderableWidget(Button.builder(Component.literal("+"), b -> changeHeight(1)).bounds(122, 28, 22, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("screen.conveyance.base"), b -> { OverheadView.height = 1; resetWork(); }).bounds(149, 28, 68, 20).build());
@@ -75,8 +82,19 @@ public final class OverheadBuildScreen extends Screen {
         Vec3 origin = camera.getPosition();
         double t = (OverheadView.height - origin.y) / ray.y;
         Vec3 point = origin.add(ray.scale(t));
+        combatAim = point.add(0, .35, 0);
         floor = ray.y < -0.0001 && t > 0 ? new BlockPos(net.minecraft.util.Mth.floor(point.x), OverheadView.height, net.minecraft.util.Mth.floor(point.z)) : null;
-        var found = minecraft.level.clip(new ClipContext(origin, origin.add(ray.scale(256)), ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, minecraft.player) {
+        if (floor == null) { hit = null; return; }
+        // Trace only through the world's height, skipping the thousands of air blocks above it.
+        double start = Math.max(0, (minecraft.level.getMaxBuildHeight() + 1.0 - origin.y) / ray.y);
+        double end = (minecraft.level.getMinBuildHeight() - 1.0 - origin.y) / ray.y;
+        Vec3 rayStart = origin.add(ray.scale(start)), rayEnd = origin.add(ray.scale(end));
+        double nearest = Double.POSITIVE_INFINITY;
+        if (dev.conveyance.combat.PistolItem.gun(minecraft.player.getMainHandItem())) for (var enemy : minecraft.level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, new net.minecraft.world.phys.AABB(rayStart, rayEnd).inflate(1), entity -> entity.isAlive() && dev.conveyance.combat.CombatContent.enemy(entity))) {
+            var intersection = enemy.getBoundingBox().inflate(.15).clip(rayStart, rayEnd);
+            if (intersection.isPresent() && origin.distanceToSqr(intersection.get()) < nearest) { nearest = origin.distanceToSqr(intersection.get()); combatAim = enemy.getBoundingBox().getCenter(); }
+        }
+        var found = minecraft.level.clip(new ClipContext(rayStart, rayEnd, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, minecraft.player) {
             @Override public VoxelShape getBlockShape(BlockState state, BlockGetter level, BlockPos pos) {
                 return state.getBlock() instanceof ForestLeavesBlock ? Shapes.empty() : super.getBlockShape(state, level, pos);
             }
@@ -88,7 +106,11 @@ public final class OverheadBuildScreen extends Screen {
         if (OverheadView.transitioning() || floor == null || overUI(mouseX, mouseY) || hasShiftDown()) return null;
         return RemoteBuilding.preview(minecraft.player, floor, facing);
     }
-    BlockPos target() { return OverheadView.transitioning() || hit == null || overUI(mouseX, mouseY) ? null : hit.getBlockPos(); }
+    BlockPos target() {
+        if (OverheadView.transitioning() || overUI(mouseX, mouseY)) return null;
+        BlockPos badge = FactoryOverlayView.target((int) mouseX, (int) mouseY);
+        return badge != null && RemoteBuilding.canReach(minecraft.player, badge) ? badge : hit == null ? null : hit.getBlockPos();
+    }
     private void action(int action, BlockPos pos) {
         RemoteBuildNetwork.action(action, pos, facing, LinkedHotbar.selectedSlot(minecraft.player), hasShiftDown());
     }
@@ -105,16 +127,21 @@ public final class OverheadBuildScreen extends Screen {
         if (OverheadView.transitioning()) { leftHeld = false; rightHeld = false; resetWork(); return; }
         double forward = (keys.contains(GLFW.GLFW_KEY_W) ? 1 : 0) - (keys.contains(GLFW.GLFW_KEY_S) ? 1 : 0);
         double right = (keys.contains(GLFW.GLFW_KEY_D) ? 1 : 0) - (keys.contains(GLFW.GLFW_KEY_A) ? 1 : 0);
-        double yaw = Math.toRadians(OverheadView.YAW), speed = Math.max(OverheadView.MIN_PAN_PER_TICK, OverheadView.distance * OverheadView.PAN_SCALE);
+        double yaw = Math.toRadians(OverheadView.YAW), speed = Math.max(OverheadView.MIN_PAN_PER_TICK, Math.min(OverheadView.MAX_PAN_PER_TICK, OverheadView.distance * OverheadView.PAN_SCALE));
         if (forward != 0 && right != 0) speed /= Math.sqrt(2);
         OverheadView.centerX += (-Math.sin(yaw) * forward - Math.cos(yaw) * right) * speed;
         OverheadView.centerZ += (Math.cos(yaw) * forward - Math.sin(yaw) * right) * speed;
-        OverheadView.clampCenter(); targets();
+        targets();
         BlockPos target = target();
         if (pasteHeld && target != null && FactoryActions.assembler(minecraft.level, target)
                 && pasted.add(FactoryActions.root(minecraft.level, target))) InventoryNetwork.requestAction(target, FactoryActions.PASTE);
         if (rightHeld && target != null) transfer(target);
         if (!leftHeld || overUI(mouseX, mouseY)) { resetWork(); return; }
+        if (dev.conveyance.combat.PistolItem.gun(minecraft.player.getMainHandItem())) {
+            resetWork();
+            if (combatAim != null && minecraft.level.getGameTime() % dev.conveyance.combat.PistolItem.COOLDOWN == 0) dev.conveyance.combat.CombatNetwork.shoot(combatAim);
+            return;
+        }
         boolean building = !hasShiftDown() && minecraft.player.getMainHandItem().getItem() instanceof BlockItem;
         if (building) {
             resetWork(); var plan = plan();
@@ -141,6 +168,7 @@ public final class OverheadBuildScreen extends Screen {
     }
     @Override public void render(GuiGraphics graphics, int x, int y, float partialTick) {
         mouseX = x; mouseY = y; targets();
+        FactoryOverlayView.badges(graphics, this, x, y);
         graphics.fill(6, 5, 301, 54, 0xD91A2530);
         graphics.drawString(font, title, 12, 11, 0xFFE1E8EF);
         graphics.drawCenteredString(font, Component.translatable("screen.conveyance.height", OverheadView.height), 78, 34, 0xFFFFFFFF);
@@ -157,7 +185,10 @@ public final class OverheadBuildScreen extends Screen {
             graphics.drawString(font, label, x + 12, y + 12, inside ? 0xFFFFFFFF : 0xFFFF8888);
         }
         super.render(graphics, x, y, partialTick);
+        FactoryOverlayView.toolbar(graphics, overlayButtons, x, y);
         int slot = hotbarSlot(x, y); if (slot >= 0) HotbarLinksView.tooltip(graphics, slot, x, y);
+        else FactoryOverlayView.tooltip(graphics, x, y);
+        FactoryOverlayView.toolbarTooltip(graphics, overlayButtons, x, y);
     }
     @Override public boolean mouseClicked(double x, double y, int button) {
         mouseX = x; mouseY = y;

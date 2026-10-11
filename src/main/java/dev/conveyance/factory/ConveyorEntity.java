@@ -19,9 +19,11 @@ import net.minecraft.world.phys.Vec3;
 /** Two independent four-item lanes, numbered left/right in the direction of travel. */
 public final class ConveyorEntity extends BlockEntity {
     public static final int LEFT = 0, RIGHT = 1, LANES = 2, POSITIONS = 4, CAPACITY = LANES * POSITIONS;
-    public static final int MOVE_TICKS = 5;
+    public static final double MOVE_TICKS = 8.0 / 3;
+    public double moveTicks() { return getBlockState().is(FactoryContent.FAST_CONVEYOR.get()) || getBlockState().is(FactoryContent.FAST_SLOPE_CONVEYOR.get()) ? MOVE_TICKS / 2 : MOVE_TICKS; }
+    private double movementTime() { return Math.floor((level.getGameTime() + .000001) / moveTicks()) * moveTicks(); }
     private final NonNullList<ItemStack> items = NonNullList.withSize(CAPACITY, ItemStack.EMPTY);
-    private final long[] moveStart = new long[CAPACITY];
+    private final double[] moveStart = new double[CAPACITY];
     private final float[] fromX = new float[CAPACITY], fromY = new float[CAPACITY], fromZ = new float[CAPACITY];
     boolean recovered;
 
@@ -87,7 +89,7 @@ public final class ConveyorEntity extends BlockEntity {
                     belt.fromX[slot] = belt.targetX(slot - 1);
                     belt.fromY[slot] = belt.targetY(slot - 1);
                     belt.fromZ[slot] = belt.targetZ(slot - 1);
-                    belt.moveStart[slot] = level.getGameTime();
+                    belt.moveStart[slot] = belt.movementTime();
                     belt.items.set(slot, belt.items.get(slot - 1));
                     belt.items.set(slot - 1, ItemStack.EMPTY);
                     changed = true;
@@ -146,7 +148,7 @@ public final class ConveyorEntity extends BlockEntity {
             fromZ[slot] = side.getAxis() == Direction.Axis.Z ? 0.5F + side.getStepZ() * 0.5F : targetZ(slot);
         }
         fromY[slot] = position == 0 ? 0.13F + inputY() - worldPosition.getY() : targetY(slot);
-        moveStart[slot] = level.getGameTime();
+        moveStart[slot] = movementTime();
         changed();
         return true;
     }
@@ -176,7 +178,7 @@ public final class ConveyorEntity extends BlockEntity {
         return result;
     }
 
-    private boolean ready(int slot) { return level.getGameTime() - moveStart[slot] >= MOVE_TICKS; }
+    private boolean ready(int slot) { return movementTime() - moveStart[slot] + .000001 >= moveTicks(); }
     public ItemStack item(int slot) { return items.get(slot); }
 
     private float targetX(int slot) {
@@ -203,7 +205,7 @@ public final class ConveyorEntity extends BlockEntity {
     }
     private float targetY(int slot) { float t = (slot % POSITIONS + 0.5F) / POSITIONS; return 0.13F + (slope() ? down() ? 1 - t : t : 0); }
     private float progress(int slot, float partialTick) {
-        return level == null ? 1 : Mth.clamp((level.getGameTime() - moveStart[slot] + partialTick) / MOVE_TICKS, 0, 1);
+        return level == null ? 1 : (float) Mth.clamp((level.getGameTime() - moveStart[slot] + partialTick) / moveTicks(), 0, 1);
     }
     public float renderX(int slot, float partialTick) { return Mth.lerp(progress(slot, partialTick), fromX[slot], targetX(slot)); }
     public float renderZ(int slot, float partialTick) { return Mth.lerp(progress(slot, partialTick), fromZ[slot], targetZ(slot)); }
@@ -235,7 +237,7 @@ public final class ConveyorEntity extends BlockEntity {
         ListTag motion = tag.getList("Motion", Tag.TAG_COMPOUND);
         for (int slot = 0; slot < Math.min(CAPACITY, motion.size()); slot++) {
             CompoundTag entry = motion.getCompound(slot);
-            moveStart[slot] = entry.getLong("Start");
+            moveStart[slot] = entry.getDouble("Start");
             fromX[slot] = entry.getFloat("X");
             fromZ[slot] = entry.getFloat("Z");
             fromY[slot] = entry.contains("Y") ? entry.getFloat("Y") : targetY(slot);
@@ -247,7 +249,7 @@ public final class ConveyorEntity extends BlockEntity {
         ListTag motion = new ListTag();
         for (int slot = 0; slot < CAPACITY; slot++) {
             CompoundTag entry = new CompoundTag();
-            entry.putLong("Start", moveStart[slot]);
+            entry.putDouble("Start", moveStart[slot]);
             entry.putFloat("X", fromX[slot]);
             entry.putFloat("Z", fromZ[slot]);
             entry.putFloat("Y", fromY[slot]);

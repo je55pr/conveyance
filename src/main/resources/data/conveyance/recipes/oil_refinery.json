@@ -1,0 +1,33 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "production",
+  "crafting_time": 8,
+  "machine_only": false,
+  "creative_only": false,
+  "ingredients": [
+    {
+      "item": "conveyance:steel_ingot",
+      "count": 15
+    },
+    {
+      "item": "conveyance:gear",
+      "count": 10
+    },
+    {
+      "item": "minecraft:stone_bricks",
+      "count": 10
+    },
+    {
+      "item": "conveyance:electronic_circuit",
+      "count": 10
+    },
+    {
+      "item": "conveyance:pipe",
+      "count": 10
+    }
+  ],
+  "result": {
+    "item": "conveyance:oil_refinery",
+    "count": 1
+  }
+}

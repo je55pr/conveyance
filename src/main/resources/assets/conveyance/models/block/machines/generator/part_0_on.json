@@ -3,8 +3,8 @@
   "textures": {
     "metal": "minecraft:block/iron_block",
     "dark": "minecraft:block/polished_deepslate",
-    "case": "minecraft:block/light_gray_concrete",
-    "accent": "minecraft:block/orange_concrete",
+    "case": "minecraft:block/iron_block",
+    "accent": "minecraft:block/magenta_concrete",
     "status": "minecraft:block/orange_concrete",
     "stone": "minecraft:block/stone_bricks",
     "pane": "minecraft:block/blue_concrete",

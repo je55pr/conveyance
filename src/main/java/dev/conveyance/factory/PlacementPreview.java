@@ -39,8 +39,10 @@ public final class PlacementPreview {
         var parts = new ArrayList<Part>();
         int foundation = 0;
         if (state.getBlock() instanceof MachineBlock machine) {
-            MachineKind kind = machine.kind; foundation = kind.width * kind.width;
+            MachineKind kind = machine.kind; foundation = kind.width * kind.depth;
             Direction facing = state.getValue(MachineBlock.FACING);
+            if (kind == MachineKind.OFFSHORE_PUMP && !SteamMachine.waterAtIntake(level, root, facing)) valid = false;
+            if (kind.fluids() && !FluidNetwork.canConnect(level, kind == MachineKind.PUMPJACK ? ChemicalMachine.pumpPreview(root, facing) : SteamMachine.previewPorts(root, facing, kind))) valid = false;
             for (int part = 0; part < kind.parts(); part++) parts.add(new Part(MachineBlock.partPosition(root, facing, kind, part), part == 0 ? state
                     : kind.casing().defaultBlockState().setValue(MachineBlock.PART, part).setValue(MachineBlock.FACING, facing)));
         } else if (state.getBlock() instanceof MinerBlock) {
@@ -57,6 +59,9 @@ public final class PlacementPreview {
             foundation = 1;
             for (int part = 0; part < PowerPoleBlock.HEIGHT; part++) parts.add(new Part(root.above(part), part == 0 ? state
                     : FactoryContent.POWER_POLE_PART.get().defaultBlockState().setValue(PowerPoleBlock.PART, part)));
+        } else if (state.getBlock() instanceof StoneWallBlock) {
+            foundation = 1; parts.add(new Part(root, state));
+            parts.add(new Part(root.above(), state.setValue(StoneWallBlock.HALF, net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER)));
         } else parts.add(new Part(root, state));
         for (int index = 0; index < parts.size(); index++) {
             Part part = parts.get(index);

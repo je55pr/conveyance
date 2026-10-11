@@ -1,0 +1,13 @@
+{
+  "parent": "conveyance:block/machines/assembler_2/part_13",
+  "textures": {
+    "metal": "minecraft:block/iron_block",
+    "dark": "minecraft:block/polished_deepslate",
+    "case": "minecraft:block/blue_concrete",
+    "accent": "minecraft:block/iron_block",
+    "status": "minecraft:block/lime_concrete",
+    "stone": "minecraft:block/stone_bricks",
+    "pane": "minecraft:block/blue_concrete",
+    "pane2": "minecraft:block/cyan_concrete"
+  }
+}

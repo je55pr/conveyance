@@ -34,7 +34,7 @@ public final class InserterRenderer<T extends BlockEntity & MovingInserter> impl
         event.registerBlockEntityRenderer(FactoryContent.BURNER_INSERTER_ENTITY.get(), InserterRenderer::new);
     }
     @SubscribeEvent public static void models(ModelEvent.RegisterAdditional event) {
-        for (String name : new String[] {"inserter", "long_inserter", "burner_inserter"})
+        for (String name : new String[] {"inserter", "long_inserter", "burner_inserter", "fast_inserter"})
             event.register(ResourceLocation.fromNamespaceAndPath(Conveyance.MOD_ID, "block/" + name + "_arm"));
     }
     @Override public void render(T arm, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {

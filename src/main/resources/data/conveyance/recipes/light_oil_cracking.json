@@ -1,0 +1,25 @@
+{
+  "type": "conveyance:chemical_processing",
+  "machine": "chemical_plant",
+  "seconds": 2,
+  "items": [],
+  "inputs": [
+    {
+      "channel": 0,
+      "fluid": "light_oil",
+      "amount": 30
+    },
+    {
+      "channel": 1,
+      "fluid": "water",
+      "amount": 30
+    }
+  ],
+  "outputs": [
+    {
+      "channel": 2,
+      "fluid": "petroleum",
+      "amount": 20
+    }
+  ]
+}

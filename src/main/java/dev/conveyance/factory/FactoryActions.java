@@ -20,6 +20,10 @@ public final class FactoryActions {
         return level.getBlockEntity(pos) instanceof Container container ? container : null;
     }
     public static BlockPos root(Level level, BlockPos pos) {
+        if (!level.hasChunkAt(pos)) return pos;
+        var targetState = level.getBlockState(pos);
+        if (targetState.getBlock() instanceof StoneWallBlock) return StoneWallBlock.origin(pos, targetState);
+        if (level.hasChunkAt(pos) && level.getBlockEntity(pos) instanceof WreckEntity wreck) return wreck.root();
         MachineEntity machine = MachineBlock.controller(level, pos);
         if (machine != null) return machine.getBlockPos();
         var miner = MinerBlock.controller(level, pos);
@@ -31,14 +35,17 @@ public final class FactoryActions {
     }
     public static boolean assembler(Level level, BlockPos pos) {
         MachineEntity machine = MachineBlock.controller(level, pos);
-        return machine != null && machine.kind() == MachineKind.ASSEMBLER;
+        return machine != null && machine.kind().assembler();
     }
     private static int fuelSlot(Container container) {
-        if (container instanceof GeneratorEntity || container instanceof BurnerInserterEntity) return 0;
-        if (container instanceof MachineEntity machine) return machine.kind() == MachineKind.FURNACE ? 1 : machine.kind() == MachineKind.BURNER_MINER ? 0 : -1;
+        if (container instanceof BurnerInserterEntity) return 0;
+        if (container instanceof MachineEntity machine) return machine.kind().furnace() ? 1 : machine.kind() == MachineKind.BURNER_MINER || machine.kind() == MachineKind.BOILER || machine.kind() == MachineKind.GUN_TURRET ? 0 : -1;
         return -1;
     }
-    public static boolean fuelTarget(Level level, BlockPos pos, ItemStack held) { return GeneratorEntity.isFuel(held) && fuelSlot(container(level, pos)) >= 0; }
+    public static boolean fuelTarget(Level level, BlockPos pos, ItemStack held) {
+        Container target = container(level, pos);
+        return target instanceof MachineEntity machine && machine.kind() == MachineKind.GUN_TURRET ? dev.conveyance.combat.CombatShots.magazine(held) : GeneratorEntity.isFuel(held) && fuelSlot(target) >= 0;
+    }
     public static boolean collectionTarget(Level level, BlockPos pos) {
         Container container = container(level, pos);
         return container instanceof CrateEntity || container instanceof MachineEntity machine && machine.outputSlot() >= 0;
@@ -51,7 +58,7 @@ public final class FactoryActions {
                 || player.containerMenu != player.inventoryMenu) return;
         MachineEntity machine = MachineBlock.controller(level, pos);
         if (action == COPY) {
-            if (machine == null || machine.kind() != MachineKind.ASSEMBLER || machine.selectedRecipe() == null) return;
+            if (machine == null || !machine.kind().assembler() || machine.selectedRecipe() == null) return;
             var recipe = machine.selectedRecipe();
             player.getPersistentData().putString(CLIPBOARD_KEY, recipe.getId().toString());
             player.displayClientMessage(Component.translatable("message.conveyance.recipe_copied", recipe.getResultItem(level.registryAccess()).getHoverName()), true);
@@ -66,7 +73,8 @@ public final class FactoryActions {
         LinkedHotbar.refreshHand(player);
         ItemStack held = player.getMainHandItem();
         int slot = fuelSlot(container);
-        if (slot < 0 || !GeneratorEntity.isFuel(held)) return;
+        boolean ammunition = container instanceof MachineEntity machine && machine.kind() == MachineKind.GUN_TURRET;
+        if (slot < 0 || !(ammunition ? dev.conveyance.combat.CombatShots.magazine(held) : GeneratorEntity.isFuel(held))) return;
         ItemStack stored = container.getItem(slot);
         if (!stored.isEmpty() && !ItemStack.isSameItemSameTags(stored, held)) return;
         int room = Math.min(container.getMaxStackSize(), held.getMaxStackSize()) - stored.getCount();
@@ -84,7 +92,7 @@ public final class FactoryActions {
         ItemStack fuel = held.copyWithCount(stored.getCount() + moved);
         InventoryAccess.commit(player, extra, inventory);
         container.setItem(slot, fuel); container.setChanged();
-        player.displayClientMessage(Component.translatable("message.conveyance.fuel_loaded", moved, fuel.getHoverName()), true);
+        player.displayClientMessage(Component.translatable(ammunition ? "message.conveyance.ammo_loaded" : "message.conveyance.fuel_loaded", moved, fuel.getHoverName()), true);
     }
     private static void collect(ServerPlayer player, Container container) {
         if (!(container instanceof CrateEntity) && !(container instanceof MachineEntity machine && machine.outputSlot() >= 0)) return;

@@ -1,0 +1,25 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "intermediates",
+  "crafting_time": 6,
+  "machine_only": false,
+  "creative_only": false,
+  "ingredients": [
+    {
+      "item": "conveyance:electronic_circuit",
+      "count": 2
+    },
+    {
+      "item": "conveyance:plastic_bar",
+      "count": 2
+    },
+    {
+      "item": "conveyance:copper_wire",
+      "count": 4
+    }
+  ],
+  "result": {
+    "item": "conveyance:advanced_circuit",
+    "count": 1
+  }
+}

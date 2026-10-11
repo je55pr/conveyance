@@ -1,0 +1,18 @@
+{
+  "type": "conveyance:chemical_processing",
+  "machine": "chemical_plant",
+  "seconds": 1,
+  "items": [],
+  "inputs": [
+    {
+      "channel": 0,
+      "fluid": "petroleum",
+      "amount": 20
+    }
+  ],
+  "outputs": [],
+  "result": {
+    "item": "conveyance:solid_fuel",
+    "count": 1
+  }
+}

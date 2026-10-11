@@ -12,14 +12,21 @@ def write(path, data):
     target.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
 
-def box(start, end, texture):
-    return {"from": start, "to": end,
-            "faces": {side: {"texture": "#" + texture}
-                      for side in ("down", "up", "north", "south", "west", "east")}}
+def box(start, end, texture, uv=None):
+    faces = {side: {"texture": "#" + texture}
+             for side in ("down", "up", "north", "south", "west", "east")}
+    if uv is not None:
+        for face in faces.values():
+            face["uv"] = list(uv)
+    return {"from": start, "to": end, "faces": faces}
 
 for material in ("grass_block", "dirt", "coarse_dirt", "sand", "stone", "andesite", "granite", "bedrock", "iron_ore", "copper_ore", "coal_ore"):
     name = "terrain_" + material
-    write(f"assets/conveyance/models/block/{name}.json", {"parent": f"minecraft:block/{material}"})
+    model = {"parent": f"minecraft:block/{material}"}
+    if material == "grass_block":
+        # The transparent grass overlay must not cover the dirt beneath it.
+        model["render_type"] = "minecraft:cutout_mipped"
+    write(f"assets/conveyance/models/block/{name}.json", model)
     write(f"assets/conveyance/blockstates/{name}.json", {"variants": {"": {"model": f"conveyance:block/{name}"}}})
     write(f"data/conveyance/loot_tables/blocks/{name}.json", {"type": "minecraft:block", "pools": []})
 
@@ -44,7 +51,7 @@ for name, body, frame in (("wood_crate", "acacia_planks", "dark_oak_planks"),
 
 write("assets/conveyance/models/block/tree_log.json", {
     "parent": "minecraft:block/cube_column", "textures": {
-        "side": "minecraft:block/acacia_log", "end": "minecraft:block/acacia_log_top"}})
+        "side": "minecraft:block/oak_log", "end": "minecraft:block/oak_log_top"}})
 leaf = box([0, 0, 0], [16, 16, 16], "leaf")
 for side, face in leaf["faces"].items():
     face.update({"tintindex": 0, "cullface": side})
@@ -275,7 +282,9 @@ write("assets/conveyance/models/block/radar_base.json", {
     "parent": "minecraft:block/block", "textures": {"body": "minecraft:block/polished_deepslate",
     "particle": "minecraft:block/iron_block"}, "elements": [box([0, 0, 0], [16, 4, 16], "body")]})
 for lit in (False, True):
-    dish = box([-16, 10, 1], [32, 12, 15], "dish")
+    # Automatic UVs follow block coordinates and would sample adjacent atlas
+    # sprites on this three-block-wide dish. Keep every face within its sprite.
+    dish = box([-16, 10, 1], [32, 12, 15], "dish", uv=[0, 0, 16, 16])
     dish["rotation"] = {"origin": [8, 10, 8], "axis": "x", "angle": 22.5}
     write(f"assets/conveyance/models/block/radar_head{'_on' if lit else ''}.json", {
         "parent": "minecraft:block/block", "textures": {
@@ -283,7 +292,8 @@ for lit in (False, True):
             "light": "minecraft:block/lime_concrete" if lit else "minecraft:block/red_concrete",
             "particle": "minecraft:block/iron_block"},
         "elements": [box([0, 0, 0], [16, 4, 16], "body"), box([6, 4, 6], [10, 12, 10], "dish"),
-                     dish, box([7, 12, 7], [9, 16, 9], "dish"), box([6, 2, -0.1], [10, 3, 0], "light")]})
+                     dish, box([7, 12, 7], [9, 16, 9], "dish"),
+                     box([6, 2, -0.1], [10, 3, 0], "light", uv=[0, 0, 16, 16])]})
 
 def radar_model(part, lit):
     return f"conveyance:block/radar_head{'_on' if lit else ''}" if part == 4 else "conveyance:block/radar_base"
@@ -463,6 +473,10 @@ for language in ("en_us", "en_gb"):
                  "message.conveyance.radar_status": "Radar: %s/%s chunks revealed | %s%% power | %sx%s blocks",
                  "menu.conveyance.map_tab": "Map",
                  "map.conveyance.center": "Here",
+                 "map.conveyance.reveal_area": "Reveal 2,000 × 2,000",
+                 "map.conveyance.reveal_tooltip": "Reveal roughly 2,000 × 2,000 blocks around your character and zoom out to show the area.",
+                 "map.conveyance.reveal_progress": "Revealing: %s%%",
+                 "map.conveyance.reveal_complete": "Map area revealed.",
                  "map.conveyance.explored": "%s chunks explored",
                  "map.conveyance.controls": "Drag: pan | Scroll: zoom | Cyan: radar range",
                  "map.conveyance.pollution_on": "Pollution: On",
@@ -572,6 +586,15 @@ for language in ("en_us", "en_gb"):
                  "research.conveyance.state.locked": "Locked",
                  "research.conveyance.requires": "Requires: %s",
                  "research.conveyance.unlocks": "Unlocks",
+                 "research.conveyance.cards": "Technologies",
+                 "research.conveyance.prerequisites": "Prerequisites",
+                 "research.conveyance.selected": "Selected",
+                 "research.conveyance.dependents": "Leads to",
+                 "research.conveyance.no_prerequisites": "No prerequisites",
+                 "research.conveyance.no_dependents": "No dependent technologies",
+                 "research.conveyance.legend.unresearchable": "Unavailable",
+                 "research.conveyance.legend.researchable": "Researchable",
+                 "research.conveyance.legend.researched": "Researched",
                  "research.conveyance.unlock_item": "Unlocks: %s",
                  "technology.conveyance.basic_industry.name": "Basic Industry",
                  "technology.conveyance.basic_industry.description": "Starter recipes are available immediately.",
@@ -717,9 +740,32 @@ for language in ("en_us", "en_gb"):
 from generate_machine_models import generate_all
 generate_all(ROOT)
 
+from generate_fluid_assets import generate_all as generate_fluids
+generate_fluids(ROOT)
+
+from generate_power_assets import generate_all as generate_power
+generate_power(ROOT)
+
+from generate_chemistry_assets import generate_all as generate_chemistry
+generate_chemistry(ROOT)
+
+from generate_resource_assets import generate_all as generate_resources
+generate_resources(ROOT)
+
+from generate_combat_assets import generate_all as generate_combat
+generate_combat(ROOT)
+
+from generate_terrain_assets import generate_all as generate_terrain
+generate_terrain(ROOT)
+
 # User-supplied item sprites take precedence over prototype voxel icons. Keep
 # this last so regenerating assets never replaces imported art with a block model.
 for sprite in sorted((ROOT / "assets/conveyance/textures/item").glob("*.png")):
+    if sprite.stem == "generator": continue # Creative items use the magenta metal model.
     write(f"assets/conveyance/models/item/{sprite.stem}.json", {
         "parent": "minecraft:item/generated",
         "textures": {"layer0": f"conveyance:item/{sprite.stem}"}})
+
+# Keep expanded early-game assets consistent after regenerating base assets.
+import runpy
+runpy.run_path(str(Path(__file__).with_name("generate_early_game_assets.py")))

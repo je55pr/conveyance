@@ -1,0 +1,19 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "power",
+  "crafting_time": 0.5,
+  "ingredients": [
+    {
+      "item": "conveyance:gear",
+      "count": 2
+    },
+    {
+      "item": "conveyance:pipe",
+      "count": 3
+    }
+  ],
+  "result": {
+    "item": "conveyance:offshore_pump",
+    "count": 1
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "power",
+  "crafting_time": 0.5,
+  "ingredients": [
+    {
+      "item": "conveyance:industrial_furnace",
+      "count": 1
+    },
+    {
+      "item": "conveyance:pipe",
+      "count": 4
+    }
+  ],
+  "result": {
+    "item": "conveyance:boiler",
+    "count": 1
+  }
+}

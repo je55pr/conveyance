@@ -2,19 +2,19 @@
   "parent": "minecraft:block/block",
   "loader": "forge:obj",
   "model": "conveyance:models/block/machines/generator/part_0.obj",
-  "mtl_override": "conveyance:models/block/machines/machine_materials.mtl",
+  "mtl_override": "conveyance:models/block/machines/creative_materials.mtl",
   "automatic_culling": false,
   "flip_v": true,
   "emissive_ambient": false,
   "textures": {
     "metal": "minecraft:block/iron_block",
     "dark": "minecraft:block/polished_deepslate",
-    "case": "minecraft:block/light_gray_concrete",
-    "accent": "minecraft:block/orange_concrete",
+    "case": "minecraft:block/iron_block",
+    "accent": "minecraft:block/magenta_concrete",
     "status": "minecraft:block/black_concrete",
     "stone": "minecraft:block/stone_bricks",
     "pane": "minecraft:block/blue_concrete",
     "pane2": "minecraft:block/cyan_concrete",
-    "particle": "minecraft:block/light_gray_concrete"
+    "particle": "minecraft:block/magenta_concrete"
   }
 }

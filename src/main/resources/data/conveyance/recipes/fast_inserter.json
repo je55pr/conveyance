@@ -1,0 +1,23 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "logistics",
+  "crafting_time": 0.5,
+  "ingredients": [
+    {
+      "item": "conveyance:electronic_circuit",
+      "count": 2
+    },
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 2
+    },
+    {
+      "item": "conveyance:inserter",
+      "count": 1
+    }
+  ],
+  "result": {
+    "item": "conveyance:fast_inserter",
+    "count": 1
+  }
+}

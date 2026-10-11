@@ -31,9 +31,10 @@ public final class PowerNetwork {
     private static final class Network {
         final List<BlockPos> poles = new ArrayList<>(), generators = new ArrayList<>(), machines = new ArrayList<>();
         final Map<BlockPos, Double> burnerDraw = new HashMap<>();
+        final Map<BlockPos, Double> accumulatorDraw = new HashMap<>();
         final Set<BlockPos> demanding = new HashSet<>();
-        double supply;
-        int demand;
+        final Map<BlockPos, Double> machineDemand = new HashMap<>();
+        double supply, demand;
         double fraction() { return demand == 0 ? 1 : Math.min(1, supply / demand); }
     }
     private record Edge(int first, int second, double distance) {}
@@ -54,20 +55,39 @@ public final class PowerNetwork {
         return network == null || !network.demanding.contains(pos) ? 0 : network.fraction();
     }
     static double generatorLoad(Level level, BlockPos pos) {
+        return generatorDraw(level, pos) / GeneratorEntity.OUTPUT_KW;
+    }
+    public static double accumulatorDraw(Level level, BlockPos pos) {
         Network network = refresh(level).assigned.get(pos);
-        return network == null ? 0 : network.burnerDraw.getOrDefault(pos, 0.0) / GeneratorEntity.OUTPUT_KW;
+        return network == null ? 0 : network.accumulatorDraw.getOrDefault(pos, 0.0);
+    }
+    public static boolean connected(Level level, BlockPos pos) { return refresh(level).assigned.containsKey(pos); }
+    /** Delivered power uses this tick's allocation, even after a machine changes its buffer. */
+    public static double deliveredPower(Level level, BlockPos pos) {
+        Network network = refresh(level).assigned.get(pos);
+        return network == null ? 0 : network.machineDemand.getOrDefault(pos, 0.0) * network.fraction();
+    }
+    public static double satisfaction(Level level, BlockPos pos) {
+        if (level == null || level.isClientSide) return 0;
+        Network network = refresh(level).assigned.get(pos);
+        return network == null || network.supply <= 0 ? 0 : network.fraction();
+    }
+    static double generatorDraw(Level level, BlockPos pos) {
+        Network network = refresh(level).assigned.get(pos);
+        return network == null ? 0 : network.burnerDraw.getOrDefault(pos, 0.0);
     }
 
     public static void showStatus(Level level, BlockPos pos, Player player) {
         Network network = refresh(level).assigned.get(pos);
         Component message = network == null ? Component.translatable("message.conveyance.no_power_coverage")
-                : network.demand == 0 ? Component.translatable("message.conveyance.power_idle", Math.round(network.supply), network.poles.size())
-                : Component.translatable("message.conveyance.power_status", Math.round(network.supply), network.demand,
+                : network.demand == 0 ? Component.translatable("message.conveyance.power_idle", FactoryTooltips.number(network.supply), network.poles.size())
+                : Component.translatable("message.conveyance.power_status", FactoryTooltips.number(network.supply), FactoryTooltips.number(network.demand),
                         Math.round(network.fraction() * 100), network.poles.size(), network.machines.size());
         player.displayClientMessage(message, true);
     }
 
     static void update(Level level) { refresh(level); }
+    static void changed(Level level) { Grid grid = GRIDS.get(level); if (grid != null) grid.statsTime = Long.MIN_VALUE; }
     private static Grid refresh(Level level) {
         Grid grid = GRIDS.computeIfAbsent(level, ignored -> new Grid());
         if (grid.dirty) rebuild(level, grid);
@@ -77,13 +97,17 @@ public final class PowerNetwork {
         for (Network network : grid.networks) {
             network.supply = 0; network.demand = 0;
             network.burnerDraw.clear();
+            network.accumulatorDraw.clear();
             network.demanding.clear();
+            network.machineDemand.clear();
             double freeSupply = 0, burnerSupply = 0;
+            var accumulators = new ArrayList<MachineEntity>();
             for (BlockPos pos : network.generators) {
                 if (level.hasChunkAt(pos) && level.getBlockEntity(pos) instanceof PowerProducer generator) {
+                    if (generator instanceof MachineEntity machine && machine.kind() == MachineKind.ACCUMULATOR) { accumulators.add(machine); continue; }
                     double available = generator.availablePower();
                     network.supply += available;
-                    if (generator instanceof GeneratorEntity) {
+                    if (generator.consumesFuelPower()) {
                         network.burnerDraw.put(pos, available);
                         burnerSupply += available;
                     } else freeSupply += available;
@@ -91,12 +115,22 @@ public final class PowerNetwork {
             }
             for (BlockPos pos : network.machines) {
                 if (level.hasChunkAt(pos) && level.getBlockEntity(pos) instanceof PoweredMachineEntity machine) {
-                    int demand = machine.powerDemand();
+                    double demand = machine.powerDemand();
+                    network.machineDemand.put(pos, demand);
                     network.demand += demand;
                     if (demand > 0) network.demanding.add(pos);
                 }
             }
-            double load = burnerSupply == 0 ? 0 : Math.min(1, Math.max(0, network.demand - freeSupply) / burnerSupply);
+            double deficit = Math.max(0, network.demand - network.supply);
+            double storedSupply = accumulators.stream().mapToDouble(machine -> machine.utility().availablePower()).sum();
+            double discharge = Math.min(deficit, storedSupply);
+            double room = accumulators.stream().mapToDouble(machine -> machine.utility().chargePower()).sum();
+            double charge = Math.min(room, Math.max(0, network.supply - network.demand));
+            for (var accumulator : accumulators) network.accumulatorDraw.put(accumulator.getBlockPos(), discharge > 0
+                    ? discharge * accumulator.utility().availablePower() / storedSupply
+                    : room > 0 ? -charge * accumulator.utility().chargePower() / room : 0);
+            network.supply += discharge;
+            double load = burnerSupply == 0 ? 0 : Math.min(1, Math.max(0, network.demand + charge - freeSupply) / burnerSupply);
             network.burnerDraw.replaceAll((pos, available) -> available * load);
         }
         return grid;

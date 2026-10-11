@@ -13,6 +13,8 @@ public final class ClientInventoryState {
     public static void assemblySelected(int containerId, ResourceLocation recipe, boolean accepted) {
         if (Minecraft.getInstance().screen instanceof ProcessingScreen screen && screen.getMenu().containerId == containerId)
             screen.selectionConfirmed(recipe, accepted);
+        else if (Minecraft.getInstance().screen instanceof ChemicalScreen screen && screen.getMenu().containerId == containerId)
+            screen.selectionConfirmed(recipe, accepted);
     }
     public static void accept(List<ItemStack> items, List<ResourceLocation> ids, int selected, ResourceLocation temporary) {
         var player = Minecraft.getInstance().player;

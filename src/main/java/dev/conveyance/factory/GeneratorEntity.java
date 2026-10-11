@@ -20,43 +20,25 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 public final class GeneratorEntity extends BlockEntity implements Container, MenuProvider, PowerProducer {
-    public static final int OUTPUT_KW = 120, FUEL_TICKS = 600;
-    public static final int MAX_FUEL_TICKS = 750;
-    private NonNullList<ItemStack> items = NonNullList.withSize(1, ItemStack.EMPTY);
+    public static final int OUTPUT_KW = 120;
+    public static final int MAX_FUEL_TICKS = 1000;
+    private NonNullList<ItemStack> items = NonNullList.withSize(0, ItemStack.EMPTY);
     // Remaining fuel energy measured in ticks at the generator's full 120 kW output.
     private double fuelReserve;
-    private int producingKW;
+    private double producingKW;
     boolean recovered;
     public GeneratorEntity(BlockPos pos, BlockState state) { super(FactoryContent.GENERATOR_ENTITY.get(), pos, state); }
 
     public static void tick(Level level, BlockPos pos, BlockState state, GeneratorEntity generator) {
-        double load = PowerNetwork.generatorLoad(level, pos);
-        if (load > generator.fuelReserve + 0.000000001 && isFuel(generator.items.get(0))) {
-            generator.fuelReserve += fuelTicks(generator.items.get(0), level);
-            generator.items.get(0).shrink(1);
-            generator.setChanged();
-        }
-        double used = Math.min(generator.fuelReserve, load);
-        boolean burning = used > 0;
-        PollutionData.emit(level, pos, PollutionRates.GENERATOR * used);
-        generator.producingKW = (int) Math.round(used * OUTPUT_KW);
-        generator.fuelReserve = Math.max(0, generator.fuelReserve - used);
-        if (generator.fuelReserve < 0.000000001) generator.fuelReserve = 0;
-        if (state.getValue(GeneratorBlock.LIT) != burning) level.setBlockAndUpdate(pos, state.setValue(GeneratorBlock.LIT, burning));
-        if (burning && level.getGameTime() % 20 == 0) generator.setChanged();
+        if (!state.getValue(GeneratorBlock.LIT)) level.setBlockAndUpdate(pos, state.setValue(GeneratorBlock.LIT, true));
     }
     @Override public double availablePower() {
-        return isFuel(items.get(0)) ? OUTPUT_KW : Math.min(OUTPUT_KW, fuelReserve * OUTPUT_KW);
+        return Double.POSITIVE_INFINITY;
     }
-    @Override public int outputPower() { return producingKW; }
-    public int fuelRemaining() { return (int) Math.ceil(fuelReserve); }
-    public static int fuelTicks(ItemStack stack) {
-        if (stack.isEmpty()) return 0;
-        return stack.is(FactoryContent.WOOD_ITEM.get()) ? FUEL_TICKS / 2
-                : stack.is(Items.COAL) || stack.is(Items.CHARCOAL) ? FUEL_TICKS : 0;
-    }
-    static boolean isFuel(ItemStack stack) { return fuelTicks(stack) > 0; }
-    static int fuelTicks(ItemStack stack, Level level) { return (int) Math.round(fuelTicks(stack) * ResearchState.fuelDuration(level)); }
+    @Override public double outputPower() { return Double.POSITIVE_INFINITY; }
+    @Override public boolean consumesFuelPower() { return false; }
+    public int fuelRemaining() { return 0; }
+    static boolean isFuel(ItemStack stack) { return FuelEnergy.mj(stack) > 0; }
     @Override public void onLoad() {
         super.onLoad();
         PowerNetwork.register(level, worldPosition, PowerNetwork.Kind.GENERATOR);
@@ -65,7 +47,7 @@ public final class GeneratorEntity extends BlockEntity implements Container, Men
         PowerNetwork.unregister(level, worldPosition, PowerNetwork.Kind.GENERATOR);
         super.setRemoved();
     }
-    @Override public boolean canPlaceItem(int slot, ItemStack stack) { return isFuel(stack); }
+    @Override public boolean canPlaceItem(int slot, ItemStack stack) { return false; }
     @Override public boolean canTakeItem(Container destination, int slot, ItemStack stack) { return false; }
     @Override public int getContainerSize() { return items.size(); }
     @Override public boolean isEmpty() { return items.stream().allMatch(ItemStack::isEmpty); }
@@ -76,19 +58,12 @@ public final class GeneratorEntity extends BlockEntity implements Container, Men
     @Override public boolean stillValid(Player player) { return !isRemoved() && (RemoteBuilding.canReach(player, worldPosition) || player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) < 64); }
     @Override public void clearContent() { items.clear(); setChanged(); }
     @Override public Component getDisplayName() { return Component.translatable("block.conveyance.generator"); }
-    @Override public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) { return new GeneratorMenu(id, inventory, this); }
+    @Override public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) { return null; }
     @Override protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        ContainerHelper.saveAllItems(tag, items);
-        tag.putDouble("FuelReserve", fuelReserve);
-        tag.putInt("BurnTicks", fuelRemaining());
     }
     @Override public void load(CompoundTag tag) {
         super.load(tag);
-        items = NonNullList.withSize(1, ItemStack.EMPTY);
-        ContainerHelper.loadAllItems(tag, items);
-        if (!isFuel(items.get(0))) items.set(0, ItemStack.EMPTY);
-        double saved = tag.contains("FuelReserve") ? tag.getDouble("FuelReserve") : tag.getInt("BurnTicks");
-        fuelReserve = Double.isFinite(saved) ? Math.max(0, Math.min(MAX_FUEL_TICKS, saved)) : 0;
+        items = NonNullList.withSize(0, ItemStack.EMPTY);
     }
 }

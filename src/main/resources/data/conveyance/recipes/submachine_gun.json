@@ -1,0 +1,23 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "combat",
+  "crafting_time": 10,
+  "ingredients": [
+    {
+      "item": "conveyance:gear",
+      "count": 10
+    },
+    {
+      "item": "minecraft:copper_ingot",
+      "count": 5
+    },
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 10
+    }
+  ],
+  "result": {
+    "item": "conveyance:submachine_gun",
+    "count": 1
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "science",
+  "crafting_time": 10,
+  "ingredients": [
+    {
+      "item": "conveyance:piercing_magazine",
+      "count": 1
+    },
+    {
+      "item": "conveyance:grenade",
+      "count": 1
+    },
+    {
+      "item": "conveyance:stone_wall",
+      "count": 2
+    }
+  ],
+  "result": {
+    "item": "conveyance:military_science_pack",
+    "count": 2
+  }
+}

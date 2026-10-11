@@ -87,8 +87,10 @@ public final class RemoteBuilding {
                     && state.hasProperty(ConveyorBlock.FACING))
                 level.setBlockAndUpdate(pos, state.setValue(ConveyorBlock.FACING, state.getValue(ConveyorBlock.FACING).getClockWise()));
         } else if (action == USE) {
+            if (player.getMainHandItem().is(FactoryContent.REPAIR_PACK.get())) { CombatRepair.repair(player, pos); return; }
             BlockPos root = FactoryActions.root(level, pos);
             var entity = level.getBlockEntity(root);
+            if (entity instanceof GeneratorEntity) { PowerNetwork.showStatus(level, root, player); return; }
             if (entity instanceof MenuProvider menu && !(entity instanceof MachineEntity machine && machine.kind() == MachineKind.SOLAR_PANEL)) {
                 player.openMenu(menu); return;
             }

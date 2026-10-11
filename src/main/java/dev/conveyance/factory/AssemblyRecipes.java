@@ -30,7 +30,8 @@ public final class AssemblyRecipes {
         return level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING).stream()
                 .filter(recipe -> recipe.getId().getNamespace().equals(Conveyance.MOD_ID))
                 .filter(recipe -> !recipe.getResultItem(level.registryAccess()).isEmpty() && !ItemPolicy.isDisabled(recipe.getResultItem(level.registryAccess())))
-                .filter(recipe -> !requirements(recipe).isEmpty() && requirements(recipe).size() <= 4)
+                .filter(recipe -> !(recipe instanceof FactoryCraftingRecipe factory) || !factory.creativeOnly())
+                .filter(recipe -> !requirements(recipe).isEmpty() && requirements(recipe).size() <= 5)
                 .sorted(Comparator.comparing(recipe -> recipe.getId().toString())).toList();
     }
     private AssemblyRecipes() {}

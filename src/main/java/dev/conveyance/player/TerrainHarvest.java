@@ -43,7 +43,7 @@ public final class TerrainHarvest {
                 || !dev.conveyance.factory.RemoteBuilding.canReach(player, pos) && pos.distToCenterSqr(player.getEyePosition()) > 36) return;
         long now = player.level().getGameTime();
         long previous = player.getPersistentData().getLong("ConveyanceHarvestTime");
-        if (now - previous < 18) return;
+        if (now - previous < Math.ceil(18 / ResearchState.handHarvestSpeed(player.level()))) return;
         BlockState state = player.level().getBlockState(pos);
         if (!terrain(state)) return;
         player.getPersistentData().putLong("ConveyanceHarvestTime", now);

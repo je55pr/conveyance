@@ -1,0 +1,20 @@
+{
+  "type": "conveyance:chemical_processing",
+  "machine": "oil_refinery",
+  "seconds": 5,
+  "items": [],
+  "inputs": [
+    {
+      "channel": 0,
+      "fluid": "crude_oil",
+      "amount": 100
+    }
+  ],
+  "outputs": [
+    {
+      "channel": 4,
+      "fluid": "petroleum",
+      "amount": 45
+    }
+  ]
+}

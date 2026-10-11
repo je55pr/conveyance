@@ -19,9 +19,11 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class JunctionEntity extends BlockEntity {
     static final Direction[] SIDES = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
     public static final int LANES = 2, PER_LANE = 8, CAPACITY = LANES * PER_LANE;
-    public static final int MOVE_TICKS = 5;
+    public static final double MOVE_TICKS = 8.0 / 3;
+    public double moveTicks() { return getBlockState().is(FactoryContent.FAST_JUNCTION.get()) ? MOVE_TICKS / 2 : MOVE_TICKS; }
+    private double movementTime() { return Math.floor((level.getGameTime() + .000001) / moveTicks()) * moveTicks(); }
     private final NonNullList<ItemStack> items = NonNullList.withSize(CAPACITY, ItemStack.EMPTY);
-    private final long[] moveStart = new long[CAPACITY];
+    private final double[] moveStart = new double[CAPACITY];
     private final float[] fromX = new float[CAPACITY], fromZ = new float[CAPACITY];
     private final int[] inputCursor = new int[LANES], outputCursor = new int[LANES];
     boolean recovered;
@@ -113,7 +115,7 @@ public final class JunctionEntity extends BlockEntity {
         float offset = lane == ConveyorEntity.LEFT ? 0.1875F : -0.1875F;
         fromX[slot] = 0.5F + SIDES[side].getStepX() * 0.5F + left.getStepX() * offset;
         fromZ[slot] = 0.5F + SIDES[side].getStepZ() * 0.5F + left.getStepZ() * offset;
-        moveStart[slot] = level.getGameTime();
+        moveStart[slot] = movementTime();
     }
     public ItemStack peekOutput(Direction outputSide, int lane) {
         int side = index(outputSide);
@@ -136,11 +138,11 @@ public final class JunctionEntity extends BlockEntity {
     private void move(int source, int destination) {
         fromX[destination] = targetX(source);
         fromZ[destination] = targetZ(source);
-        moveStart[destination] = level.getGameTime();
+        moveStart[destination] = movementTime();
         items.set(destination, items.get(source));
         items.set(source, ItemStack.EMPTY);
     }
-    private boolean ready(int slot) { return level.getGameTime() - moveStart[slot] >= MOVE_TICKS; }
+    private boolean ready(int slot) { return movementTime() - moveStart[slot] + .000001 >= moveTicks(); }
     private float targetX(int slot) { return target(slot, true); }
     private float targetZ(int slot) { return target(slot, false); }
     private float target(int slot, boolean xAxis) {
@@ -152,7 +154,7 @@ public final class JunctionEntity extends BlockEntity {
                 + (xAxis ? left.getStepX() : left.getStepZ()) * offset;
     }
     private float progress(int slot, float partialTick) {
-        return level == null ? 1 : Mth.clamp((level.getGameTime() - moveStart[slot] + partialTick) / MOVE_TICKS, 0, 1);
+        return level == null ? 1 : (float) Mth.clamp((level.getGameTime() - moveStart[slot] + partialTick) / moveTicks(), 0, 1);
     }
     public float renderX(int slot, float partialTick) { return Mth.lerp(progress(slot, partialTick), fromX[slot], targetX(slot)); }
     public float renderZ(int slot, float partialTick) { return Mth.lerp(progress(slot, partialTick), fromZ[slot], targetZ(slot)); }
@@ -185,7 +187,7 @@ public final class JunctionEntity extends BlockEntity {
         ListTag motion = tag.getList("Motion", Tag.TAG_COMPOUND);
         for (int slot = 0; slot < Math.min(CAPACITY, motion.size()); slot++) {
             CompoundTag entry = motion.getCompound(slot);
-            moveStart[slot] = entry.getLong("Start"); fromX[slot] = entry.getFloat("X"); fromZ[slot] = entry.getFloat("Z");
+            moveStart[slot] = entry.getDouble("Start"); fromX[slot] = entry.getFloat("X"); fromZ[slot] = entry.getFloat("Z");
         }
     }
     @Override public CompoundTag getUpdateTag() {
@@ -193,7 +195,7 @@ public final class JunctionEntity extends BlockEntity {
         ListTag motion = new ListTag();
         for (int slot = 0; slot < CAPACITY; slot++) {
             CompoundTag entry = new CompoundTag();
-            entry.putLong("Start", moveStart[slot]); entry.putFloat("X", fromX[slot]); entry.putFloat("Z", fromZ[slot]);
+            entry.putDouble("Start", moveStart[slot]); entry.putFloat("X", fromX[slot]); entry.putFloat("Z", fromZ[slot]);
             motion.add(entry);
         }
         tag.put("Motion", motion);

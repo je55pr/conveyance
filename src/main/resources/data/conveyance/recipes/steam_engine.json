@@ -1,0 +1,23 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "power",
+  "crafting_time": 0.5,
+  "ingredients": [
+    {
+      "item": "conveyance:gear",
+      "count": 8
+    },
+    {
+      "item": "conveyance:pipe",
+      "count": 5
+    },
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 10
+    }
+  ],
+  "result": {
+    "item": "conveyance:steam_engine",
+    "count": 1
+  }
+}

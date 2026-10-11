@@ -31,7 +31,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 
 public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerWorkbenchMenu> {
-    private static final int RIGHT = PlayerStorageLayout.MACHINE_X, CELL = 26, ROW_HEIGHT = 42, GRID_Y = 73, CONTENT = PlayerWorkbenchMenu.CONTENT_Y;
+    private static final int RIGHT = PlayerStorageLayout.MACHINE_X, CELL = 26, ROW_HEIGHT = CELL, GRID_Y = 73, CONTENT = PlayerWorkbenchMenu.CONTENT_Y;
     private static final List<String> CATEGORIES = RecipePresentation.CATEGORIES;
     private final List<Button> recipeButtons = new ArrayList<>();
     private final List<Button> categoryButtons = new ArrayList<>();
@@ -41,11 +41,11 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
     private final Map<ResourceLocation, List<ItemStack>> rawCosts = new HashMap<>();
     private List<CraftingRecipe> availableRecipes = List.of();
     private List<ItemStack> cachedItems = List.of();
-    private int cachedMask = -1;
+    private long cachedMask = -1;
     private boolean cachedCreative;
     private String category;
     private EditBox search;
-    private Button inventoryTab, researchTab, mapTab, startResearch, fitGraph, pollutionToggle;
+    private Button inventoryTab, researchTab, mapTab, startResearch, fitGraph, pollutionToggle, revealMap;
     private final ResearchGraphView graph = new ResearchGraphView();
     private final WorldMapView map = new WorldMapView();
     private boolean researchView, mapView;
@@ -87,6 +87,14 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
             map.togglePollution(); button.setMessage(map.pollutionLabel());
         }).bounds(leftPos + 48, topPos + CONTENT + 3, 88, 16).build());
         pollutionToggle.setTooltip(Tooltip.create(Component.translatable("map.conveyance.pollution_toggle")));
+        revealMap = addRenderableWidget(Button.builder(Component.translatable("map.conveyance.reveal_area"), button -> {
+            if (minecraft.player != null && minecraft.player.isCreative()) {
+                dev.conveyance.map.MapNetwork.reveal();
+                map.showArea(minecraft.player.getX(), minecraft.player.getZ(), dev.conveyance.map.CreativeMapReveal.SIDE);
+                refresh();
+            }
+        }).bounds(leftPos + 144, topPos + CONTENT + 3, 116, 16).build());
+        revealMap.setTooltip(Tooltip.create(Component.translatable("map.conveyance.reveal_tooltip")));
         int categoryWidth = (panelWidth - 16) / CATEGORIES.size();
         for (int index = 0; index < CATEGORIES.size(); index++) {
             String selected = CATEGORIES.get(index);
@@ -108,7 +116,7 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
             recipeButtons.add(addRenderableWidget(Button.builder(Component.empty(), button -> {
                 CraftingRecipe recipe = recipeAt(index, grouped());
                 if (recipe != null) InventoryNetwork.requestCraft(recipe.getId(), hasShiftDown());
-            }).bounds(leftPos + RIGHT + 8 + cell % columns * CELL, topPos + CONTENT + GRID_Y + cell / columns * ROW_HEIGHT + 12, 24, 24).build()));
+            }).bounds(leftPos + RIGHT + 8 + cell % columns * CELL, topPos + CONTENT + GRID_Y + cell / columns * ROW_HEIGHT, 24, 24).build()));
         }
         startResearch = addRenderableWidget(Button.builder(Component.translatable("research.conveyance.start"), button -> research(graph.inspected()))
                 .bounds(leftPos + imageWidth - 108, topPos + imageHeight - 24, 100, 18).build());
@@ -155,7 +163,7 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
     }
     private void updateAmounts() {
         var current = items();
-        int mask = menu.researchMask();
+        long mask = menu.researchMask();
         boolean creative = minecraft.player.isCreative();
         boolean changed = mask != cachedMask || creative != cachedCreative || current.size() != cachedItems.size();
         if (!changed) for (int i = 0; i < current.size(); i++) if (!ItemStack.matches(current.get(i), cachedItems.get(i))) { changed = true; break; }
@@ -192,11 +200,14 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
         }
         fitGraph.visible = researchView || mapView;
         pollutionToggle.visible = mapView;
+        revealMap.visible = mapView && minecraft.player.isCreative();
+        revealMap.active = !dev.conveyance.map.WorldMapData.revealing();
+        revealMap.setMessage(Component.translatable(dev.conveyance.map.WorldMapData.revealing() ? "map.conveyance.reveal_progress" : "map.conveyance.reveal_area", dev.conveyance.map.WorldMapData.revealPercent()));
         fitGraph.setMessage(Component.translatable(mapView ? "map.conveyance.center" : "menu.conveyance.tree_fit"));
         startResearch.visible = researchView;
         Technology tech = Technology.byId(graph.inspected());
-        startResearch.active = tech != null && tech.available(menu.researchMask()) && ResearchState.selected(minecraft.level) != tech.id;
-        String action = tech == null || tech.complete(menu.researchMask()) ? "completed" : ResearchState.selected(minecraft.level) == tech.id ? "active" : !tech.available(menu.researchMask()) ? "locked" : "start";
+        startResearch.active = tech != null && !tech.triggered() && tech.available(menu.researchMask()) && ResearchState.selected(minecraft.level) != tech.id;
+        String action = tech != null && tech.triggered() && !tech.complete(menu.researchMask()) ? "trigger_button" : tech == null || tech.complete(menu.researchMask()) ? "completed" : ResearchState.selected(minecraft.level) == tech.id ? "active" : !tech.available(menu.researchMask()) ? "locked" : "start";
         startResearch.setMessage(Component.translatable("research.conveyance." + action));
         var groups = grouped();
         scroll = Math.min(scroll, maxScroll(groups.size()));
@@ -248,12 +259,10 @@ public final class PlayerWorkbenchScreen extends AbstractContainerScreen<PlayerW
         if (researchView) {
             graph.render(graphics, leftPos, topPos + CONTENT, imageWidth, mouseX, mouseY);
             startResearch.render(graphics, mouseX, mouseY, partialTick);
+            graph.renderTooltip(graphics, leftPos, topPos + CONTENT, imageWidth, mouseX, mouseY);
             return;
         }
         var groups = grouped();
-        for (int row = 0; row < rows && scroll + row < groups.size(); row++)
-            graphics.drawString(font, Component.translatable("menu.conveyance.group." + groups.get(scroll + row).family()),
-                    leftPos + RIGHT + 8, topPos + CONTENT + GRID_Y + row * ROW_HEIGHT, FactoryWindowStyle.MUTED, false);
         for (int i = 0; i < categoryButtons.size(); i++) {
             Button button = categoryButtons.get(i);
             boolean selected = CATEGORIES.get(i).equals(category);

@@ -35,6 +35,7 @@ public final class InserterBlock extends FactoryBlock {
     public InserterBlock(Properties properties, boolean burner) { this(properties, burner, 1); }
     public InserterBlock(Properties properties, int reach) { this(properties, false, reach); }
     private InserterBlock(Properties properties, boolean burner, int reach) { super(properties); this.burner = burner; this.reach = reach; registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH)); }
+    public boolean fast() { return this == FactoryContent.FAST_INSERTER.get(); }
     public int reach() { return reach; }
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(FACING); }
     @Override public BlockState getStateForPlacement(BlockPlaceContext context) { return defaultBlockState().setValue(FACING, context.getHorizontalDirection()); }

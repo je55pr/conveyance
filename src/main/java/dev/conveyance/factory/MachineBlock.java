@@ -30,7 +30,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 public final class MachineBlock extends FactoryBlock {
-    public static final IntegerProperty PART = IntegerProperty.create("part", 0, 17);
+    public static final IntegerProperty PART = IntegerProperty.create("part", 0, 49);
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
     public final MachineKind kind;
@@ -55,16 +55,19 @@ public final class MachineBlock extends FactoryBlock {
         return state.getBlock() instanceof MachinePartBlock block ? block.kind : null;
     }
     static BlockPos partPosition(BlockPos root, Direction facing, MachineKind kind, int part) {
-        int x = part % kind.width, z = part / kind.width % kind.width, y = part / (kind.width * kind.width);
+        int x = part % kind.width, z = part / kind.width % kind.depth, y = part / (kind.width * kind.depth);
+        return localPosition(root, facing, x, y, z);
+    }
+    static BlockPos localPosition(BlockPos root, Direction facing, int x, int y, int z) {
         return root.offset(rotateX(x, z, facing), y, rotateZ(x, z, facing));
     }
     private static int rotateX(int x, int z, Direction facing) { return switch (facing) { case EAST -> -z; case SOUTH -> -x; case WEST -> z; default -> x; }; }
     private static int rotateZ(int x, int z, Direction facing) { return switch (facing) { case EAST -> x; case SOUTH -> -z; case WEST -> -x; default -> z; }; }
     private static BlockPos origin(BlockPos pos, BlockState state) {
         MachineKind kind = kind(state);
-        int part = state.getValue(PART), x = part % kind.width, z = part / kind.width % kind.width;
+        int part = state.getValue(PART), x = part % kind.width, z = part / kind.width % kind.depth;
         Direction facing = state.getValue(FACING);
-        return pos.offset(-rotateX(x, z, facing), -part / (kind.width * kind.width), -rotateZ(x, z, facing));
+        return pos.offset(-rotateX(x, z, facing), -part / (kind.width * kind.depth), -rotateZ(x, z, facing));
     }
     static MachineEntity controller(Level level, BlockPos pos) {
         if (!level.hasChunkAt(pos)) return null;
@@ -77,12 +80,14 @@ public final class MachineBlock extends FactoryBlock {
     static InteractionResult interact(Level level, BlockPos pos, Player player, InteractionHand hand) {
         if (player.getItemInHand(hand).getItem() instanceof BlockItem) return InteractionResult.PASS;
         MachineEntity machine = controller(level, pos);
+        if (MachineModules.interact(machine, player, hand)) return InteractionResult.sidedSuccess(level.isClientSide);
         if (!level.isClientSide && machine != null) {
+            if (machine.kind().utility()) { machine.utility().showStatus(player); return InteractionResult.SUCCESS; }
             if (machine.kind() == MachineKind.SOLAR_PANEL) {
-                player.displayClientMessage(Component.translatable("message.conveyance.solar_output", machine.outputPower()), true);
+                player.displayClientMessage(Component.translatable("message.conveyance.solar_output", FactoryTooltips.number(machine.outputPower())), true);
                 return InteractionResult.SUCCESS;
             }
-            if (machine.kind() == MachineKind.ASSEMBLER || machine.kind() == MachineKind.LAB) PowerNetwork.showStatus(level, machine.getBlockPos(), player);
+            if (machine.kind().assembler() || machine.kind() == MachineKind.LAB) PowerNetwork.showStatus(level, machine.getBlockPos(), player);
             player.openMenu(machine);
         }
         return InteractionResult.sidedSuccess(level.isClientSide);

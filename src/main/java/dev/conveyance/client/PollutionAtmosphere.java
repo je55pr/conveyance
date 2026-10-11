@@ -22,7 +22,7 @@ public final class PollutionAtmosphere {
         if (event.phase != TickEvent.Phase.END) return;
         var game = Minecraft.getInstance();
         if (game.level == null || game.level.dimension() != Level.OVERWORLD) { strength = 0; return; }
-        var pos = game.gameRenderer.getMainCamera().getPosition();
+        var pos = OverheadView.terrainCentre(game.gameRenderer.getMainCamera().getPosition());
         double amount = PollutionData.clientSample(pos.x, pos.z);
         double target = Math.max(0, Math.min(1, (Math.log1p(amount) - Math.log1p(5)) / (Math.log1p(80) - Math.log1p(5))));
         strength += (target - strength) * 0.08F;
@@ -38,13 +38,17 @@ public final class PollutionAtmosphere {
         event.setRed((float) color.x); event.setGreen((float) color.y); event.setBlue((float) color.z);
     }
     @SubscribeEvent public static void fog(ViewportEvent.RenderFog event) {
-        if (strength < 0.001F || event.getType() != FogType.NONE) return;
-        float overhead = (float) (OverheadView.overheadFraction() * OverheadView.distance);
-        float original = event.getFarPlaneDistance(), target = Math.min(original, 40 + overhead);
+        if (event.getType() != FogType.NONE) return;
+        boolean distant = DistantTerrainRenderer.active();
+        if (!distant && strength < 0.001F && !OverheadView.controlsCamera()) return;
+        float overhead = OverheadView.cameraDistance();
+        float original = (distant ? DistantTerrainRenderer.DISTANCE : event.getFarPlaneDistance()) + overhead;
+        float target = Math.min(original, 40 + overhead);
         float far = original + (target - original) * strength;
         event.setFarPlaneDistance(far);
-        event.setNearPlaneDistance(Math.max(overhead * 0.9F, Math.min(event.getNearPlaneDistance(), far * (0.75F - 0.6F * strength))));
-        event.setFogShape(FogShape.SPHERE);
+        float near = distant ? original * .94F : event.getNearPlaneDistance();
+        event.setNearPlaneDistance(Math.max(overhead * 0.9F, Math.min(near, far * (strength < .001F ? .94F : .75F - .6F * strength))));
+        event.setFogShape(strength < .001F ? FogShape.CYLINDER : FogShape.SPHERE);
         event.setCanceled(true);
     }
     @SubscribeEvent public static void logout(ClientPlayerNetworkEvent.LoggingOut event) { strength = 0; PollutionData.resetClient(); }

@@ -46,6 +46,7 @@ public final class BaselineRules {
             // spawners and buckets. Do not touch chunks inside this event.
             event.setCanceled(true);
         } else if (entity instanceof ItemEntity drop && !event.getLevel().isClientSide) {
+            if (dev.conveyance.factory.BuildingDamage.replacing()) { event.setCanceled(true); return; }
             ItemPolicy.sanitize(drop.getItem());
             if (drop.getItem().isEmpty()) {
                 event.setCanceled(true);

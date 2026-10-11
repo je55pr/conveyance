@@ -29,8 +29,8 @@ public final class OverheadView {
     public static final float YAW = 180, PITCH = 68;
     public static final double FOV = 50;
     static final double ZOOM_STEP = 0.88;
-    static final double MIN_DISTANCE = 4, MAX_DISTANCE = 110, DEFAULT_DISTANCE = 48 * Math.pow(ZOOM_STEP, 8);
-    static final double PAN_SCALE = 0.04, MIN_PAN_PER_TICK = 0.6;
+    static final double MIN_DISTANCE = 4, MAX_DISTANCE = 4096, DEFAULT_DISTANCE = 48 * Math.pow(ZOOM_STEP, 8);
+    static final double PAN_SCALE = 0.04, MIN_PAN_PER_TICK = 0.6, MAX_PAN_PER_TICK = 4.4;
     private static final long TRANSITION_NANOS = 300_000_000L;
     public record CameraPose(Vec3 position, float yaw, float pitch) {}
     private record Transition(CameraPose from, double fov, double overhead, long start, Level level) {}
@@ -67,6 +67,12 @@ public final class OverheadView {
     public static double overheadFraction() {
         if (!validWorld()) return 0;
         return transitioning() ? Mth.lerp(easedProgress(), transition.overhead, active() ? 1 : 0) : active() ? 1 : 0;
+    }
+    public static float cameraDistance() { return (float) (overheadFraction() * distance); }
+    /** Keep the distant terrain around the view's ground focus as the angled camera rises. */
+    public static Vec3 terrainCentre(Vec3 camera) {
+        double fraction = overheadFraction();
+        return new Vec3(Mth.lerp(fraction, camera.x, centerX), Mth.lerp(fraction, camera.y, height), Mth.lerp(fraction, camera.z, centerZ));
     }
     private static void beginTransition() {
         var game = Minecraft.getInstance(); var camera = game.gameRenderer.getMainCamera();
@@ -110,22 +116,12 @@ public final class OverheadView {
         if (game.player != null) { RemoteBuilding.toggle(game.player, false); RemoteBuildNetwork.toggle(false); }
         game.setScreen(null);
     }
-    static void clampCenter() {
-        var player = Minecraft.getInstance().player;
-        if (player == null) return;
-        int x = player.chunkPosition().x * 16, z = player.chunkPosition().z * 16;
-        centerX = Math.max(x - 32, Math.min(x + 48, centerX));
-        centerZ = Math.max(z - 32, Math.min(z + 48, centerZ));
-    }
     @SubscribeEvent public static void tick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         var game = Minecraft.getInstance();
         if (!validWorld()) { enabled = false; transition = null; if (game.player != null) RemoteBuilding.toggle(game.player, false); }
         if (transition != null && (!transitioning() || transition.level != game.level)) transition = null;
         while (Keys.TOGGLE.consumeClick()) if (game.screen == null) { if (active()) leave(); else enter(); }
-    }
-    @SubscribeEvent public static void opening(ScreenEvent.Opening event) {
-        if (active() && event.getNewScreen() == null) event.setNewScreen(new OverheadBuildScreen());
     }
     @SubscribeEvent public static void key(ScreenEvent.KeyPressed.Pre event) {
         if (!active() || !(event.getScreen() instanceof AbstractContainerScreen<?> screen)

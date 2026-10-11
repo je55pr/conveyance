@@ -1,0 +1,23 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "combat",
+  "crafting_time": 6,
+  "ingredients": [
+    {
+      "item": "conveyance:firearm_magazine",
+      "count": 2
+    },
+    {
+      "item": "conveyance:steel_ingot",
+      "count": 1
+    },
+    {
+      "item": "minecraft:copper_ingot",
+      "count": 2
+    }
+  ],
+  "result": {
+    "item": "conveyance:piercing_magazine",
+    "count": 1
+  }
+}

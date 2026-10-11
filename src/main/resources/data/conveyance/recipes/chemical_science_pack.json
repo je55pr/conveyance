@@ -1,0 +1,25 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "science",
+  "crafting_time": 24,
+  "machine_only": false,
+  "creative_only": false,
+  "ingredients": [
+    {
+      "item": "conveyance:engine_unit",
+      "count": 2
+    },
+    {
+      "item": "conveyance:advanced_circuit",
+      "count": 3
+    },
+    {
+      "item": "conveyance:sulfur",
+      "count": 1
+    }
+  ],
+  "result": {
+    "item": "conveyance:chemical_science_pack",
+    "count": 2
+  }
+}

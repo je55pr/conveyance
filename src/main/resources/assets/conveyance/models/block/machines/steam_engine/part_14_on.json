@@ -1,0 +1,13 @@
+{
+  "parent": "conveyance:block/machines/steam_engine/part_14",
+  "textures": {
+    "metal": "minecraft:block/iron_block",
+    "dark": "minecraft:block/polished_deepslate",
+    "case": "minecraft:block/gray_concrete",
+    "accent": "minecraft:block/orange_concrete",
+    "status": "minecraft:block/lime_concrete",
+    "stone": "minecraft:block/stone_bricks",
+    "pane": "minecraft:block/blue_concrete",
+    "pane2": "minecraft:block/cyan_concrete"
+  }
+}

@@ -10,14 +10,19 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public final class MapPalette {
     public static final byte UNKNOWN = 0, LAND = 1, DRY = 2, WATER = 3, SHORE = 4, ROCK = 5,
-            RIDGE = 6, FOREST = 7, IRON = 8, COPPER = 9, COAL = 10, STONE = 11, FACTORY = 12;
+            RIDGE = 6, FOREST = 7, IRON = 8, COPPER = 9, COAL = 10, STONE = 11, FACTORY = 12, OIL = 13, URANIUM = 14, NEST = 15;
     private static final int[] COLORS = {0x0C131B, 0xA2A46A, 0xA38C60, 0x467CA9, 0xC8BD91,
-            0x828D96, 0xA17665, 0x465E36, 0xBCCBD4, 0xE29450, 0x30333C, 0xAAAAA0, 0xA1B7BA};
+            0x828D96, 0xA17665, 0x465E36, 0x6DD5FF, 0xFF993A, 0x000000, 0xFFF0B0, 0xA1B7BA, 0xFF22FF, 0x9FFF32, 0xFF1818};
     private static final String[] NAMES = {"unknown", "land", "dry", "water", "shore", "rock", "ridge",
-            "forest", "iron", "copper", "coal", "stone", "factory"};
+            "forest", "iron", "copper", "coal", "stone", "factory", "oil", "uranium", "nest"};
     public static int color(int value) { return COLORS[value >= 0 && value < COLORS.length ? value : 0]; }
+    public static int color(int value, long seed, double x, double z) {
+        if (value == LAND || value == DRY) return dev.conveyance.world.SurfacePalette.base(seed, x, z);
+        if (value == FOREST) return dev.conveyance.world.SurfacePalette.mix(dev.conveyance.world.SurfacePalette.base(seed, x, z), 0x385B34, .65);
+        return color(value);
+    }
     public static String name(int value) { return NAMES[value >= 0 && value < NAMES.length ? value : 0]; }
-    public static boolean isResource(int value) { return value >= IRON && value <= STONE; }
+    public static boolean isResource(int value) { return value >= IRON && value <= STONE || value == OIL || value == URANIUM; }
     public static int size() { return COLORS.length; }
     public static byte overview(byte[] pixels, int x, int z, int size) {
         if (size == 1) return pixels[z * 16 + x];
@@ -34,13 +39,15 @@ public final class MapPalette {
         int resource = IRON;
         for (int value = IRON + 1; value <= STONE; value++) if (counts[offset + value] > counts[offset + resource]) resource = value;
         if (counts[offset + resource] > 0) return (byte) resource;
+        if (counts[offset + OIL] > 0) return OIL;
+        if (counts[offset + URANIUM] > 0) return URANIUM;
         if (counts[offset + FACTORY] > 0) return FACTORY;
         int most = UNKNOWN;
         for (int value = 1; value < COLORS.length; value++) if (counts[offset + value] > counts[offset + most]) most = value;
         return (byte) most;
     }
     public static byte ore(TerracedTerrain.Ore ore) { return switch (ore) {
-        case IRON -> IRON; case COPPER -> COPPER; case COAL -> COAL; case STONE -> STONE; default -> UNKNOWN;
+        case IRON -> IRON; case COPPER -> COPPER; case COAL -> COAL; case STONE -> STONE; case URANIUM -> URANIUM; default -> UNKNOWN;
     }; }
     public static byte terrain(TerracedTerrain.Cell cell, TerracedTerrain.Ore ore, boolean forest) {
         if (cell.water()) return WATER;
@@ -51,6 +58,8 @@ public final class MapPalette {
         return resource != UNKNOWN ? resource : forest ? FOREST : LAND;
     }
     public static byte resource(BlockState state) {
+        if (state.is(FactoryContent.OIL_DEPOSIT.get())) return OIL;
+        if (state.is(FactoryContent.URANIUM_ORE.get())) return URANIUM;
         state = TerrainBlocks.material(state);
         return state.is(BlockTags.IRON_ORES) ? IRON : state.is(BlockTags.COPPER_ORES) ? COPPER
                 : state.is(BlockTags.COAL_ORES) ? COAL : UNKNOWN;

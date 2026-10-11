@@ -1,0 +1,23 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "production",
+  "crafting_time": 2,
+  "ingredients": [
+    {
+      "item": "conveyance:engine_unit",
+      "count": 1
+    },
+    {
+      "item": "conveyance:steel_ingot",
+      "count": 1
+    },
+    {
+      "item": "conveyance:pipe",
+      "count": 1
+    }
+  ],
+  "result": {
+    "item": "conveyance:fluid_pump",
+    "count": 1
+  }
+}

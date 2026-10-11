@@ -1,0 +1,13 @@
+{
+  "parent": "conveyance:block/machines/oil_refinery/part_48",
+  "textures": {
+    "metal": "minecraft:block/iron_block",
+    "dark": "minecraft:block/polished_deepslate",
+    "case": "minecraft:block/light_gray_concrete",
+    "accent": "minecraft:block/orange_concrete",
+    "status": "minecraft:block/lime_concrete",
+    "stone": "minecraft:block/stone_bricks",
+    "pane": "minecraft:block/blue_concrete",
+    "pane2": "minecraft:block/cyan_concrete"
+  }
+}

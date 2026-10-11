@@ -1,0 +1,19 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "production",
+  "crafting_time": 15,
+  "ingredients": [
+    {
+      "item": "conveyance:advanced_circuit",
+      "count": 5
+    },
+    {
+      "item": "conveyance:electronic_circuit",
+      "count": 5
+    }
+  ],
+  "result": {
+    "item": "conveyance:productivity_module",
+    "count": 1
+  }
+}

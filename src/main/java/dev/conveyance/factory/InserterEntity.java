@@ -10,20 +10,28 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 public final class InserterEntity extends PoweredMachineEntity implements MovingInserter {
-    public static final int DEMAND_KW = 15, SHORT_CYCLE_TICKS = 10, LONG_CYCLE_TICKS = 20;
+    public static final int SHORT_CYCLE_TICKS = 24, LONG_CYCLE_TICKS = 17;
     private ItemStack held = ItemStack.EMPTY;
     private boolean returning;
     private final InserterMotion motion = new InserterMotion(this);
     public ItemStack heldItem() { return held.copy(); }
     @Override public InserterMotion motion() { return motion; }
-    private int cycleTicks() { return ((InserterBlock) getBlockState().getBlock()).reach() == 2 ? LONG_CYCLE_TICKS : SHORT_CYCLE_TICKS; }
+    private double cycleTicks() { return ((InserterBlock) getBlockState().getBlock()).fast() ? 26.0 / 3 : ((InserterBlock) getBlockState().getBlock()).reach() == 2 ? 50.0 / 3 : SHORT_CYCLE_TICKS; }
     public InserterEntity(BlockPos pos, BlockState state) {
         super(((InserterBlock) state.getBlock()).reach() == 2 ? FactoryContent.LONG_INSERTER_ENTITY.get() : FactoryContent.INSERTER_ENTITY.get(), pos, state,
-                DEMAND_KW, ((InserterBlock) state.getBlock()).reach() == 2 ? LONG_CYCLE_TICKS : SHORT_CYCLE_TICKS);
+                InserterPower.peakKW(((InserterBlock) state.getBlock()).reach(), false) - InserterPower.IDLE_KW,
+                ((InserterBlock) state.getBlock()).reach() == 2 ? LONG_CYCLE_TICKS : SHORT_CYCLE_TICKS);
+    }
+    @Override protected double idlePower() { return ((InserterBlock) getBlockState().getBlock()).fast() ? .5 : InserterPower.IDLE_KW; }
+    @Override protected double workingPower() {
+        if (currentWork() >= (returning ? cycleTicks() : cycleTicks() / 2.0)) return 0;
+        if (((InserterBlock) getBlockState().getBlock()).fast()) return InserterPower.fastMovementKW(currentWork(), cycleTicks());
+        return InserterPower.movementKW(((InserterBlock) getBlockState().getBlock()).reach(), false,
+                currentWork(), cycleTicks(), level == null ? 1 : dev.conveyance.player.ResearchState.inserterSpeed(level));
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, InserterEntity inserter) {
-        int cycle = inserter.cycleTicks();
+        double cycle = inserter.cycleTicks();
         if (!inserter.hasWork() || PowerNetwork.fraction(level, pos) <= 0) {
             inserter.motion.capture(inserter.held.isEmpty() && !inserter.returning ? 0 : inserter.currentWork() / cycle, 0, inserter.returning, false);
             return;
@@ -32,21 +40,25 @@ public final class InserterEntity extends PoweredMachineEntity implements Moving
         int reach = ((InserterBlock) state.getBlock()).reach();
         BlockPos from = pos.relative(facing.getOpposite(), reach), to = pos.relative(facing, reach);
         boolean changed = false;
-        if (inserter.held.isEmpty() && !inserter.returning) {
-            ItemStack candidate = ItemTransfer.peekForOutput(level, from, to, facing);
-            if (candidate.isEmpty()) { inserter.motion.capture(0, 0, false, false); return; }
-            inserter.held = ItemTransfer.takeSource(level, from, facing, candidate);
-            if (inserter.held.isEmpty()) { inserter.motion.capture(0, 0, false, false); return; }
-            changed = true;
-        }
-        double limit = inserter.returning ? cycle : cycle / 2.0;
-        double rate = inserter.advanceInserterWork();
-        if (inserter.currentWork() + 0.000001 >= limit) {
+        double budget = PowerNetwork.fraction(level, pos), rate = 0;
+        // Carry fractional ticks through the pickup/drop/return boundaries.
+        for (int transition = 0; transition < 4 && budget > .000001; transition++) {
+            if (inserter.held.isEmpty() && !inserter.returning) {
+                ItemStack candidate = ItemTransfer.peekForOutput(level, from, to, facing);
+                if (candidate.isEmpty()) break;
+                inserter.held = ItemTransfer.takeSource(level, from, facing, candidate);
+                if (inserter.held.isEmpty()) break;
+                changed = true;
+            }
+            double limit = inserter.returning ? cycle : cycle / 2;
+            double step = Math.min(budget, Math.max(0, limit - inserter.currentWork()));
+            inserter.setWork(inserter.currentWork() + step); budget -= step; rate += step;
+            if (inserter.currentWork() + .000001 < limit) break;
             if (inserter.returning) {
-                inserter.returning = false; inserter.setWork(inserter.currentWork() - cycle); rate = 0; changed = true;
+                inserter.returning = false; inserter.setWork(0); changed = true;
             } else if (ItemTransfer.inserterOutput(level, to, facing.getOpposite(), inserter.held)) {
                 inserter.held = ItemStack.EMPTY; inserter.returning = true; changed = true;
-            } else { inserter.setWork(limit); rate = 0; }
+            } else { rate = 0; break; }
         }
         inserter.motion.capture(inserter.held.isEmpty() && !inserter.returning ? 0 : inserter.currentWork() / cycle, rate / cycle, inserter.returning, changed);
     }

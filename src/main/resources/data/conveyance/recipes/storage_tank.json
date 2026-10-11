@@ -1,0 +1,19 @@
+{
+  "type": "conveyance:factory_crafting",
+  "tab": "production",
+  "crafting_time": 3,
+  "ingredients": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 20
+    },
+    {
+      "item": "conveyance:steel_ingot",
+      "count": 5
+    }
+  ],
+  "result": {
+    "item": "conveyance:storage_tank",
+    "count": 1
+  }
+}

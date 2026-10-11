@@ -39,7 +39,6 @@ public final class GeneratorBlock extends FactoryBlock {
         if (player.getItemInHand(hand).getItem() instanceof BlockItem) return InteractionResult.PASS;
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof GeneratorEntity generator) {
             PowerNetwork.showStatus(level, pos, player);
-            player.openMenu(generator);
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }

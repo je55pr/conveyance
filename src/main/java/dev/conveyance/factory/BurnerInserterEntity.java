@@ -25,20 +25,21 @@ public final class BurnerInserterEntity extends BlockEntity implements Container
     public static final int CYCLE_TICKS = 20;
     private ItemStack fuel = ItemStack.EMPTY, held = ItemStack.EMPTY;
     public ItemStack heldItem() { return held.copy(); }
-    private int burnTicks;
+    private final BurnerFuel burner = new BurnerFuel(0.5);
     private double work;
     private boolean returning;
     private final InserterMotion motion = new InserterMotion(this);
     @Override public InserterMotion motion() { return motion; }
     private boolean recovered;
     public BurnerInserterEntity(BlockPos pos, BlockState state) { super(FactoryContent.BURNER_INSERTER_ENTITY.get(), pos, state); }
-    public int fuelRemaining() { return burnTicks; }
+    public int fuelRemaining() { return burner.remainingTicks(InserterPower.BURNER_PEAK_KW); }
+    public double fuelReserveMJ() { return burner.reserveMJ(); }
 
     public static void tick(Level level, BlockPos pos, BlockState state, BurnerInserterEntity arm) {
         var facing = state.getValue(InserterBlock.FACING);
         BlockPos from = pos.relative(facing.getOpposite()), to = pos.relative(facing);
         boolean changed = false;
-        if (arm.burnTicks == 0 && arm.fuel.isEmpty()) {
+        if (!arm.burner.available(arm.fuel)) {
             ItemStack picked = ItemTransfer.takeSource(level, from, facing, true);
             if (picked.isEmpty() && GeneratorEntity.isFuel(arm.held)) {
                 picked = arm.held;
@@ -50,23 +51,19 @@ public final class BurnerInserterEntity extends BlockEntity implements Container
         }
         if (arm.held.isEmpty() && !arm.returning) {
             ItemStack candidate = ItemTransfer.peekForOutput(level, from, to, facing);
-            if (candidate.isEmpty() || arm.burnTicks == 0 && arm.fuel.isEmpty()) { arm.sync(0, changed); return; }
+            if (candidate.isEmpty() || !arm.burner.available(arm.fuel)) { arm.sync(0, changed); return; }
             arm.held = ItemTransfer.takeSource(level, from, facing, candidate);
             if (arm.held.isEmpty()) { arm.sync(0, changed); return; }
             changed = true;
         }
         if (!arm.returning && arm.work >= CYCLE_TICKS / 2.0 && !ItemTransfer.canInserterOutput(level, to, facing.getOpposite(), arm.held)) { arm.sync(0, changed); return; }
-        if (arm.burnTicks == 0) {
-            if (!GeneratorEntity.isFuel(arm.fuel)) { arm.sync(0, changed); return; }
-            arm.burnTicks = GeneratorEntity.fuelTicks(arm.fuel, level);
-            arm.fuel.shrink(1);
-            arm.setChanged();
-        }
-        arm.burnTicks--;
-        PollutionData.emit(level, pos, PollutionRates.of(state.getBlock()));
-        if (level.getGameTime() % 20 == 0) arm.setChanged();
         double limit = arm.returning ? CYCLE_TICKS : CYCLE_TICKS / 2.0;
-        double rate = ResearchState.inserterSpeed(level);
+        double speed = ResearchState.inserterSpeed(level), step = Math.min(speed, Math.max(0, limit - arm.work));
+        double fraction = arm.burner.consume(level, arm.fuel, step == 0 ? 0 : InserterPower.movementKW(1, true, arm.work, CYCLE_TICKS, speed));
+        if (fraction <= 0) { arm.sync(0, changed); return; }
+        PollutionData.emit(level, pos, PollutionRates.of(state.getBlock()) * fraction);
+        if (step > 0) arm.setChanged();
+        double rate = step * fraction;
         arm.work += rate;
         if (arm.work + 0.000001 >= limit) {
             if (arm.returning) {
@@ -100,7 +97,7 @@ public final class BurnerInserterEntity extends BlockEntity implements Container
     @Override protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.put("Fuel", fuel.save(new CompoundTag())); tag.put("Held", held.save(new CompoundTag()));
-        tag.putInt("BurnTicks", burnTicks); tag.putDouble("Work", work);
+        burner.save(tag); tag.putInt("BurnTicks", fuelRemaining()); tag.putDouble("Work", work);
         tag.putBoolean("Returning", returning);
     }
     @Override public void load(CompoundTag tag) {
@@ -109,7 +106,7 @@ public final class BurnerInserterEntity extends BlockEntity implements Container
         if (!GeneratorEntity.isFuel(fuel)) fuel = ItemStack.EMPTY;
         held = ItemStack.of(tag.getCompound("Held"));
         if (!held.isEmpty()) held.setCount(1);
-        burnTicks = Math.max(0, Math.min(GeneratorEntity.MAX_FUEL_TICKS, tag.getInt("BurnTicks")));
+        burner.load(tag);
         double savedWork = tag.getDouble("Work");
         work = Double.isFinite(savedWork) ? Math.max(0, Math.min(CYCLE_TICKS, savedWork)) : 0;
         returning = tag.getBoolean("Returning");
