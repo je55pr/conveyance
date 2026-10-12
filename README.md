@@ -3,6 +3,15 @@
 A standalone industrial overhaul for Minecraft Java Edition **1.20.1**, using
 **Forge 47.4.26** and **Java 17**. No other mods are required.
 
+## Version 0.52.1: supplied item textures
+
+Steel and sulfur now use the supplied PNG icons. The iron-stick sprite has a
+matching model ready for a future item. Asset generation finishes by applying
+all supplied item textures, so placeholder models cannot overwrite them.
+Run `python tools/apply_item_textures.py` to connect newly added item PNGs without
+regenerating other assets. Filenames should match the item ID. The creative
+generator retains its magenta model. Restart Minecraft for this version.
+
 ## Version 0.52.0: laser turrets and military science
 
 Laser turrets have a 2 x 2 x 2 base with a rotating head above it, visible red

@@ -99,3 +99,7 @@ research_path.write_text(json.dumps(research, indent=2) + '\n', encoding='utf-8'
 for language in ('en_us', 'en_gb'):
     path = f'assets/conveyance/lang/{language}.json'
     translations = json.loads((RES / path).read_text(encoding='utf-8')); translations.update(labels); write(path, translations)
+
+# Run after the complete generator chain, so placeholder icons cannot replace supplied PNGs.
+import runpy
+runpy.run_path(str(Path(__file__).with_name('apply_item_textures.py')), run_name='__main__')
